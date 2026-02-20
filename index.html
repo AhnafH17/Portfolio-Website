@@ -3,14 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Ahnaf Hussain — Web Developer & Data Scientist at AurixLab, Calgary. Building optimized websites and data-driven solutions.">
+    <meta name="description" content="Ahnaf Hussain is a Web Developer and Data Scientist at AurixLab, Calgary. Building optimized websites and data-driven solutions.">
     <meta name="keywords" content="Ahnaf Hussain, web developer, data scientist, Calgary, AurixLab, Shopify, WordPress, SEO, portfolio">
     <meta name="author" content="Ahnaf Hussain">
-    <meta property="og:title" content="Ahnaf Hussain — Web Developer & Data Scientist">
+    <meta name="robots" content="index, follow">
+
+    <!-- C: Canonical -->
+    <link rel="canonical" href="https://ahnafhussain.vercel.app/">
+
+    <!-- C: Open Graph -->
+    <meta property="og:title" content="Ahnaf Hussain | Web Developer and Data Scientist">
     <meta property="og:description" content="Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.">
     <meta property="og:type" content="website">
-    <meta name="robots" content="index, follow">
-    <title>Ahnaf Hussain — Web Developer & Data Scientist</title>
+    <meta property="og:url" content="https://ahnafhussain.vercel.app/">
+    <meta property="og:image" content="https://ahnafhussain.vercel.app/og-image.png">
+
+    <!-- C: Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ahnaf Hussain | Web Developer and Data Scientist">
+    <meta name="twitter:description" content="Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.">
+    <meta name="twitter:image" content="https://ahnafhussain.vercel.app/og-image.png">
+
+    <title>Ahnaf Hussain | Web Developer and Data Scientist</title>
+
+    <!-- C: Favicons -->
+    <link rel="icon" href="/favicon.png" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+
+    <!-- E: Preload hero image for LCP -->
+    <link rel="preload" as="image" href="ahnaf-photo.jpg">
+
+    <!-- Schema Markup (A: no em dashes) -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
@@ -19,7 +44,7 @@
                 "@type": "Person",
                 "name": "Ahnaf Hussain",
                 "url": "https://ahnafhussain.vercel.app",
-                "jobTitle": "Web Developer & Data Scientist",
+                "jobTitle": "Web Developer and Data Scientist",
                 "worksFor": { "@type": "Organization", "name": "AurixLab", "url": "https://www.aurixlab.com" },
                 "alumniOf": { "@type": "EducationalOrganization", "name": "BRAC University" },
                 "knowsAbout": ["WordPress","Shopify","Python","SEO","Data Science","Web Development"],
@@ -49,7 +74,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
     <style>
         *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
-        :root{--black:#002e33;--black-deep:#001a1e;--gold:#F4EDDD;--gold-dim:#c4b99a;--gold-bright:#fff8ec;--gold-hover:rgba(244,237,221,0.08);--gold-border:rgba(201,168,76,0.08);--gold-border-hover:rgba(201,168,76,0.2);--accent:#c9a84c;--accent-glow:#e2c973;--font-display:'Syne',sans-serif;--font-body:'DM Sans',sans-serif}
+
+        /* F: Gold and black only palette */
+        :root{
+            --black:#0d0d0d;
+            --black-deep:#070707;
+            --black-card:rgba(13,13,13,0.97);
+            --gold:#F4EDDD;
+            --gold-dim:#c4b99a;
+            --gold-bright:#fff8ec;
+            --gold-hover:rgba(244,237,221,0.08);
+            --gold-border:rgba(201,168,76,0.08);
+            --gold-border-hover:rgba(201,168,76,0.2);
+            --accent:#c9a84c;
+            --accent-glow:#e2c973;
+            --font-display:'Syne',sans-serif;
+            --font-body:'DM Sans',sans-serif
+        }
+
         html{scroll-behavior:smooth;font-size:16px}
         body{background:var(--black);color:var(--gold);font-family:var(--font-body);line-height:1.7;overflow-x:hidden;-webkit-font-smoothing:antialiased}
         a{color:inherit;text-decoration:none}img{max-width:100%;display:block}
@@ -59,10 +101,15 @@
         .cursor-dot{width:8px;height:8px;background:var(--accent-glow);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:10000;mix-blend-mode:difference}
         .cursor-ring{width:40px;height:40px;border:1.5px solid var(--gold-dim);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:10000;transition:width .3s,height .3s,border-color .3s}
 
+        /* F: Nav backgrounds now pure black */
         nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1.25rem 3rem;display:flex;justify-content:space-between;align-items:center;transition:background .4s,padding .4s}
-        nav.scrolled{background:rgba(0,26,30,0.92);backdrop-filter:blur(20px);padding:.8rem 3rem;border-bottom:1px solid var(--gold-border)}
-        .nav-logo{font-family:var(--font-display);font-weight:800;font-size:1.3rem;letter-spacing:-0.02em}
-        .nav-logo span{color:var(--accent-glow)}
+        nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8rem 3rem;border-bottom:1px solid var(--gold-border)}
+
+        /* H: Logo placeholder */
+        .nav-logo{display:flex;align-items:center;gap:5rem}
+        .nav-logo img{height:100px;width:auto;display:block}
+        .nav-logo .logo-fallback{font-family:var(--font-display);font-weight:700;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-dim);border:1px solid rgba(201,168,76,0.2);padding:.3rem .7rem;border-radius:4px}
+
         .nav-links{display:flex;gap:2.2rem;list-style:none;font-size:.85rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase}
         .nav-links a{position:relative;padding-bottom:4px}
         .nav-links a::after{content:'';position:absolute;bottom:0;left:0;width:0;height:1.5px;background:var(--accent-glow);transition:width .3s}
@@ -72,7 +119,7 @@
         .menu-toggle.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
         .menu-toggle.active span:nth-child(2){opacity:0}
         .menu-toggle.active span:nth-child(3){transform:rotate(-45deg) translate(5px,-5px)}
-        .mobile-nav{position:fixed;inset:0;background:rgba(0,26,30,0.97);backdrop-filter:blur(30px);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;opacity:0;pointer-events:none;transition:opacity .4s}
+        .mobile-nav{position:fixed;inset:0;background:rgba(7,7,7,0.97);backdrop-filter:blur(30px);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2rem;opacity:0;pointer-events:none;transition:opacity .4s}
         .mobile-nav.open{opacity:1;pointer-events:all}
         .mobile-nav a{font-family:var(--font-display);font-size:1.8rem;font-weight:800;transition:color .3s}
         .mobile-nav a:hover{color:var(--accent-glow)}
@@ -85,6 +132,7 @@
         .hero-greeting{font-size:.85rem;letter-spacing:.2em;text-transform:uppercase;color:var(--accent-glow);font-weight:600;margin-bottom:1rem;opacity:0;transform:translateY(20px);animation:fadeUp .8s ease .3s forwards}
         .hero-name{font-family:var(--font-display);font-size:clamp(2.6rem,5vw,4.5rem);font-weight:700;line-height:1.08;letter-spacing:-0.02em;margin-bottom:1.2rem;opacity:0;transform:translateY(30px);animation:fadeUp .8s ease .5s forwards}
         .hero-name .accent{color:var(--accent-glow)}
+        .accent{color:var(--accent-glow)}
         .hero-tagline{font-size:1.1rem;color:var(--gold-dim);max-width:420px;margin-bottom:2.5rem;opacity:0;transform:translateY(20px);animation:fadeUp .8s ease .7s forwards}
         .hero-cta{display:inline-flex;align-items:center;gap:.8rem;background:transparent;border:1.5px solid var(--accent);color:var(--gold);padding:.9rem 2rem;font-family:var(--font-display);font-weight:600;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;transition:color .4s,border-color .4s;opacity:0;transform:translateY(20px);animation:fadeUp .8s ease .9s forwards}
         .hero-cta::before{content:'';position:absolute;inset:0;background:var(--accent-glow);transform:scaleX(0);transform-origin:left;transition:transform .4s;z-index:-1}
@@ -97,7 +145,8 @@
         .hero-image-frame img{width:100%;height:100%;object-fit:cover;object-position:center 50%;transform:scale(1.2);filter:contrast(1.05) brightness(0.95)}
         .hero-image-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--black) 0%,transparent 30%)}
         .hero-image-decoration{position:absolute;width:420px;height:520px;border:1.5px solid rgba(201,168,76,0.12);border-radius:220px 220px 40px 40px;top:-20px;left:50%;transform:translateX(calc(-50% + 15px));z-index:-1}
-        .hero-floating-tag{position:absolute;bottom:60px;right:-30px;background:rgba(0,46,51,0.88);backdrop-filter:blur(12px);border:1px solid rgba(201,168,76,0.2);padding:.8rem 1.4rem;border-radius:12px;font-size:.8rem;font-weight:500;letter-spacing:.05em;z-index:3}
+        /* F: floating tag now black bg */
+        .hero-floating-tag{position:absolute;bottom:60px;right:-30px;background:rgba(13,13,13,0.92);backdrop-filter:blur(12px);border:1px solid rgba(201,168,76,0.2);padding:.8rem 1.4rem;border-radius:12px;font-size:.8rem;font-weight:500;letter-spacing:.05em;z-index:3}
         .hero-floating-tag span{color:var(--accent-glow);font-weight:700}
         .scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-dim);opacity:0;animation:fadeUp .8s ease 1.2s forwards}
         .scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold-dim),transparent);animation:scrollPulse 2s ease infinite}
@@ -109,7 +158,7 @@
         .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
         .reveal.visible{opacity:1;transform:translateY(0)}
 
-        #about{background:var(--black-deep)}
+        #about{background:rgba(201,168,76,0.04)}
         .about-grid{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:start}
         .about-bio p{color:var(--gold-dim);margin-bottom:1.5rem;font-size:1.02rem}
         .about-bio p strong{color:var(--gold);font-weight:600}
@@ -117,15 +166,18 @@
         .journey-block:last-child{margin-bottom:0}
         .journey-block h4{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:.8rem;color:var(--gold)}
         .journey-block p{color:var(--gold-dim);font-size:.95rem}
+        .journey-list{list-style:none;padding:0;margin:0}
+        .journey-list li{color:var(--gold-dim);font-size:.9rem;padding:.3rem 0 .3rem 1.2rem;position:relative;line-height:1.6}
+        .journey-list li::before{content:'';position:absolute;left:0;top:.7rem;width:5px;height:5px;border-radius:50%;background:var(--accent-glow);opacity:.5}
         .skills-wrap{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:2rem}
         .skill-tag{padding:.5rem 1.1rem;border:1px solid rgba(201,168,76,0.18);border-radius:100px;font-size:.8rem;font-weight:500;letter-spacing:.03em;transition:all .3s;cursor:default}
         .skill-tag:hover{background:var(--accent-glow);color:var(--black-deep);border-color:var(--accent-glow)}
 
         #portfolio{max-width:1300px;margin:0 auto}
         .projects-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:2rem;margin-top:1rem}
-        .project-card{background:rgba(201,168,76,0.02);border:1px solid rgba(201,168,76,0.07);border-radius:20px;padding:2.5rem;position:relative;overflow:hidden;transition:all .4s;cursor:pointer}
-        .project-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.06),transparent 60%);opacity:0;transition:opacity .4s}
-        .project-card:hover{border-color:rgba(201,168,76,0.25);transform:translateY(-4px)}
+        .project-card{background:rgba(201,168,76,0.05);border:1px solid rgba(201,168,76,0.12);border-radius:20px;padding:2.5rem;position:relative;overflow:hidden;transition:all .4s;cursor:pointer}
+        .project-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,0.08),transparent 60%);opacity:0;transition:opacity .4s}
+        .project-card:hover{border-color:rgba(201,168,76,0.35);transform:translateY(-4px);background:rgba(201,168,76,0.08)}
         .project-card:hover::before{opacity:1}
         .project-number{font-family:var(--font-display);font-size:3.5rem;font-weight:700;color:rgba(201,168,76,0.06);line-height:1;margin-bottom:1rem;transition:color .4s}
         .project-card:hover .project-number{color:rgba(201,168,76,0.14)}
@@ -138,14 +190,18 @@
         .read-more-btn svg{width:16px;height:16px}
         .project-card.featured{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
 
-        .modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(0,20,24,0.75);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .4s;overflow-y:auto}
+        /* G: Fixed modal structure - overlay is non-scrolling, inner area scrolls */
+        .modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(7,7,7,0.75);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .4s;display:flex;flex-direction:column}
         .modal-overlay.open{opacity:1;pointer-events:all}
-        .modal-container{max-width:900px;margin:3rem auto;padding:2.5rem 3rem;transform:translateY(30px);transition:transform .4s;background:var(--black);border:1px solid rgba(201,168,76,0.15);border-radius:24px;box-shadow:0 24px 80px rgba(0,0,0,0.5)}
-        .modal-overlay.open .modal-container{transform:translateY(0)}
-        .modal-close{position:fixed;top:1.5rem;right:2rem;z-index:2001;width:48px;height:48px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s}
+        /* G: Close button pinned top-right, never scrolls */
+        .modal-close{position:absolute;top:1.5rem;right:2rem;z-index:2001;width:48px;height:48px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .3s;flex-shrink:0}
         .modal-close:hover{background:var(--accent-glow)}
         .modal-close:hover svg{stroke:var(--black-deep)}
         .modal-close svg{width:20px;height:20px;stroke:var(--gold);stroke-width:2}
+        /* G: Scrollable inner area */
+        .modal-scroll-area{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+        .modal-container{max-width:900px;margin:3rem auto;padding:2.5rem 3rem;transform:translateY(30px);transition:transform .4s;background:var(--black);border:1px solid rgba(201,168,76,0.15);border-radius:24px;box-shadow:0 24px 80px rgba(0,0,0,0.5)}
+        .modal-overlay.open .modal-container{transform:translateY(0)}
         .modal-header{margin-bottom:3rem;padding-top:1rem}
         .modal-header .section-label{margin-bottom:.8rem}
         .modal-header h2{font-family:var(--font-display);font-size:clamp(1.9rem,3.8vw,2.6rem);font-weight:700;letter-spacing:-0.01em;margin-bottom:1rem}
@@ -169,10 +225,10 @@
         .modal-tech-tag{padding:.4rem .9rem;font-size:.75rem;font-weight:600;border:1px solid rgba(201,168,76,0.15);border-radius:100px;color:var(--accent-glow);letter-spacing:.04em}
         .modal-results-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-top:1rem}
         .modal-result-card{padding:1.2rem;border-radius:12px;background:rgba(201,168,76,0.04);border:1px solid rgba(201,168,76,0.08);text-align:center}
-        .modal-result-card .big{font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--accent-glow);display:block}
+        .modal-result-card .big{font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent-glow);display:block}
         .modal-result-card .label{font-size:.75rem;color:var(--gold-dim);letter-spacing:.05em;text-transform:uppercase;margin-top:.3rem;display:block}
 
-        #contact{background:var(--black-deep)}
+        #contact{background:rgba(201,168,76,0.04)}
         .contact-inner{max-width:700px;margin:0 auto;text-align:center}
         .contact-inner .section-divider{margin:0 auto 3rem}
         .contact-subtitle{color:var(--gold-dim);margin-bottom:3rem;font-size:1.05rem}
@@ -210,6 +266,7 @@
             .about-grid{grid-template-columns:1fr;gap:3rem}
             .projects-grid{grid-template-columns:1fr}
             .project-card.featured{grid-template-columns:1fr}
+            .project-card.featured>div:last-child{order:-1}
             .form-row{grid-template-columns:1fr}
         }
         @media(max-width:768px){
@@ -222,14 +279,32 @@
             .hero-floating-tag{font-size:.7rem;right:0;bottom:30px}
             .cursor-dot,.cursor-ring{display:none}
             .scroll-indicator{display:none}
+            /* G: mobile modal adjustments */
             .modal-container{padding:1.5rem 1.2rem;margin:1.5rem auto;border-radius:18px}
-            .modal-close{top:1rem;right:1rem}
+            .modal-close{top:1rem;right:1rem;width:40px;height:40px}
             .modal-results-grid{grid-template-columns:1fr 1fr}
         }
         @media(max-width:480px){
             .hero-name{font-size:2.1rem}
             .project-card{padding:1.8rem}
             .project-number{font-size:3rem}
+        }
+
+        /* D: Reduced motion preferences */
+        @media(prefers-reduced-motion:reduce){
+            *,*::before,*::after{
+                animation-duration:0.01ms !important;
+                animation-iteration-count:1 !important;
+                transition-duration:0.01ms !important;
+                scroll-behavior:auto !important;
+            }
+            html{scroll-behavior:auto}
+            .cursor-dot,.cursor-ring{display:none !important}
+            .scroll-line{animation:none}
+            .reveal{opacity:1;transform:none}
+            .hero-greeting,.hero-name,.hero-tagline,.hero-cta,.hero-image-wrapper,.scroll-indicator{
+                opacity:1;transform:none;animation:none;
+            }
         }
     </style>
 </head>
@@ -238,7 +313,11 @@
     <div class="cursor-ring" id="cursorRing"></div>
 
     <nav id="navbar">
-        <a href="#hero" class="nav-logo">ahnaf<span>.</span></a>
+        <!-- H: Logo placeholder with image + fallback -->
+        <a href="#hero" class="nav-logo">
+            <img src="logo-placeholder.svg" alt="Ahnaf Hussain" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+            <span class="logo-fallback" style="display:none">Ahnaf</span>
+        </a>
         <ul class="nav-links">
             <li><a href="#about">About</a></li>
             <li><a href="#portfolio">Work</a></li>
@@ -252,12 +331,12 @@
         <a href="#contact" onclick="closeMobileNav()">Contact</a>
     </div>
 
-    <!-- HERO -->
+    <!-- HERO (A: no em dashes) -->
     <section id="hero">
         <div class="hero-bg-line"></div><div class="hero-bg-line"></div><div class="hero-bg-line"></div><div class="hero-bg-line"></div>
         <div class="hero-content">
             <div class="hero-text">
-                <p class="hero-greeting">Junior Web Developer & Data Scientist</p>
+                <p class="hero-greeting">Junior Web Developer &amp; Data Scientist</p>
                 <h1 class="hero-name">Hi, I'm<br><span class="accent">Ahnaf Hussain</span></h1>
                 <p class="hero-tagline">Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.</p>
                 <a href="#portfolio" class="hero-cta">See My Work <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></a>
@@ -265,20 +344,21 @@
             <div class="hero-image-wrapper">
                 <div class="hero-image-decoration"></div>
                 <div class="hero-image-frame">
-                    <img src="ahnaf-photo.jpg" alt="Ahnaf Hussain - Web Developer and Data Scientist at AurixLab, Calgary" loading="eager" width="380" height="480">
+                    <img src="ahnaf-photo.jpg" alt="Ahnaf Hussain, Web Developer and Data Scientist at AurixLab, Calgary" loading="eager" width="380" height="480">
                 </div>
-                <div class="hero-floating-tag"><span>@</span> AurixLab &mdash; Calgary</div>
+                <!-- A: replaced em dash with vertical bar -->
+                <div class="hero-floating-tag"><span>@</span> AurixLab | Calgary</div>
             </div>
         </div>
         <div class="scroll-indicator"><span>Scroll</span><div class="scroll-line"></div></div>
     </section>
 
-    <!-- ABOUT -->
+    <!-- ABOUT (A: no em dashes) -->
     <section id="about">
         <div class="about-grid">
             <div class="about-bio reveal">
                 <p class="section-label">About Me</p>
-                <h2 class="section-title"> <span class="accent">Developer by craft,</span><br>data scientist by curiosity.</h2>
+                <h2 class="section-title"><span class="accent">Developer by craft,</span><br>data scientist by curiosity.</h2>
                 <div class="section-divider"></div>
                 <p>Hi, I'm <strong>Ahnaf Hussain</strong>, currently studying at <strong>BRAC University</strong>, and I work as a web developer at <strong>AurixLab</strong>. I specialize in building customized, highly optimized websites with a strong focus on SEO.</p>
                 <p>I enjoy solving problems through code and continuously work on improving my skills across various technologies including <strong>WordPress, Shopify, Python, and data science</strong>.</p>
@@ -287,14 +367,14 @@
                 </div>
             </div>
             <div class="about-details reveal" style="transition-delay:.15s">
-                <div class="journey-block"><h4>My Journey</h4><p>I started as an intern at AurixLab in August 2025, where I worked exclusively on WordPress until December 2025. I was then given the responsibility of fixing critical bugs and backend issues for Budget Promotion's website, and later, I contributed to data science projects to optimize email marketing strategies.</p></div>
-                <div class="journey-block"><h4>What Drives Me</h4><p>I'm passionate about the intersection of web development and data science. I believe websites should be more than pretty &mdash; they should perform, convert, and be backed by data-informed decisions.</p></div>
-                <div class="journey-block"><h4>How I Work</h4><p>I take a detail-oriented, problem-first approach to every project. Whether it's recovering a hacked WordPress site at 2 AM, debugging canvas rendering across Mac and Windows, or building a classification pipeline from 10,000 messy rows of data &mdash; I focus on understanding the root cause before writing a single line of code. Clean, maintainable solutions over quick patches, every time.</p></div>
+                <div class="journey-block"><h4>My Journey</h4><ul class="journey-list"><li>Joined AurixLab as an intern in August 2025, working on WordPress</li><li>Promoted to fixing critical bugs and backend issues for Budget Promotion (Shopify)</li><li>Contributed to data science projects for email marketing segmentation</li></ul></div>
+                <div class="journey-block"><h4>What Drives Me</h4><ul class="journey-list"><li>Passionate about the intersection of web development and data science</li><li>Websites should perform, convert, and be backed by data-informed decisions</li></ul></div>
+                <div class="journey-block"><h4>How I Work</h4><ul class="journey-list"><li>Problem-first approach: understand the root cause before writing code</li><li>From recovering hacked sites to building classification pipelines from 10K messy rows</li><li>Clean, maintainable solutions over quick patches, every time</li></ul></div>
             </div>
         </div>
     </section>
 
-    <!-- PORTFOLIO -->
+    <!-- PORTFOLIO (A: no em dashes) -->
     <section id="portfolio">
         <div class="reveal">
             <p class="section-label">Selected Work</p>
@@ -306,7 +386,7 @@
                 <div>
                     <div class="project-number">01</div>
                     <h3>CPC Clinics</h3>
-                    <p>Full-scale redesign of a clinical psychology website &mdash; added 20+ service pages, eliminated a major security breach, removed 10,000+ spam posts, and pushed SEO scores past 90.</p>
+                    <p>Full-scale redesign of a clinical psychology website. Added 20+ service pages, eliminated a major security breach, removed 10,000+ spam posts, and pushed SEO scores past 90.</p>
                     <div class="project-tag-row"><span class="project-tag">WordPress</span><span class="project-tag">SEO</span><span class="project-tag">Security</span></div>
                     <button class="read-more-btn" aria-label="Read more about CPC Clinics">Read More <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></button>
                 </div>
@@ -319,38 +399,40 @@
             <div class="project-card reveal" style="transition-delay:.1s" onclick="openModal('bp')">
                 <div class="project-number">02</div>
                 <h3>Budget Promotion</h3>
-                <p>Full-stack Shopify development &mdash; product uploads, customization features, Printavo backend integration, and performance optimization to 95+ load speeds.</p>
+                <p>Full-stack Shopify development: product uploads, customization features, Printavo backend integration, and performance optimization to 95+ load speeds.</p>
                 <div class="project-tag-row"><span class="project-tag">Shopify</span><span class="project-tag">Liquid</span><span class="project-tag">JavaScript</span></div>
                 <button class="read-more-btn" aria-label="Read more about Budget Promotion">Read More <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></button>
             </div>
             <div class="project-card reveal" style="transition-delay:.2s" onclick="openModal('resizer')">
                 <div class="project-number">03</div>
                 <h3>Image Resizer Studio</h3>
-                <p>A browser-based tool for resizing, compressing, and optimizing images with batch processing and ZIP download &mdash; no server needed.</p>
+                <p>A browser-based tool for resizing, compressing, and optimizing images with batch processing and ZIP download. No server needed.</p>
                 <div class="project-tag-row"><span class="project-tag">HTML / CSS / JS</span><span class="project-tag">Canvas API</span></div>
                 <button class="read-more-btn" aria-label="Read more about Image Resizer">Read More <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></button>
             </div>
             <div class="project-card reveal" style="transition-delay:.1s" onclick="openModal('aurix')">
                 <div class="project-number">04</div>
                 <h3>AurixLab</h3>
-                <p>Comprehensive SEO overhaul &mdash; keyword research, schema markup, content optimization, and performance tuning for Calgary's digital marketing landscape.</p>
+                <p>Comprehensive SEO overhaul including keyword research, schema markup, content optimization, and performance tuning for Calgary's digital marketing landscape.</p>
                 <div class="project-tag-row"><span class="project-tag">SEO</span><span class="project-tag">Schema</span><span class="project-tag">Performance</span></div>
                 <button class="read-more-btn" aria-label="Read more about AurixLab">Read More <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></button>
             </div>
             <div class="project-card reveal" style="transition-delay:.2s" onclick="openModal('data')">
                 <div class="project-number">05</div>
                 <h3>Customer Segmentation Engine</h3>
-                <p>Built a Python pipeline that merged 10,900+ contacts and classified them into 9 business sectors using embeddings and cosine similarity.</p>
+                <p>Built a Python pipeline that merged 10,900+ contacts and classified them into 9 business sectors using keyword rules, embeddings, and cosine similarity.</p>
                 <div class="project-tag-row"><span class="project-tag">Python</span><span class="project-tag">Pandas</span><span class="project-tag">NLP</span></div>
                 <button class="read-more-btn" aria-label="Read more about Customer Segmentation">Read More <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg></button>
             </div>
         </div>
     </section>
 
-    <!-- PROJECT MODAL -->
+    <!-- G: Restructured modal with scroll-area wrapper -->
     <div class="modal-overlay" id="projectModal">
         <button class="modal-close" onclick="closeModal()" aria-label="Close"><svg fill="none" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
-        <div class="modal-container" id="modalContent"></div>
+        <div class="modal-scroll-area" id="modalScrollArea">
+            <div class="modal-container" id="modalContent"></div>
+        </div>
     </div>
 
     <!-- CONTACT -->
@@ -381,50 +463,55 @@
         </div>
     </section>
 
-    <footer><p>Created by <span>Ahnaf Hussain</span> &mdash; Web Developer & Data Scientist &copy; 2026</p></footer>
+    <!-- A: no em dashes in footer -->
+    <footer><p>Created by <span>Ahnaf Hussain</span> | Web Developer &amp; Data Scientist &copy; 2026</p></footer>
 
     <script>
+    /* A: All em dashes removed from modal content. B: Data science metrics replaced with verifiable facts. */
     const projectData={
         cpc:{label:'Project 01',title:'CPC Clinics',link:'https://cpcclinics.ca/',image:'images/Cpc_Clinics_image.png',imagePlaceholder:'',sections:[
-            {heading:'Overview',content:'<p>CPC Clinics is a Calgary-based clinical psychology practice. I was responsible for a complete website overhaul — from redesigning the front-end and rebuilding the content architecture to resolving a critical security breach and driving the SEO score above 90.</p>'},
-            {heading:'Work Done',content:'<ul><li>Rebuilt and improved the homepage structure, messaging flow, CTAs, and internal linking for better user conversion</li><li>Created and optimized <strong>20+ service and workshop pages</strong> across Counselling Services (Anxiety, PTSD, Couples, Sports Psychology, OCD, etc.), Assessments (ADHD, Psychoeducational, Forensic, Autism, etc.), and Workshops (Workplace, Athletes, Teachers)</li><li>Revamped the About Us section including Our Story, Our Team, Our Space, FAQs, Partner With Us, and Blog pages</li><li>Published <strong>11 SEO-optimized blog posts</strong> targeting Calgary-relevant mental health topics</li><li>Rebuilt the Contact Us page with improved inquiry flow and service selection</li><li>Aligned the entire booking journey end-to-end — from homepage to service pages to the "Book a Free Consultation" pathway</li></ul>'},
-            {heading:'Security Remediation',content:'<p>The website had suffered a significant security breach. Here\'s what I addressed:</p><ul><li><strong>Unauthorized Access Recovery:</strong> An external entity ("SocialMore") gained backend access and changed admin passwords. I recovered the account through PHPmyAdmin on Hostinger, removed all unauthorized traces, and reclaimed control</li><li><strong>Japanese SEO Spam:</strong> The site was targeted with malicious Japanese-character spam appearing in Google results. I cleaned the corrupted Index.php backdoor, deleted the monarx-analyzer.php malware file, and submitted a security review through Google Search Console</li><li><strong>Core File Cleanup:</strong> The Functions.php was heavily compromised — I manually removed 395 lines of malicious code. I also sanitized the wp_options database table by deleting malicious entries that were redirecting traffic to spam sites</li><li><strong>Spam Post Removal:</strong> Removed <strong>10,000+ spam blog posts</strong> that had been injected through backdoors</li><li><strong>Brute Force Protection:</strong> Stopped 200+ brute force attacks by disabling XML-RPC, reducing login failure limits to 2 attempts, extending lockout duration to 2 months, and enabling immediate lockout for invalid usernames</li><li><strong>Bot Blocking:</strong> Enabled blocking of POST requests with blank User-Agent and Referer to prevent automated hacking scripts</li></ul>'},
-            {heading:'SEO & Performance',content:'<ul><li>Completed a full on-page SEO implementation using <strong>Yoast SEO</strong> across all pages — optimized meta titles, meta descriptions, URL slugs, keyphrase placement, heading hierarchy, internal linking, and image alt text</li><li>Achieved <strong>Yoast "green" status</strong> across all key SEO criteria for every page</li><li>Improved mobile responsiveness and spacing for a premium user experience</li></ul>'},
+            {heading:'Overview',content:'<p>CPC Clinics is a Calgary-based clinical psychology practice. I was responsible for a complete website overhaul, from redesigning the front-end and rebuilding the content architecture to resolving a critical security breach and driving the SEO score above 90.</p>'},
+            {heading:'Work Done',content:'<ul><li>Rebuilt and improved the homepage structure, messaging flow, CTAs, and internal linking for better user conversion</li><li>Created and optimized <strong>20+ service and workshop pages</strong> across Counselling Services (Anxiety, PTSD, Couples, Sports Psychology, OCD, etc.), Assessments (ADHD, Psychoeducational, Forensic, Autism, etc.), and Workshops (Workplace, Athletes, Teachers)</li><li>Revamped the About Us section including Our Story, Our Team, Our Space, FAQs, Partner With Us, and Blog pages</li><li>Published <strong>11 SEO-optimized blog posts</strong> targeting Calgary-relevant mental health topics</li><li>Rebuilt the Contact Us page with improved inquiry flow and service selection</li><li>Aligned the entire booking journey end-to-end, from homepage to service pages to the "Book a Free Consultation" pathway</li></ul>'},
+            {heading:'Security Remediation',content:'<p>The website had suffered a significant security breach. Here is what I addressed:</p><ul><li><strong>Unauthorized Access Recovery:</strong> An external entity ("SocialMore") gained backend access and changed admin passwords. I recovered the account through PHPmyAdmin on Hostinger, removed all unauthorized traces, and reclaimed control</li><li><strong>Japanese SEO Spam:</strong> The site was targeted with malicious Japanese-character spam appearing in Google results. I cleaned the corrupted Index.php backdoor, deleted the monarx-analyzer.php malware file, and submitted a security review through Google Search Console</li><li><strong>Core File Cleanup:</strong> The Functions.php was heavily compromised. I manually removed 395 lines of malicious code. I also sanitized the wp_options database table by deleting malicious entries that were redirecting traffic to spam sites</li><li><strong>Spam Post Removal:</strong> Removed <strong>10,000+ spam blog posts</strong> that had been injected through backdoors</li><li><strong>Brute Force Protection:</strong> Stopped 200+ brute force attacks by disabling XML-RPC, reducing login failure limits to 2 attempts, extending lockout duration to 2 months, and enabling immediate lockout for invalid usernames</li><li><strong>Bot Blocking:</strong> Enabled blocking of POST requests with blank User-Agent and Referer to prevent automated hacking scripts</li></ul>'},
+            {heading:'SEO & Performance',content:'<ul><li>Completed a full on-page SEO implementation using <strong>Yoast SEO</strong> across all pages: optimized meta titles, meta descriptions, URL slugs, keyphrase placement, heading hierarchy, internal linking, and image alt text</li><li>Achieved <strong>Yoast "green" status</strong> across all key SEO criteria for every page</li><li>Improved mobile responsiveness and spacing for a premium user experience</li></ul>'},
             {heading:'Results',type:'results',items:[{big:'90+',label:'SEO Score'},{big:'1.23K',label:'Organic Clicks (6mo)'},{big:'582K',label:'Search Impressions'},{big:'20+',label:'Pages Created'}]},
             {heading:'Technologies',type:'tech',tags:['WordPress','Elementor','Yoast SEO','Wordfence','PHPmyAdmin','Google Search Console','PHP']}
         ]},
         bp:{label:'Project 02',title:'Budget Promotion',link:'https://budgetpromotion.ca/',image:'images/Budget_Promotion_image.png',imagePlaceholder:'',sections:[
-            {heading:'Overview',content:'<p>Budget Promotion is a Calgary-based promotional products company running on Shopify. I worked across the full stack — uploading products, fixing critical front-end and back-end bugs, building customization features, integrating with the Printavo fulfillment API, and driving performance scores above 95.</p>'},
-            {heading:'Work Done',content:'<ul><li>Managed bulk product uploads and organized catalog structure within Shopify</li><li>Built and refined the <strong>product customization modal</strong> — allowing customers to upload images, position designs on products via a canvas-based tool, and preview before ordering</li><li>Fixed cross-platform compatibility issues between Mac and Windows devices for the product customizer</li><li>Developed the <strong>AJAX cart system</strong> for smooth add-to-cart and checkout flows without page reloads</li><li>Integrated the Shopify backend with <strong>Printavo</strong> for automated print-on-demand fulfillment via webhook architecture</li><li>Implemented the custom quote system for bulk/corporate orders</li></ul>'},
+            {heading:'Overview',content:'<p>Budget Promotion is a Calgary-based promotional products company running on Shopify. I worked across the full stack: uploading products, fixing critical front-end and back-end bugs, building customization features, integrating with the Printavo fulfillment API, and driving performance scores above 95.</p>'},
+            {heading:'Work Done',content:'<ul><li>Managed bulk product uploads and organized catalog structure within Shopify</li><li>Built and refined the <strong>product customization modal</strong>, allowing customers to upload images, position designs on products via a canvas-based tool, and preview before ordering</li><li>Fixed cross-platform compatibility issues between Mac and Windows devices for the product customizer</li><li>Developed the <strong>AJAX cart system</strong> for smooth add-to-cart and checkout flows without page reloads</li><li>Integrated the Shopify backend with <strong>Printavo</strong> for automated print-on-demand fulfillment via webhook architecture</li><li>Implemented the custom quote system for bulk/corporate orders</li></ul>'},
             {heading:'Challenges & Solutions',content:'<ul><li><strong>Customizer Cross-Platform Bugs:</strong> The product image customizer rendered differently on Mac vs Windows. I debugged canvas rendering logic, font rendering, and mouse event handling to ensure consistent behavior across platforms</li><li><strong>Performance Bottlenecks:</strong> The site had suboptimal load times due to unoptimized images, render-blocking scripts, and large Liquid template files. I implemented image compression, lazy loading, script deferral, and CSS optimization</li><li><strong>Printavo API Integration:</strong> Built a webhook-based architecture to automatically push order data from Shopify to Printavo, handling edge cases for custom orders with uploaded artwork</li></ul>'},
             {heading:'Results',type:'results',items:[{big:'90+',label:'SEO Score'},{big:'95+',label:'Load Speed Score'},{big:'100%',label:'Cross-Platform Fix'},{big:'Live',label:'Printavo Integration'}]},
             {heading:'Technologies',type:'tech',tags:['Shopify','Liquid','JavaScript','AJAX','Canvas API','Printavo API','Webhooks','CSS']}
         ]},
         resizer:{label:'Project 03',title:'Image Resizer Studio',link:'https://ahnaf-image-resizer.netlify.app/',image:'images/Image_resizer_app_image.png',imagePlaceholder:'',sections:[
-            {heading:'Overview',content:'<p>Image Resizer Studio is a browser-based tool I built to solve my own frustration with unreliable online image resizers. It handles resizing, compression, aspect ratio changes, and batch processing — all client-side with zero server uploads.</p>'},
-            {heading:'Work Done',content:'<ul><li>Built the entire application as a <strong>single-file HTML/CSS/JS</strong> solution — no frameworks, no backend, fully portable</li><li>Implemented drag-and-drop file uploads with live preview thumbnails</li><li>Created pixel-level resizing with custom width, height, and aspect ratio lock controls</li><li>Added quality/compression sliders with real-time file size estimation</li><li>Built <strong>batch processing</strong> — process multiple images at once and download as a ZIP file using JSZip</li><li>All processing happens in the browser via the <strong>Canvas API</strong> — images never leave the user\'s device</li></ul>'},
+            {heading:'Overview',content:'<p>Image Resizer Studio is a browser-based tool I built to solve my own frustration with unreliable online image resizers. It handles resizing, compression, aspect ratio changes, and batch processing, all client-side with zero server uploads.</p>'},
+            {heading:'Work Done',content:'<ul><li>Built the entire application as a <strong>single-file HTML/CSS/JS</strong> solution with no frameworks, no backend, and fully portable</li><li>Implemented drag-and-drop file uploads with live preview thumbnails</li><li>Created pixel-level resizing with custom width, height, and aspect ratio lock controls</li><li>Added quality/compression sliders with real-time file size estimation</li><li>Built <strong>batch processing</strong> to process multiple images at once and download as a ZIP file using JSZip</li><li>All processing happens in the browser via the <strong>Canvas API</strong> so images never leave the user\'s device</li></ul>'},
             {heading:'Challenges & Solutions',content:'<ul><li><strong>No Reliable Existing Tools:</strong> Most online image resizers either require server uploads (privacy concerns), are slow, or add watermarks. I needed a fast, private, no-nonsense tool for daily web development work</li><li><strong>Large File Handling:</strong> Processing very high-resolution images in the browser can cause memory issues. I implemented chunked rendering and optimized canvas operations to handle files up to 20MB smoothly</li></ul>'},
             {heading:'Technologies',type:'tech',tags:['HTML5','CSS3','JavaScript','Canvas API','JSZip','Netlify']}
         ]},
         aurix:{label:'Project 04',title:'AurixLab SEO Optimization',link:'https://www.aurixlab.com/',image:'images/Aurix_lab_2.png',imagePlaceholder:'',sections:[
             {heading:'Overview',content:'<p>AurixLab is a Calgary-based marketing agency specializing in Shopify customization, promotional products, and digital marketing. I was tasked with a comprehensive SEO overhaul to improve the site\'s visibility and performance in Calgary\'s competitive digital marketing landscape.</p>'},
-            {heading:'Work Done',content:'<ul><li>Conducted extensive <strong>keyword research</strong> targeting Calgary-specific digital marketing search terms</li><li>Optimized all page content — meta titles, meta descriptions, heading hierarchy, and internal linking structures</li><li>Implemented <strong>structured data / schema markup</strong> (JSON-LD) across the site for enhanced search result appearance — including Organization, LocalBusiness, and Service schemas</li><li>Identified and fixed performance bottlenecks — image optimization, render-blocking resource elimination, CLS/LCP improvements</li><li>Set up proper canonical URLs, sitemap, and robots.txt configuration</li></ul>'},
+            {heading:'Work Done',content:'<ul><li>Conducted extensive <strong>keyword research</strong> targeting Calgary-specific digital marketing search terms</li><li>Optimized all page content: meta titles, meta descriptions, heading hierarchy, and internal linking structures</li><li>Implemented <strong>structured data / schema markup</strong> (JSON-LD) across the site for enhanced search result appearance, including Organization, LocalBusiness, and Service schemas</li><li>Identified and fixed performance bottlenecks: image optimization, render-blocking resource elimination, CLS/LCP improvements</li><li>Set up proper canonical URLs, sitemap, and robots.txt configuration</li></ul>'},
             {heading:'Challenges & Solutions',content:'<ul><li><strong>Competitive Local Market:</strong> Calgary\'s digital marketing space is competitive. Extensive research was needed to identify high-value, low-competition keyword opportunities</li><li><strong>Schema Complexity:</strong> Implementing comprehensive structured data for a multi-service agency required careful mapping of service types to appropriate schema.org types and validation through Google\'s Rich Results Test</li></ul>'},
             {heading:'Results',type:'results',items:[{big:'90+',label:'SEO Score'},{big:'Faster',label:'Load Times'},{big:'Live',label:'Schema Markup'},{big:'Higher',label:'Search Visibility'}]},
             {heading:'Technologies',type:'tech',tags:['SEO','Schema.org / JSON-LD','Google Search Console','PageSpeed Insights','Keyword Research','Core Web Vitals']}
         ]},
+
+        /* B: Data science project - replaced "93% Accuracy" with verifiable pipeline facts */
         data:{label:'Project 05',title:'Customer Segmentation Engine',link:null,image:'images/Data_science_project.jpeg',imagePlaceholder:'',sections:[
-            {heading:'Overview',content:'<p>Budget Promotion needed a way to send targeted email campaigns to their 10,900+ contact database. The challenge: most contacts had minimal data — often just a name and personal email with no company info. I built a Python-based classification pipeline to segment every contact into one of 9 business sectors.</p>'},
+            {heading:'Overview',content:'<p>Budget Promotion needed a way to send targeted email campaigns to their 10,900+ contact database. The challenge: most contacts had minimal data, often just a name and personal email with no company info. I built a Python-based classification pipeline to segment every contact into one of 9 business sectors.</p>'},
             {heading:'The 9 Sectors',content:'<p>Events, Trades, Camps, Schools, Sports, Non-Profits, Restaurants, Corporates, and Retail.</p>'},
-            {heading:'How It Works',content:'<ul><li><strong>Data Merging:</strong> Loaded 3 separate Mailchimp CSV exports (cleaned, subscribed, non-subscribed), standardized columns, resolved duplicated email fields, and deduplicated by primary email</li><li><strong>Feature Engineering:</strong> Built a classification_text field combining company name, contact name, email domain, tags, notes, and city — all normalized and cleaned</li><li><strong>Pass 1 — Rule-Based Classification:</strong> Used weighted keyword dictionaries per sector. Company name hits were weighted higher than tags. Campaign tags (e.g., "Back 2 School Clicks") were filtered out to prevent false signals</li><li><strong>Pass 2 — AI Fallback:</strong> For low-confidence rows (below 0.65), the system calls Claude via the Anthropic API with the classification_text for intelligent sector assignment</li><li><strong>Output:</strong> Master segmented spreadsheet with sector, confidence score, classification method, and a needs_review flag. Plus a separate review queue and sector summary</li></ul>'},
-            {heading:'Challenges & Solutions',content:'<ul><li><strong>Sparse Data:</strong> ~7,200 contacts had only personal emails with no company or tag data. These default to "Corporates" as a catch-all and are flagged for AI review or manual classification</li><li><strong>Campaign Tag Contamination:</strong> Mailchimp engagement tags like "Back 2 School Clicks" and "Clicked Black Friday" were inflating the Schools sector. I built a tag filtering system to strip campaign-related tags before classification</li><li><strong>Tie Breaking:</strong> When two sectors had equal scores, I implemented a deterministic priority order to ensure consistent classification</li></ul>'},
-            {heading:'Results',type:'results',items:[{big:'10.9K',label:'Contacts Classified'},{big:'9',label:'Business Sectors'},{big:'2-Pass',label:'Rules + AI Pipeline'},{big:'93%',label:'Accuracy'}]},
+            {heading:'How It Works',content:'<ul><li><strong>Data Merging:</strong> Loaded 3 separate Mailchimp CSV exports (cleaned, subscribed, non-subscribed), standardized columns, resolved duplicated email fields, and deduplicated by primary email</li><li><strong>Feature Engineering:</strong> Built a classification_text field combining company name, contact name, email domain, tags, notes, and city, all normalized and cleaned</li><li><strong>Pass 1 (Rule-Based Classification):</strong> Used weighted keyword dictionaries per sector. Company name hits were weighted higher than tags. Campaign tags (e.g., "Back 2 School Clicks") were filtered out to prevent false signals</li><li><strong>Pass 2 (AI Fallback):</strong> For low-confidence rows (below 0.65), the system calls Claude via the Anthropic API with the classification_text for intelligent sector assignment</li><li><strong>Output:</strong> Master segmented spreadsheet with sector, confidence score, classification method, and a needs_review flag. Plus a separate review queue and sector summary</li></ul>'},
+            {heading:'Challenges & Solutions',content:'<ul><li><strong>Sparse Data:</strong> Around 7,200 contacts had only personal emails with no company or tag data. These default to "Corporates" as a catch-all and are flagged for AI review or manual classification</li><li><strong>Campaign Tag Contamination:</strong> Mailchimp engagement tags like "Back 2 School Clicks" and "Clicked Black Friday" were inflating the Schools sector. I built a tag filtering system to strip campaign-related tags before classification</li><li><strong>Tie Breaking:</strong> When two sectors had equal scores, I implemented a deterministic priority order to ensure consistent classification</li></ul>'},
+            {heading:'Results',type:'results',items:[{big:'10.9K',label:'Contacts Processed'},{big:'9',label:'Business Sectors'},{big:'2-Pass',label:'Rules + AI Pipeline'},{big:'5',label:'Output Deliverables'}]},
             {heading:'Technologies',type:'tech',tags:['Python','Pandas','TF-IDF Embeddings','Cosine Similarity','Anthropic Claude API','Jupyter Notebook','Mailchimp']}
         ]}
     };
 
     const modalOverlay=document.getElementById('projectModal');
     const modalContent=document.getElementById('modalContent');
+    const modalScrollArea=document.getElementById('modalScrollArea');
 
     function openModal(key){
         const p=projectData[key];if(!p)return;
@@ -440,10 +527,13 @@
             else{h+=s.content;}
             h+=`</div>`;
         });
-        modalContent.innerHTML=h;modalOverlay.classList.add('open');document.body.style.overflow='hidden';modalOverlay.scrollTop=0;
+        modalContent.innerHTML=h;modalOverlay.classList.add('open');document.body.style.overflow='hidden';
+        /* G: scroll the inner area to top, not the overlay */
+        modalScrollArea.scrollTop=0;
     }
     function closeModal(){modalOverlay.classList.remove('open');document.body.style.overflow='';}
-    modalOverlay.addEventListener('click',e=>{if(e.target===modalOverlay)closeModal();});
+    /* G: clicking the scroll area background closes modal */
+    modalScrollArea.addEventListener('click',e=>{if(e.target===modalScrollArea)closeModal();});
     document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
 
     // CONTACT FORM (Web3Forms)
@@ -462,11 +552,14 @@
         submitBtn.disabled=false;submitBtn.textContent='Send Message';
     });
 
-    // CURSOR
+    // CURSOR (D: respects reduced motion via CSS hiding)
     const dot=document.getElementById('cursorDot'),ring=document.getElementById('cursorRing');
     let mx=0,my=0,rx=0,ry=0;
-    document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx-4+'px';dot.style.top=my-4+'px';});
-    (function anim(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx-20+'px';ring.style.top=ry-20+'px';requestAnimationFrame(anim);})();
+    const prefersReducedMotion=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(!prefersReducedMotion){
+        document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;dot.style.left=mx-4+'px';dot.style.top=my-4+'px';});
+        (function anim(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx-20+'px';ring.style.top=ry-20+'px';requestAnimationFrame(anim);})();
+    }
     document.querySelectorAll('a,button,.project-card').forEach(el=>{
         el.addEventListener('mouseenter',()=>{Object.assign(ring.style,{width:'60px',height:'60px',borderColor:'var(--accent-glow)'});});
         el.addEventListener('mouseleave',()=>{Object.assign(ring.style,{width:'40px',height:'40px',borderColor:'var(--gold-dim)'});});
