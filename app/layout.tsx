@@ -17,38 +17,38 @@ const dmSans = DM_Sans({
   display: 'swap',
 });
 
+const DESCRIPTION =
+  'Ahnaf Hussain is a Web Developer and Data Scientist at AurixLab, Calgary — building optimized websites and data-driven solutions.';
+
 export const metadata: Metadata = {
-  title: 'Ahnaf Hussain | Web Developer and Data Scientist',
-  description:
-    'Ahnaf Hussain is a Web Developer and Data Scientist at AurixLab, Calgary. Building optimized websites and data-driven solutions.',
+  title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+  description: DESCRIPTION,
   keywords: [
     'Ahnaf Hussain',
-    'web developer',
-    'data scientist',
-    'Calgary',
+    'web developer Calgary',
+    'data scientist Calgary',
     'AurixLab',
-    'Shopify',
-    'WordPress',
-    'SEO',
+    'Shopify developer Calgary',
+    'WordPress developer Calgary',
+    'SEO Calgary',
     'portfolio',
   ],
   authors: [{ name: 'Ahnaf Hussain' }],
   robots: { index: true, follow: true },
   metadataBase: new URL('https://ahnafhussain.vercel.app'),
-  alternates: { canonical: '/' },
+  alternates: { canonical: 'https://ahnafhussain.vercel.app/' },
   openGraph: {
-    title: 'Ahnaf Hussain | Web Developer and Data Scientist',
-    description:
-      'Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.',
-    url: 'https://ahnafhussain.vercel.app',
+    title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+    description: DESCRIPTION,
+    url: 'https://ahnafhussain.vercel.app/',
     type: 'website',
-    images: [{ url: '/og-image.png' }],
+    locale: 'en_CA',
+    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ahnaf Hussain | Web Developer and Data Scientist',
-    description:
-      'Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.',
+    title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+    description: DESCRIPTION,
     images: ['/og-image.png'],
   },
 };
@@ -64,6 +64,7 @@ const schemaOrg = {
       worksFor: { '@type': 'Organization', name: 'AurixLab', url: 'https://www.aurixlab.com' },
       alumniOf: { '@type': 'EducationalOrganization', name: 'BRAC University' },
       knowsAbout: ['WordPress', 'Shopify', 'Python', 'SEO', 'Data Science', 'Web Development'],
+      address: { '@type': 'PostalAddress', addressLocality: 'Calgary', addressRegion: 'AB', addressCountry: 'CA' },
       sameAs: [],
     },
     {
@@ -81,7 +82,7 @@ const schemaOrg = {
         { '@type': 'ListItem', position: 4, item: { '@type': 'CreativeWork', name: 'AurixLab SEO Optimization', description: 'Comprehensive SEO strategy for Calgary market.', url: 'https://www.aurixlab.com/' } },
         { '@type': 'ListItem', position: 5, item: { '@type': 'CreativeWork', name: 'Customer Segmentation Engine', description: 'Python ML pipeline classifying 10,900+ customers into 9 sectors using embeddings and cosine similarity.' } },
         { '@type': 'ListItem', position: 6, item: { '@type': 'CreativeWork', name: 'CPC Revive', description: "Four-page WordPress build for CPC Clinics' premium mental wellness and performance program arm.", url: 'https://cpcclinics.ca/revive/' } },
-        { '@type': 'ListItem', position: 7, item: { '@type': 'CreativeWork', name: 'Aurix Lab Notion', description: 'Full-stack internal project and task management system for an 11-person digital agency, built with Next.js, Prisma, Supabase, and Claude AI integration.' } },
+        { '@type': 'ListItem', position: 7, item: { '@type': 'CreativeWork', name: 'Mission Control', description: 'Full-stack internal project and task management system for an 11-person digital agency, built with Next.js, Prisma, Supabase, and Claude AI integration.' } },
         { '@type': 'ListItem', position: 8, item: { '@type': 'CreativeWork', name: 'LeadCraft IT Solutions', description: 'Full 5-page WordPress/Elementor website for a US+Bangladesh ITES/BPO company, featuring WebGL shaders, GSAP animations, Lenis smooth scroll, Globe.gl visualization, and Swiper carousel.', url: 'https://www.leadcraftit.com/' } },
       ],
     },

@@ -113,7 +113,7 @@ export default function AccordionHero({ onOpenModal }: AccordionHeroProps) {
                       </div>
                     </div>
                     <div className="acc-info-bottom">
-                      <h2 className="acc-title">{project.title}</h2>
+                      <h3 className="acc-title">{project.title}</h3>
                       <button
                         className="acc-cta"
                         onClick={(e) => { e.stopPropagation(); onOpenModal(key); }}

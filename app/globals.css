@@ -335,7 +335,7 @@ section{padding:7rem 3rem;position:relative}
 .about-bio p strong{color:var(--gold);font-weight:600}
 .journey-block{background:rgba(201,168,76,0.03);border:1px solid rgba(201,168,76,0.08);border-radius:16px;padding:2rem;margin-bottom:1.5rem}
 .journey-block:last-child{margin-bottom:0}
-.journey-block h4{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:.8rem;color:var(--gold)}
+.journey-block h3{font-family:var(--font-display);font-weight:700;font-size:1.1rem;margin-bottom:.8rem;color:var(--gold)}
 .journey-block p{color:var(--gold-dim);font-size:.95rem}
 .journey-list{list-style:none;padding:0;margin:0}
 .journey-list li{color:var(--gold-dim);font-size:.9rem;padding:.3rem 0 .3rem 1.2rem;position:relative;line-height:1.6}

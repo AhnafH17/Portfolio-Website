@@ -42,7 +42,7 @@ export default function AboutSection() {
 
         <div className="about-details reveal" style={{ transitionDelay: '.15s' }}>
           <div className="journey-block">
-            <h4>My Journey</h4>
+            <h3>My Journey</h3>
             <ul className="journey-list">
               <li>Joined AurixLab as an intern in August 2025, working on WordPress</li>
               <li>
@@ -52,7 +52,7 @@ export default function AboutSection() {
             </ul>
           </div>
           <div className="journey-block">
-            <h4>What Drives Me</h4>
+            <h3>What Drives Me</h3>
             <ul className="journey-list">
               <li>Passionate about the intersection of web development and data science</li>
               <li>
@@ -61,7 +61,7 @@ export default function AboutSection() {
             </ul>
           </div>
           <div className="journey-block">
-            <h4>How I Work</h4>
+            <h3>How I Work</h3>
             <ul className="journey-list">
               <li>Problem-first approach: understand the root cause before writing code</li>
               <li>
