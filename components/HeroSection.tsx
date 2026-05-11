@@ -31,10 +31,9 @@ export default function HeroSection() {
             <Image
               src="/ahnaf-photo.jpg"
               alt="Ahnaf Hussain, Web Developer and Data Scientist at AurixLab, Calgary"
-              width={380}
-              height={480}
+              fill
               priority
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ objectFit: 'cover', objectPosition: 'center 50%', transform: 'scale(1.2)', filter: 'contrast(1.05) brightness(0.95)' }}
             />
           </div>
           <div className="hero-floating-tag">
