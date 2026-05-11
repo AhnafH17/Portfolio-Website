@@ -33,7 +33,7 @@ export type ProjectKey =
 export const projectData: Record<ProjectKey, Project> = {
   notion: {
     label: 'Project 01',
-    title: 'Aurix Lab Notion',
+    title: 'Misson Control',
     link: null,
     image: 'notion.png',
     imagePlaceholder: '',
@@ -453,12 +453,12 @@ export interface StripMeta {
 }
 
 export const stripMeta: StripMeta[] = [
-  { key: 'notion',   num: '01', tags: ['Next.js', 'AI', 'SaaS'] },
+  { key: 'notion',   num: '01', tags: ['Next.js', 'Supabase', 'SaaS'] },
   { key: 'revive',   num: '02', tags: ['WordPress', 'SEO', 'UX'] },
   { key: 'leadcraft',num: '03', tags: ['WordPress', 'GSAP', 'WebGL'] },
   { key: 'data',     num: '04', tags: ['Python', 'ML', 'Anthropic'] },
   { key: 'cpc',      num: '05', tags: ['WordPress', 'SEO', 'Security'] },
-  { key: 'bp',       num: '06', tags: ['Shopify', 'JS', 'API'] },
+  { key: 'bp',       num: '06', tags: ['Shopify', 'API', 'Liquid'] },
   { key: 'aurix',    num: '07', tags: ['SEO', 'Schema', 'Core Web Vitals'] },
   { key: 'resizer',  num: '08', tags: ['HTML5', 'Canvas', 'Netlify'] },
 ];
