@@ -54,11 +54,8 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 /* ===== ACCORDION STRIP HERO ===== */
 #showcase{
   position:relative;
-  height:calc(8 * 30vh + 100vh);
 }
 .acc-showcase-sticky{
-  position:sticky;
-  top:0;
   height:100vh;
   display:flex;
   flex-direction:column;
@@ -277,7 +274,6 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 /* ===== ACCORDION RESPONSIVE ===== */
 @media(max-width:900px){
   #showcase{height:auto}
-  .acc-scroll-hint{display:none}
   .acc-track-wrap::before,.acc-track-wrap::after{display:none}
   .acc-showcase-sticky{position:relative;height:auto;padding-top:4rem;padding-bottom:2rem;}
   .acc-track-wrap{padding:0 1rem}
