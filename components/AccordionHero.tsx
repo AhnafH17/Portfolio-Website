@@ -234,7 +234,7 @@ export default function AccordionHero({ onOpenModal }: AccordionHeroProps) {
                     alt={project.title}
                     fill
                     className="acc-img"
-                    sizes="(max-width: 900px) 72vw, 15vw"
+                    sizes="(max-width: 900px) 72vw, (max-width: 1300px) 55vw, 700px"
                     priority={idx < 2}
                   />
                   <div className="acc-overlay" />
