@@ -10,6 +10,7 @@ import Modal from '@/components/Modal';
 import ContactSection from '@/components/ContactSection';
 import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
+import LenisProvider from '@/components/LenisProvider';
 import { ProjectKey } from '@/lib/projects';
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
 
   return (
     <>
+      <LenisProvider />
       <CustomCursor />
       <Navbar />
       <main>
