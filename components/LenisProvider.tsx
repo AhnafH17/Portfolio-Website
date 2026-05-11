@@ -3,6 +3,11 @@
 import { useEffect } from 'react';
 import Lenis from 'lenis';
 
+// Global instance so Modal can pause/resume it
+declare global {
+  interface Window { __lenis?: Lenis; }
+}
+
 export default function LenisProvider() {
   useEffect(() => {
     const lenis = new Lenis({
@@ -12,8 +17,8 @@ export default function LenisProvider() {
       smoothWheel: true,
     });
 
-    // Forward Lenis scroll position to native scroll events
-    // so our accordion's window.addEventListener('scroll') keeps working
+    window.__lenis = lenis;
+
     lenis.on('scroll', () => {
       window.dispatchEvent(new Event('scroll'));
     });
@@ -26,6 +31,7 @@ export default function LenisProvider() {
 
     return () => {
       lenis.destroy();
+      window.__lenis = undefined;
     };
   }, []);
 

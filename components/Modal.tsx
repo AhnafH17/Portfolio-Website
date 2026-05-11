@@ -2,6 +2,11 @@
 
 import { useEffect, useRef } from 'react';
 import { projectData, ProjectKey } from '@/lib/projects';
+import type Lenis from 'lenis';
+
+declare global {
+  interface Window { __lenis?: Lenis; }
+}
 
 interface ModalProps {
   projectKey: ProjectKey | null;
@@ -13,12 +18,17 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
   useEffect(() => {
     if (projectKey) {
+      window.__lenis?.stop();
       document.body.style.overflow = 'hidden';
       scrollAreaRef.current?.scrollTo({ top: 0 });
     } else {
+      window.__lenis?.start();
       document.body.style.overflow = '';
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      window.__lenis?.start();
+      document.body.style.overflow = '';
+    };
   }, [projectKey]);
 
   useEffect(() => {
