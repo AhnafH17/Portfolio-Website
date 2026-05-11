@@ -43,13 +43,13 @@ export const metadata: Metadata = {
     url: 'https://ahnafhussain.vercel.app/',
     type: 'website',
     locale: 'en_CA',
-    images: [{ url: '/og-image.png', width: 1200, height: 630 }],
+    images: [{ url: '/OG_image__resized.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
     description: DESCRIPTION,
-    images: ['/og-image.png'],
+    images: ['/OG_image__resized.png'],
   },
 };
 
