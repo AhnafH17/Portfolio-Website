@@ -674,20 +674,30 @@ footer span{color:var(--accent-glow)}
 
 /* ===== SHOWCASE RESPONSIVE ===== */
 @media(max-width:900px){
-  #showcase.sc-wrap{flex-direction:column;height:auto;min-height:0}
-  .sc-left{flex:none;padding:5rem 1.5rem 1.5rem;gap:1rem;border-right:none;border-bottom:1px solid rgba(201,168,76,0.08)}
-  .sc-mockup-frame{max-height:54vw;min-height:220px}
+  #showcase.sc-wrap{flex-direction:column;height:100svh;min-height:0;overflow:hidden}
+  .sc-left{flex:1;padding:4.5rem 1.2rem 1.2rem;gap:.8rem;border-right:none;border-bottom:none}
+  .sc-mockup-frame{max-height:none;min-height:0;flex:1}
   .sc-big-num{display:none}
-  .sc-right{flex:none;padding:1.5rem}
-  .sc-grid{gap:.5rem}
+  .sc-right{display:none}
 }
 @media(max-width:600px){
-  .sc-card{min-height:120px}
-  .sc-card-num{font-size:1.3rem}
-  .sc-mockup-frame{max-height:62vw}
-  .sc-left{padding:4.5rem 1.2rem 1.2rem}
-  .sc-cta{width:100%;justify-content:center}
-  .sc-big-num{bottom:4rem;font-size:clamp(5rem,18vw,8rem)}
+  .sc-mockup-frame{border-radius:8px}
+  .sc-left{padding:4rem 1rem 1rem;gap:.7rem}
+  /* VIEW PROJECT — compact, bottom-right of mockup */
+  .sc-cta{
+    padding:.4rem .9rem;
+    font-size:.62rem;
+    letter-spacing:.1em;
+    bottom:.9rem;
+    right:.9rem;
+    min-height:36px;
+    gap:.4rem;
+  }
+  .sc-cta svg{width:13px;height:13px}
+  .sc-status-bar{font-size:.55rem;letter-spacing:.15em}
+  .sc-arrow-btn{width:32px;height:32px}
+  .sc-arrow-count{font-size:.52rem}
+  .sc-bottom-row{padding-right:.2rem}
 }
 
 /* ===== FOCUS VISIBLE ===== */
