@@ -20,6 +20,12 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
       <div className="sc-left">
         <div className="sc-circuit" aria-hidden="true" />
 
+        {/* Section heading */}
+        <div className="sc-heading">
+          <span className="sc-heading-label">Selected Work</span>
+          <h2 className="sc-heading-title">Projects I&apos;ve <span>built &amp; led</span></h2>
+        </div>
+
         {/* Mockup frame */}
         <div className="sc-mockup-frame">
           {/* Title bar */}
@@ -65,9 +71,11 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             onClick={() => onOpenModal(active.key)}
           >
             VIEW PROJECT
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={14} height={14}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
+            <span className="sc-cta-arrow">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} width={15} height={15}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </span>
           </button>
         </div>
 
