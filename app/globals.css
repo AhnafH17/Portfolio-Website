@@ -507,7 +507,7 @@ footer span{color:var(--accent-glow)}
 }
 .sc-mockup-img{
   object-fit:cover;object-position:center top;
-  opacity:.75;
+  opacity:.6;
   transition:transform .5s cubic-bezier(.25,.46,.45,.94), opacity .4s;
 }
 .sc-mockup-body:hover .sc-mockup-img{

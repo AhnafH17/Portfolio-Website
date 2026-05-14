@@ -18,19 +18,33 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const bigNumRef = useRef<HTMLSpanElement>(null);
+  const isFirstRender = useRef(true);
 
   const active = stripMeta[activeIdx];
   const project = projectData[active.key];
   const totalPairs = Math.ceil(stripMeta.length / 2);
 
+  const getTargets = useCallback(() =>
+    [imgRef.current, titleRef.current, subtitleRef.current, tagsRef.current, bigNumRef.current].filter(Boolean),
+  []);
+
   const handleSelect = useCallback((idx: number) => {
     if (idx === activeIdx) return;
-    const tl = gsap.timeline();
-    const targets = [imgRef.current, titleRef.current, subtitleRef.current, tagsRef.current, bigNumRef.current];
-    tl.to(targets, { opacity: 0, y: 10, duration: 0.18, ease: 'power2.in', stagger: 0.03 })
-      .call(() => setActiveIdx(idx))
-      .to(targets, { opacity: 1, y: 0, duration: 0.32, ease: 'power2.out', stagger: 0.04 });
-  }, [activeIdx]);
+    const targets = getTargets();
+    gsap.to(targets, { opacity: 0, y: -12, duration: 0.2, ease: 'power2.in', stagger: 0.025,
+      onComplete: () => setActiveIdx(idx),
+    });
+  }, [activeIdx, getTargets]);
+
+  // Fade in after activeIdx changes (new content rendered)
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    const targets = getTargets();
+    gsap.fromTo(targets,
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', stagger: 0.045 }
+    );
+  }, [activeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMobilePrev = useCallback(() => {
     const newPair = (mobilePair - 2 + stripMeta.length) % stripMeta.length;
@@ -44,10 +58,11 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
     handleSelect(newPair);
   }, [mobilePair, handleSelect]);
 
+  // Initial entrance animation
   useEffect(() => {
-    const targets = [tagsRef.current, imgRef.current, titleRef.current, subtitleRef.current, bigNumRef.current];
+    const targets = getTargets();
     gsap.fromTo(targets, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', stagger: 0.06, delay: 0.2 });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // The two cards shown on mobile
   const pairA = stripMeta[mobilePair];
