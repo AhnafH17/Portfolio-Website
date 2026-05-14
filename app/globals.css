@@ -418,6 +418,7 @@ footer span{color:var(--accent-glow)}
 
 /* ===== SHOWCASE SPLIT PANEL ===== */
 #showcase.sc-wrap{
+  position:relative;
   display:flex;flex-direction:row;
   height:100svh;min-height:560px;
   overflow:hidden;

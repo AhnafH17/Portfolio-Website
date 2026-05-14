@@ -41,10 +41,11 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   return (
     <section id="showcase" className="sc-wrap">
 
+      {/* Animated background paths — full section */}
+      <BackgroundPaths />
+
       {/* ── LEFT PANEL ── */}
       <div className="sc-left">
-        {/* Animated background paths */}
-        <BackgroundPaths />
         {/* Radial glow */}
         <div className="sc-glow" aria-hidden="true" />
 
