@@ -5,59 +5,54 @@ import { motion } from 'framer-motion';
 function FloatingPaths({ position }: { position: number }) {
   const paths = Array.from({ length: 36 }, (_, i) => ({
     id: i,
-    d: `M${-380 * position + i * 5 * position} ${180 + i * 8}C${
-      -300 * position + i * 4 * position
-    } ${80 + i * 6},${200 * position + i * 3 * position} ${
-      20 + i * 5
-    },${400 * position + i * 8 * position} ${-20 + i * 4}`,
-    width: 0.5 + i * 0.05,
-    opacity: 0.12 + i * 0.022,
+    d: `M${-500 * position + i * 12 * position} ${-50 + i * 22}C${
+      -200 * position + i * 10 * position
+    } ${150 + i * 15},${300 * position + i * 8 * position} ${
+      350 + i * 10
+    },${700 * position + i * 14 * position} ${600 + i * 8}`,
+    width: 0.5 + i * 0.055,
+    opacity: 0.1 + i * 0.02,
+    duration: 12 + (i % 7) * 3,
+    delay: i * 0.4,
   }));
 
   return (
     <svg
       className="sc-bg-svg"
-      viewBox="0 0 696 316"
+      viewBox="0 0 1400 800"
+      preserveAspectRatio="xMidYMid slice"
       fill="none"
       aria-hidden="true"
     >
+      <defs>
+        <linearGradient id={`gold-grad-${position > 0 ? 'a' : 'b'}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#c9a84c" stopOpacity="0" />
+          <stop offset="30%" stopColor="#c9a84c" />
+          <stop offset="70%" stopColor="#e2c973" />
+          <stop offset="100%" stopColor="#a07830" stopOpacity="0" />
+        </linearGradient>
+      </defs>
       {paths.map((p) => (
         <motion.path
           key={p.id}
           d={p.d}
-          stroke="url(#gold-grad)"
+          stroke={`url(#gold-grad-${position > 0 ? 'a' : 'b'})`}
           strokeWidth={p.width}
-          strokeOpacity={p.opacity}
-          initial={{ pathLength: 0.2, opacity: 0 }}
+          fill="none"
+          initial={{ opacity: 0 }}
           animate={{
-            pathLength: 1,
-            opacity: [p.opacity * 0.4, p.opacity, p.opacity * 0.4],
-            pathOffset: [0, 1],
+            opacity: [0, p.opacity, p.opacity * 0.5, p.opacity, 0],
           }}
           transition={{
-            pathLength: { duration: 0, delay: 0 },
             opacity: {
-              duration: 4 + (p.id % 6) * 1.5,
+              duration: p.duration,
               repeat: Infinity,
               ease: 'easeInOut',
-              delay: p.id * 0.15,
-            },
-            pathOffset: {
-              duration: 18 + (p.id % 8) * 3,
-              repeat: Infinity,
-              ease: 'linear',
-              delay: p.id * 0.2,
+              delay: p.delay,
             },
           }}
         />
       ))}
-      <defs>
-        <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#c9a84c" />
-          <stop offset="50%" stopColor="#e2c973" />
-          <stop offset="100%" stopColor="#a07830" />
-        </linearGradient>
-      </defs>
     </svg>
   );
 }

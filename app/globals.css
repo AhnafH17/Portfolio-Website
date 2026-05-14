@@ -435,6 +435,7 @@ footer span{color:var(--accent-glow)}
 .sc-bg-svg{
   position:absolute;inset:0;
   width:100%;height:100%;
+  overflow:visible;
 }
 
 /* Right panel structural lines */
