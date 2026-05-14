@@ -725,6 +725,7 @@ footer span{color:var(--accent-glow)}
     color:rgba(201,168,76,0.4);letter-spacing:-0.02em;flex-shrink:0;
   }
   .sc-mobile-card.active .sc-mobile-card-num{color:rgba(201,168,76,0.75)}
+  .sc-mobile-tags{display:flex;flex-wrap:wrap;gap:.25rem}
   .sc-mobile-card-title{
     font-family:var(--font-display);font-size:.85rem;font-weight:700;
     text-transform:uppercase;letter-spacing:.06em;

@@ -132,7 +132,9 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
                 <span className="sc-mobile-card-num">{meta.num}</span>
                 <div>
                   <p className="sc-mobile-card-title">{proj.title}</p>
-                  <span className="sc-card-tag">{meta.tags[0]}</span>
+                  <div className="sc-mobile-tags">
+                    {meta.tags.map((t) => <span key={t} className="sc-card-tag">{t}</span>)}
+                  </div>
                 </div>
               </div>
             </button>
