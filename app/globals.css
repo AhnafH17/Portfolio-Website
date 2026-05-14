@@ -689,7 +689,7 @@ footer span{color:var(--accent-glow)}
   }
   .sc-mobile-pair{
     display:grid;grid-template-columns:1fr 1fr;
-    gap:.7rem;flex:1;
+    gap:.7rem;flex:0 0 auto;
   }
   .sc-mobile-card{
     position:relative;display:flex;flex-direction:column;
@@ -699,6 +699,7 @@ footer span{color:var(--accent-glow)}
     cursor:pointer;touch-action:manipulation;
     transition:border-color .25s;
     text-align:left;
+    width:100%;
   }
   .sc-mobile-card.active{border-color:rgba(201,168,76,0.5)}
   .sc-mobile-card-img{
