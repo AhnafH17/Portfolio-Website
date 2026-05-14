@@ -693,26 +693,31 @@ footer span{color:var(--accent-glow)}
     gap:.7rem;flex:1;min-height:0;
   }
   .sc-mobile-card{
-    flex:1;
-    position:relative;display:flex;flex-direction:column;
+    flex:1;min-width:0;
+    position:relative;
     border-radius:10px;overflow:hidden;
     border:1px solid rgba(201,168,76,0.15);
-    background:rgba(13,13,13,0.6);
     cursor:pointer;touch-action:manipulation;
     transition:border-color .25s;
-    text-align:left;
-    min-width:0;
   }
   .sc-mobile-card.active{border-color:rgba(201,168,76,0.5)}
+  /* image fills the card completely */
   .sc-mobile-card-img{
-    position:relative;
-    flex:1;
-    min-height:0;
-    overflow:hidden;
+    width:100%;height:100%;
+    object-fit:cover;object-position:center top;
+    display:block;
+    opacity:.85;
+  }
+  /* dark gradient overlay at bottom */
+  .sc-mobile-card-overlay{
+    position:absolute;inset:0;
+    background:linear-gradient(to top,rgba(7,7,7,.85) 0%,rgba(7,7,7,.2) 50%,transparent 100%);
+    pointer-events:none;
   }
   .sc-mobile-card-footer{
-    display:flex;align-items:center;gap:.5rem;
-    padding:.5rem .6rem;flex-shrink:0;
+    position:absolute;bottom:0;left:0;right:0;
+    display:flex;align-items:flex-end;gap:.4rem;
+    padding:.5rem .6rem;z-index:2;
   }
   .sc-mobile-card-num{
     font-family:var(--font-display);font-size:1.1rem;font-weight:700;

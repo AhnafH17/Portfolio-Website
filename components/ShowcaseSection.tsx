@@ -125,10 +125,9 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}
               aria-label={`View ${proj.title}`}
             >
-              <div className="sc-mobile-card-img">
-                <Image src={`/${proj.image}`} alt={proj.title} fill className="sc-card-img" sizes="50vw" />
-                <div className="sc-mockup-overlay" />
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`/${proj.image}`} alt={proj.title} className="sc-mobile-card-img" />
+              <div className="sc-mobile-card-overlay" />
               <div className="sc-mobile-card-footer">
                 <span className="sc-mobile-card-num">{meta.num}</span>
                 <div>
