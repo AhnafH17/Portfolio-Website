@@ -162,7 +162,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               aria-label={`View ${proj.title}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={`/${proj.image}`} alt={proj.title} className="sc-mobile-card-img" />
+              <img src={`/${proj.image}`} alt={proj.title} className="sc-mobile-card-img" loading="lazy" decoding="async" />
               <div className="sc-mobile-card-overlay" />
               <div className="sc-mobile-card-footer">
                 <span className="sc-mobile-card-num">{meta.num}</span>

@@ -1,17 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import Navbar from '@/components/Navbar';
 import ShowcaseSection from '@/components/ShowcaseSection';
-import MarqueeStrip from '@/components/MarqueeStrip';
 import HeroSection from '@/components/HeroSection';
-import AboutSection from '@/components/AboutSection';
-import Modal from '@/components/Modal';
-import ContactSection from '@/components/ContactSection';
-import Footer from '@/components/Footer';
 import CustomCursor from '@/components/CustomCursor';
 import LenisProvider from '@/components/LenisProvider';
 import { ProjectKey } from '@/lib/projects';
+
+const MarqueeStrip = lazy(() => import('@/components/MarqueeStrip'));
+const AboutSection = lazy(() => import('@/components/AboutSection'));
+const ContactSection = lazy(() => import('@/components/ContactSection'));
+const Footer = lazy(() => import('@/components/Footer'));
+const Modal = lazy(() => import('@/components/Modal'));
 
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ProjectKey | null>(null);
@@ -23,13 +24,17 @@ export default function Home() {
       <Navbar />
       <main>
         <ShowcaseSection onOpenModal={setActiveModal} />
-        <MarqueeStrip />
         <HeroSection />
-        <AboutSection />
-        <ContactSection />
+        <Suspense fallback={null}>
+          <MarqueeStrip />
+          <AboutSection />
+          <ContactSection />
+        </Suspense>
       </main>
-      <Footer />
-      <Modal projectKey={activeModal} onClose={() => setActiveModal(null)} />
+      <Suspense fallback={null}>
+        <Footer />
+        <Modal projectKey={activeModal} onClose={() => setActiveModal(null)} />
+      </Suspense>
     </>
   );
 }
