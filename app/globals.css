@@ -700,6 +700,7 @@ footer span{color:var(--accent-glow)}
     border:1px solid rgba(201,168,76,0.15);
     cursor:pointer;touch-action:manipulation;
     transition:border-color .25s;
+    text-align:left;
   }
   .sc-mobile-card.active{border-color:rgba(201,168,76,0.5)}
   /* image fills the card completely */
@@ -719,6 +720,7 @@ footer span{color:var(--accent-glow)}
     position:absolute;bottom:0;left:0;right:0;
     display:flex;align-items:flex-end;gap:.35rem;
     padding:.5rem .55rem .55rem;z-index:2;
+    text-align:left;
   }
   .sc-mobile-card-num{
     font-family:var(--font-display);font-size:2rem;font-weight:700;
