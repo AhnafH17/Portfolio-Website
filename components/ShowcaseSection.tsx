@@ -93,8 +93,9 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
           </div>
 
           <div className="sc-mockup-body" ref={imgRef}>
+            <BackgroundPaths />
             <Image src={`/${project.image}`} alt={project.title} fill className="sc-mockup-img"
-              sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.55 }} />
+              sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.82 }} />
             <div className="sc-mockup-overlay" />
             <div className="sc-mockup-info">
               <h2 className="sc-mockup-title" ref={titleRef}>{project.title}</h2>

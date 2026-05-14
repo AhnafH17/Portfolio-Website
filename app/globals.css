@@ -507,7 +507,6 @@ footer span{color:var(--accent-glow)}
 }
 .sc-mockup-img{
   object-fit:cover;object-position:center top;
-  opacity:.6;
   transition:transform .5s cubic-bezier(.25,.46,.45,.94), opacity .4s;
 }
 .sc-mockup-body:hover .sc-mockup-img{
@@ -708,12 +707,12 @@ footer span{color:var(--accent-glow)}
     width:100%;height:100%;
     object-fit:cover;object-position:center top;
     display:block;
-    opacity:.85;
+    opacity:.55;
   }
   /* dark gradient overlay at bottom */
   .sc-mobile-card-overlay{
     position:absolute;inset:0;
-    background:linear-gradient(to top,rgba(7,7,7,.85) 0%,rgba(7,7,7,.2) 50%,transparent 100%);
+    background:linear-gradient(to top,rgba(7,7,7,.8) 0%,rgba(7,7,7,.1) 45%,transparent 100%);
     pointer-events:none;
   }
   .sc-mobile-card-footer{
