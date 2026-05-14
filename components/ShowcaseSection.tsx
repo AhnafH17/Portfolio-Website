@@ -81,8 +81,20 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
           </div>
         </div>
 
-        {/* Status bar — arrows live here on the left */}
+        {/* Status bar */}
         <div className="sc-status-bar">
+          <span>STATUS: <span className="sc-status-active">ACTIVE</span></span>
+          <span>SYSTEM: OPTIMAL</span>
+        </div>
+
+        {/* Bottom row: VIEW PROJECT center, arrows right */}
+        <div className="sc-bottom-row">
+          <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
+            VIEW PROJECT
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+            </svg>
+          </button>
           <div className="sc-nav-arrows">
             <button
               className="sc-arrow-btn"
@@ -104,17 +116,6 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               </svg>
             </button>
           </div>
-          <span>SYSTEM: OPTIMAL</span>
-        </div>
-
-        {/* CTA — centered */}
-        <div className="sc-bottom-row">
-          <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
-            VIEW PROJECT
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </button>
         </div>
 
         {/* Giant faded number */}
