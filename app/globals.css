@@ -685,11 +685,12 @@ footer span{color:var(--accent-glow)}
   .sc-mobile-panel{
     display:flex;flex-direction:column;
     flex:1;padding:4.2rem 1rem 1rem;
-    gap:.9rem;position:relative;z-index:1;
+    gap:.7rem;position:relative;z-index:1;
+    min-height:0;
   }
   .sc-mobile-pair{
     display:grid;grid-template-columns:1fr 1fr;
-    gap:.7rem;flex:0 0 auto;
+    gap:.7rem;flex:1;min-height:0;
   }
   .sc-mobile-card{
     position:relative;display:flex;flex-direction:column;
@@ -699,12 +700,12 @@ footer span{color:var(--accent-glow)}
     cursor:pointer;touch-action:manipulation;
     transition:border-color .25s;
     text-align:left;
-    width:100%;
+    min-height:0;
   }
   .sc-mobile-card.active{border-color:rgba(201,168,76,0.5)}
   .sc-mobile-card-img{
     position:relative;width:100%;
-    aspect-ratio:16/9;overflow:hidden;
+    flex:1;min-height:0;overflow:hidden;
   }
   .sc-mobile-card-footer{
     display:flex;align-items:center;gap:.5rem;
