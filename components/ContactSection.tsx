@@ -65,21 +65,22 @@ export default function ContactSection() {
 
           <div className="form-row">
             <div className="form-group">
-              <label htmlFor="name">Your Name</label>
-              <input type="text" id="name" name="name" placeholder="John Doe" required />
+              <label htmlFor="name">Your Name <span aria-hidden="true" style={{color:'var(--accent-glow)'}}>*</span></label>
+              <input type="text" id="name" name="name" placeholder="John Doe" autoComplete="name" required />
             </div>
             <div className="form-group">
-              <label htmlFor="email">Email Address</label>
-              <input type="email" id="email" name="email" placeholder="john@example.com" required />
+              <label htmlFor="email">Email Address <span aria-hidden="true" style={{color:'var(--accent-glow)'}}>*</span></label>
+              <input type="email" id="email" name="email" placeholder="john@example.com" autoComplete="email" required />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="message">Message</label>
+            <label htmlFor="message">Message <span aria-hidden="true" style={{color:'var(--accent-glow)'}}>*</span></label>
             <textarea
               id="message"
               name="message"
               placeholder="Tell me about your project..."
+              autoComplete="off"
               required
             />
           </div>
