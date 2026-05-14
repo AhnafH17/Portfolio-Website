@@ -89,20 +89,12 @@ export default function Navbar() {
     <>
       <nav ref={navRef} id="navbar" className={scrolled ? 'scrolled' : ''}>
         <div className="nav-logo">
-          <Image
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
             src="/logo-placeholder.svg"
             alt="Ahnaf Hussain logo"
-            width={28}
-            height={28}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-              const fb = e.currentTarget.nextSibling as HTMLElement;
-              if (fb) fb.style.display = 'block';
-            }}
+            className="nav-logo-img"
           />
-          <span className="logo-fallback" style={{ display: 'none' }}>
-            AH
-          </span>
         </div>
 
         <ul className="nav-links">
