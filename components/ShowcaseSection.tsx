@@ -78,6 +78,13 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               <h2 className="sc-mockup-title" ref={titleRef}>{project.title}</h2>
               <p className="sc-mockup-subtitle" ref={subtitleRef}>{project.label}</p>
             </div>
+            {/* VIEW PROJECT inside mockup, bottom-right */}
+            <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
+              VIEW PROJECT
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+              </svg>
+            </button>
           </div>
         </div>
 
@@ -87,14 +94,8 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
           <span>SYSTEM: OPTIMAL</span>
         </div>
 
-        {/* Bottom row: VIEW PROJECT center, arrows right */}
+        {/* Bottom row: arrows only */}
         <div className="sc-bottom-row">
-          <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
-            VIEW PROJECT
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </button>
           <div className="sc-nav-arrows">
             <button
               className="sc-arrow-btn"
