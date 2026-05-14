@@ -41,15 +41,15 @@ export default function ContactSection() {
   return (
     <section id="contact">
       <div className="contact-inner reveal">
-        <p className="section-label">Get in Touch</p>
+        <p className="section-label">Work With Us</p>
         <h2 className="section-title">
-          Let&apos;s build something
+          Let&apos;s build your next
           <br />
-          together.
+          product together.
         </h2>
         <div className="section-divider" />
         <p className="contact-subtitle">
-          Have a project in mind or just want to connect? Drop me a message.
+          Looking for a technical partner or a high-capacity development team? Whether you&apos;re a SaaS founder or a digital agency, let&apos;s discuss how my team at AurixLab can help you scale.
         </p>
 
         <form

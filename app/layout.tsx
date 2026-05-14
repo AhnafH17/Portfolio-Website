@@ -18,19 +18,20 @@ const dmSans = DM_Sans({
 });
 
 const DESCRIPTION =
-  'Ahnaf Hussain is a Web Developer and Data Scientist at AurixLab, Calgary — building optimized websites and data-driven solutions.';
+  'Ahnaf Hussain is Head of Web Development at AurixLab — architecting high-performance SaaS frontends, interactive digital experiences, and leading a team that delivers world-class products.';
 
 export const metadata: Metadata = {
-  title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+  title: 'Ahnaf Hussain | Head of Web Development at AurixLab',
   description: DESCRIPTION,
   keywords: [
     'Ahnaf Hussain',
-    'web developer Calgary',
-    'data scientist Calgary',
+    'Head of Web Development',
     'AurixLab',
-    'Shopify developer Calgary',
-    'WordPress developer Calgary',
-    'SEO Calgary',
+    'SaaS frontend developer',
+    'technical lead',
+    'web development team lead',
+    'GSAP developer',
+    'Next.js architect',
     'portfolio',
   ],
   authors: [{ name: 'Ahnaf Hussain' }],
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://ahnafhussain.vercel.app'),
   alternates: { canonical: 'https://ahnafhussain.vercel.app/' },
   openGraph: {
-    title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+    title: 'Ahnaf Hussain | Head of Web Development at AurixLab',
     description: DESCRIPTION,
     url: 'https://ahnafhussain.vercel.app/',
     type: 'website',
@@ -47,7 +48,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Ahnaf Hussain | Web Developer and Data Scientist in Calgary',
+    title: 'Ahnaf Hussain | Head of Web Development at AurixLab',
     description: DESCRIPTION,
     images: ['/OG_image__resized.png'],
   },
@@ -60,7 +61,7 @@ const schemaOrg = {
       '@type': 'Person',
       name: 'Ahnaf Hussain',
       url: 'https://ahnafhussain.vercel.app',
-      jobTitle: 'Web Developer and Data Scientist',
+      jobTitle: 'Head of Web Development',
       worksFor: { '@type': 'Organization', name: 'AurixLab', url: 'https://www.aurixlab.com' },
       alumniOf: { '@type': 'EducationalOrganization', name: 'BRAC University' },
       knowsAbout: ['WordPress', 'Shopify', 'Python', 'SEO', 'Data Science', 'Web Development'],

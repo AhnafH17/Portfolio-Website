@@ -5,31 +5,32 @@ export default function AboutSection() {
         <div className="about-bio reveal">
           <p className="section-label">About Me</p>
           <h2 className="section-title">
-            <span className="accent">Developer by craft,</span>
+            <span className="accent">Technical leader by role,</span>
             <br />
-            data scientist by curiosity.
+            architect by craft.
           </h2>
           <div className="section-divider" />
           <p>
-            Hi, I&apos;m <strong>Ahnaf Hussain</strong>, currently studying at{' '}
-            <strong>BRAC University</strong>, and I work as a web developer at{' '}
-            <strong>AurixLab</strong>. I specialize in building customized, highly optimized
-            websites with a strong focus on SEO.
+            Hi, I&apos;m <strong>Ahnaf Hussain</strong> — Head of Web Development at{' '}
+            <strong>AurixLab</strong>. I lead a development team building high-performance websites,
+            SaaS frontends, and data-driven digital products for clients across North America.
+            Currently finishing my degree at <strong>BRAC University</strong> while running a
+            professional engineering team full-time.
           </p>
           <p>
-            I enjoy solving problems through code and continuously work on improving my skills across
-            various technologies including{' '}
-            <strong>WordPress, Shopify, Python, and data science</strong>.
+            My focus is on <strong>systems architecture</strong> — building internal boilerplates,
+            component standards, and development workflows that let my team consistently deliver 90+
+            SEO scores, GSAP-driven interactivity, and scalable frontend infrastructure at speed.
           </p>
           <div className="skills-wrap">
             {[
+              'Next.js',
               'WordPress',
               'Shopify',
               'Python',
-              'Java',
-              'C / C++',
-              'HTML / CSS',
-              'Prompt Engineering',
+              'Systems Architecture',
+              'GSAP',
+              'Team Leadership',
               'SEO',
               'Data Science',
             ].map((s) => (
@@ -44,31 +45,24 @@ export default function AboutSection() {
           <div className="journey-block">
             <h3>My Journey</h3>
             <ul className="journey-list">
-              <li>Joined AurixLab as an intern in August 2025, working on WordPress</li>
-              <li>
-                Promoted to fixing critical bugs and backend issues for Budget Promotion (Shopify)
-              </li>
-              <li>Contributed to data science projects for email marketing segmentation</li>
+              <li>Joined AurixLab in August 2025 and rapidly advanced from technical specialist to leading the entire development function</li>
+              <li>Architected Mission Control — a full-stack internal PM system used by all 11 team members daily, replacing fragmented Slack threads and spreadsheets</li>
+              <li>Established frontend standards and boilerplates adopted across all client projects at AurixLab</li>
             </ul>
           </div>
           <div className="journey-block">
             <h3>What Drives Me</h3>
             <ul className="journey-list">
-              <li>Passionate about the intersection of web development and data science</li>
-              <li>
-                Websites should perform, convert, and be backed by data-informed decisions
-              </li>
+              <li>Building systems that scale — internal tooling, team workflows, and frontend architectures that outlast any single project</li>
+              <li>The intersection of engineering rigour and design quality: products that perform, convert, and look world-class</li>
             </ul>
           </div>
           <div className="journey-block">
             <h3>How I Work</h3>
             <ul className="journey-list">
-              <li>Problem-first approach: understand the root cause before writing code</li>
-              <li>
-                From recovering hacked sites to building classification pipelines from 10K messy
-                rows
-              </li>
-              <li>Clean, maintainable solutions over quick patches, every time</li>
+              <li>Architecture-first: define the system before writing a line of code</li>
+              <li>Lead by doing — from recovering hacked production sites to directing GSAP animation pipelines across a team</li>
+              <li>Raise the floor, not just the ceiling: standards, documentation, and repeatable processes over heroic one-off fixes</li>
             </ul>
           </div>
         </div>

@@ -41,7 +41,7 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          '<p>This custom notion is a full-stack internal project and task management system built from scratch for the 11-person Aurix Lab team. Inspired by Notion but purpose-built for a digital agency, it replaced ad-hoc Slack threads and spreadsheets with a structured, always-on workspace deployed on Vercel with a Supabase PostgreSQL backend.</p>',
+          '<p>Mission Control is a full-stack internal project and task management system I architected and led the development of for the 11-person AurixLab team. Identifying that fragmented Slack threads and spreadsheets were creating operational drag, I designed and directed the build of a purpose-built agency workspace — deployed on Vercel with a Supabase PostgreSQL backend, replacing legacy tooling at zero monthly infrastructure cost.</p>',
       },
       {
         heading: 'Core Features Built',
@@ -157,7 +157,7 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          '<p>LeadCraft IT Solutions is a US + Bangladesh ITES/BPO company serving enterprise clients in banking, financial services, and real estate asset management. I built their full web presence from scratch — 5 interconnected pages designed to convert enterprise-level prospects and showcase a 50+ professional operation to US clients.</p>',
+          '<p>LeadCraft IT Solutions is a full 5-page website I directed the development of for a US + Bangladesh ITES/BPO company serving enterprise clients. I led the technical implementation strategy — architecting the WordPress + Elementor foundation while directing the integration of WebGL shaders, GSAP ScrollTrigger animations, Lenis smooth scroll, Globe.gl visualization, and Swiper carousel into a unified, high-performance frontend.</p>',
       },
       {
         heading: 'Pages Built',
@@ -414,7 +414,7 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          "<p>Image Resizer Studio is a browser-based tool I built to solve my own frustration with unreliable online image resizers. It handles resizing, compression, aspect ratio changes, and batch processing, all client-side with zero server uploads.</p>",
+          "<p>Image Resizer Studio is a standalone browser-based SaaS-style tool I built and launched independently to solve a real gap: no reliable, free, client-side image optimization tool existed without privacy trade-offs. Built as a zero-dependency single-file app with batch processing, Canvas API compression, and ZIP download — a product lab project demonstrating my ability to ideate, architect, and ship standalone tools end-to-end.</p>",
       },
       {
         heading: 'Work Done',

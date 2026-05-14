@@ -9,13 +9,13 @@ export default function HeroSection() {
       <div className="hero-bg-line" />
       <div className="hero-content">
         <div className="hero-text">
-          <p className="hero-greeting">Web Developer &amp; Data Scientist</p>
+          <p className="hero-greeting">Head of Web Development · AurixLab</p>
           <h1 className="hero-name">
             Hi, I&apos;m<br />
             <span className="accent">Ahnaf Hussain</span>
           </h1>
           <p className="hero-tagline">
-            Building optimized websites and implementing data-driven solutions at AurixLab, Calgary.
+            Architecting high-performance SaaS frontends and interactive digital experiences. Leading the development team at AurixLab to bridge the gap between complex data and world-class UI.
           </p>
           <a href="#about" className="hero-cta">
             Learn More{' '}
@@ -30,14 +30,14 @@ export default function HeroSection() {
           <div className="hero-image-frame">
             <Image
               src="/ahnaf-photo.jpg"
-              alt="Ahnaf Hussain, Web Developer and Data Scientist at AurixLab, Calgary"
+              alt="Ahnaf Hussain, Head of Web Development at AurixLab"
               fill
               priority
               style={{ objectFit: 'cover', objectPosition: 'center 50%', transform: 'scale(1.2)', filter: 'contrast(1.05) brightness(0.95)' }}
             />
           </div>
           <div className="hero-floating-tag">
-            <span>@</span> AurixLab | Calgary
+            <span>@</span> AurixLab | Head of Dev
           </div>
         </div>
       </div>
