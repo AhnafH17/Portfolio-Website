@@ -689,10 +689,11 @@ footer span{color:var(--accent-glow)}
     min-height:0;
   }
   .sc-mobile-pair{
-    display:grid;grid-template-columns:1fr 1fr;
+    display:flex;flex-direction:row;
     gap:.7rem;flex:1;min-height:0;
   }
   .sc-mobile-card{
+    flex:1;
     position:relative;display:flex;flex-direction:column;
     border-radius:10px;overflow:hidden;
     border:1px solid rgba(201,168,76,0.15);
@@ -700,12 +701,14 @@ footer span{color:var(--accent-glow)}
     cursor:pointer;touch-action:manipulation;
     transition:border-color .25s;
     text-align:left;
-    min-height:0;
+    min-width:0;
   }
   .sc-mobile-card.active{border-color:rgba(201,168,76,0.5)}
   .sc-mobile-card-img{
-    position:relative;width:100%;
-    flex:1;min-height:0;overflow:hidden;
+    position:relative;
+    flex:1;
+    min-height:0;
+    overflow:hidden;
   }
   .sc-mobile-card-footer{
     display:flex;align-items:center;gap:.5rem;
