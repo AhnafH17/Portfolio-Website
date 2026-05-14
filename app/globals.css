@@ -427,10 +427,11 @@ footer span{color:var(--accent-glow)}
 }
 
 /* BACKGROUND PATHS */
+.sc-bg-desktop{ display:contents }
+.sc-bg-mobile{ display:none }
 .sc-bg-paths{
   position:absolute;inset:0;
   pointer-events:none;z-index:0;
-  overflow:hidden;
 }
 .sc-bg-svg{
   width:100%;height:100%;
@@ -681,12 +682,14 @@ footer span{color:var(--accent-glow)}
   /* hide desktop panels */
   .sc-left{display:none}
   .sc-right{display:none}
+  .sc-bg-desktop{display:none}
+  .sc-bg-mobile{display:contents}
   /* show mobile panel */
   .sc-mobile-panel{
     display:flex;flex-direction:column;
     flex:1;padding:4.2rem 1rem 1rem;
     gap:.7rem;position:relative;z-index:1;
-    min-height:0;
+    min-height:0;background:transparent;
   }
   .sc-mobile-pair{
     display:flex;flex-direction:column;

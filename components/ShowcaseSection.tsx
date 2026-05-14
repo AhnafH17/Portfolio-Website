@@ -77,7 +77,8 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   return (
     <section id="showcase" className="sc-wrap">
 
-      <BackgroundPaths />
+      <span className="sc-bg-desktop"><BackgroundPaths count={36} /></span>
+      <span className="sc-bg-mobile"><BackgroundPaths count={14} /></span>
       <div className="sc-glow" aria-hidden="true" />
 
       {/* ── DESKTOP LEFT PANEL ── */}

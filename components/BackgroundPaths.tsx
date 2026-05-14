@@ -2,8 +2,8 @@
 
 import { motion } from "framer-motion";
 
-function FloatingPaths({ position }: { position: number }) {
-  const paths = Array.from({ length: 36 }, (_, i) => ({
+function FloatingPaths({ position, count = 36 }: { position: number; count?: number }) {
+  const paths = Array.from({ length: count }, (_, i) => ({
     id: i,
     d: `M-${380 - i * 5 * position} -${189 + i * 6}C-${
       380 - i * 5 * position
@@ -51,11 +51,11 @@ function FloatingPaths({ position }: { position: number }) {
   );
 }
 
-export default function BackgroundPaths() {
+export default function BackgroundPaths({ count = 36 }: { count?: number }) {
   return (
     <>
-      <FloatingPaths position={1} />
-      <FloatingPaths position={-1} />
+      <FloatingPaths position={1} count={count} />
+      <FloatingPaths position={-1} count={count} />
     </>
   );
 }
