@@ -423,6 +423,7 @@ footer span{color:var(--accent-glow)}
   height:100svh;min-height:560px;
   overflow:hidden;
   padding:0;
+  background:#0a0804;
 }
 
 /* BACKGROUND PATHS */
@@ -457,16 +458,15 @@ footer span{color:var(--accent-glow)}
   overflow:hidden;
   gap:1.2rem;
   border-right:1px solid rgba(201,168,76,0.12);
-  background-color:#0f0d09;
+  background:transparent;
 }
-/* background handled by BackgroundPaths component */
-/* Warm amber radial glow behind mockup */
+/* Warm amber glow — section-wide, sits above paths */
 .sc-glow{
   position:absolute;
-  left:50%;top:42%;
+  left:35%;top:50%;
   transform:translate(-50%,-50%);
-  width:110%;height:85%;
-  background:radial-gradient(ellipse 65% 55% at 50% 45%, rgba(180,110,20,0.22) 0%, rgba(180,110,20,0.08) 40%, transparent 70%);
+  width:70%;height:80%;
+  background:radial-gradient(ellipse 60% 55% at 50% 50%, rgba(180,110,20,0.15) 0%, rgba(180,110,20,0.04) 50%, transparent 70%);
   pointer-events:none;z-index:0;
 }
 
@@ -604,6 +604,7 @@ footer span{color:var(--accent-glow)}
   display:flex;align-items:center;justify-content:center;
   padding:3.5rem 1.8rem;
   overflow:hidden;
+  background:transparent;
 }
 .sc-grid{
   position:relative;z-index:1;
