@@ -166,7 +166,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             return (
               <button key={key} className={`sc-card${isActive ? ' active' : ''}`}
                 onClick={() => handleSelect(idx)} aria-label={`Select ${p.title}`}>
-                <div className="sc-card-top"><span className="sc-card-tag">{tags[0]}</span></div>
+                <div className="sc-card-top">{tags.map((t) => <span key={t} className="sc-card-tag">{t}</span>)}</div>
                 <div className="sc-card-img-wrap">
                   <Image src={`/${p.image}`} alt={p.title} fill className="sc-card-img" sizes="15vw" />
                 </div>
