@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
 import gsap from 'gsap';
+import BackgroundPaths from '@/components/BackgroundPaths';
 
 interface ShowcaseSectionProps {
   onOpenModal: (key: ProjectKey) => void;
@@ -42,10 +43,8 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
 
       {/* ── LEFT PANEL ── */}
       <div className="sc-left">
-        {/* Vertical structural lines */}
-        <div className="sc-vlines" aria-hidden="true">
-          <span /><span /><span />
-        </div>
+        {/* Animated background paths */}
+        <BackgroundPaths />
         {/* Radial glow */}
         <div className="sc-glow" aria-hidden="true" />
 
