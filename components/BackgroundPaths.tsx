@@ -5,15 +5,18 @@ import { motion } from 'framer-motion';
 function FloatingPaths({ position }: { position: number }) {
   const paths = Array.from({ length: 36 }, (_, i) => ({
     id: i,
-    d: `M${-500 * position + i * 12 * position} ${-50 + i * 22}C${
-      -200 * position + i * 10 * position
-    } ${150 + i * 15},${300 * position + i * 8 * position} ${
-      350 + i * 10
-    },${700 * position + i * 14 * position} ${600 + i * 8}`,
-    width: 0.6 + i * 0.06,
-    baseOpacity: 0.15 + i * 0.018,
-    duration: 3 + (i % 5) * 1.2,
-    delay: i * 0.18,
+    // Diagonal sweep: top-left → bottom-right (or mirrored)
+    d: `M${position > 0 ? -200 + i * 18 : 1600 - i * 18} ${-100}C${
+      position > 0 ? 100 + i * 20 : 1300 - i * 20
+    } ${250},${
+      position > 0 ? 600 + i * 15 : 800 - i * 15
+    } ${500},${
+      position > 0 ? 1100 + i * 12 : 300 - i * 12
+    } ${900}`,
+    width: 0.4 + i * 0.03,
+    opacity: 0.04 + i * 0.006,
+    duration: 5 + (i % 6) * 1.5,
+    delay: i * 0.22,
   }));
 
   const gradId = `gg-${position > 0 ? 'a' : 'b'}`;
@@ -29,8 +32,8 @@ function FloatingPaths({ position }: { position: number }) {
       <defs>
         <linearGradient id={gradId} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%"   stopColor="#c9a84c" stopOpacity="0" />
-          <stop offset="25%"  stopColor="#c9a84c" />
-          <stop offset="75%"  stopColor="#e2c973" />
+          <stop offset="35%"  stopColor="#c9a84c" />
+          <stop offset="65%"  stopColor="#e2c973" />
           <stop offset="100%" stopColor="#a07830" stopOpacity="0" />
         </linearGradient>
       </defs>
@@ -42,7 +45,7 @@ function FloatingPaths({ position }: { position: number }) {
           strokeWidth={p.width}
           fill="none"
           animate={{
-            opacity: [p.baseOpacity, p.baseOpacity * 1.8, p.baseOpacity],
+            opacity: [p.opacity, p.opacity * 2.5, p.opacity],
           }}
           transition={{
             duration: p.duration,
