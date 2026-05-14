@@ -18,7 +18,9 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const tagsRef = useRef<HTMLDivElement>(null);
   const bigNumRef = useRef<HTMLSpanElement>(null);
+  const mobilePairRef = useRef<HTMLDivElement>(null);
   const isFirstRender = useRef(true);
+  const mobileFirstRender = useRef(true);
 
   const active = stripMeta[activeIdx];
   const project = projectData[active.key];
@@ -51,15 +53,29 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
 
   const handleMobilePrev = useCallback(() => {
     const newPair = (mobilePair - 2 + stripMeta.length) % stripMeta.length;
-    setMobilePair(newPair);
-    handleSelect(newPair);
-  }, [mobilePair, handleSelect]);
+    gsap.to(mobilePairRef.current, { opacity: 0, x: 30, duration: 0.18, ease: 'power2.in',
+      onComplete: () => setMobilePair(newPair),
+    });
+  }, [mobilePair]);
 
   const handleMobileNext = useCallback(() => {
     const newPair = (mobilePair + 2) % stripMeta.length;
-    setMobilePair(newPair);
-    handleSelect(newPair);
-  }, [mobilePair, handleSelect]);
+    gsap.to(mobilePairRef.current, { opacity: 0, x: -30, duration: 0.18, ease: 'power2.in',
+      onComplete: () => setMobilePair(newPair),
+    });
+  }, [mobilePair]);
+
+  // Fade in mobile pair after mobilePair state changes
+  useEffect(() => {
+    if (mobileFirstRender.current) { mobileFirstRender.current = false; return; }
+    const raf = requestAnimationFrame(() => {
+      gsap.fromTo(mobilePairRef.current,
+        { opacity: 0, x: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out' }
+      );
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [mobilePair]);
 
   // Initial entrance animation
   useEffect(() => {
@@ -137,7 +153,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
 
       {/* ── MOBILE PANEL — 2 cards per page ── */}
       <div className="sc-mobile-panel">
-        <div className="sc-mobile-pair">
+        <div className="sc-mobile-pair" ref={mobilePairRef}>
           {[{ meta: pairA, proj: projA }, { meta: pairB, proj: projB }].map(({ meta, proj }, i) => (
             <button
               key={meta.key}
