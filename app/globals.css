@@ -683,7 +683,7 @@ footer span{color:var(--accent-glow)}
   .sc-left{display:none}
   .sc-right{display:none}
   .sc-bg-desktop{display:none}
-  .sc-bg-mobile{display:contents}
+  .sc-bg-mobile{display:none}
   /* show mobile panel */
   .sc-mobile-panel{
     display:flex;flex-direction:column;
