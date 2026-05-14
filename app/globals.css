@@ -689,7 +689,7 @@ footer span{color:var(--accent-glow)}
     min-height:0;
   }
   .sc-mobile-pair{
-    display:flex;flex-direction:row;
+    display:flex;flex-direction:column;
     gap:.7rem;flex:1;min-height:0;
   }
   .sc-mobile-card{
