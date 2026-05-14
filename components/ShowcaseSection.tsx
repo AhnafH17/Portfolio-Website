@@ -81,22 +81,15 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
           </div>
         </div>
 
-        {/* Status bar */}
+        {/* Status bar — arrows live here on the left */}
         <div className="sc-status-bar">
-          <span>STATUS: <span className="sc-status-active">ACTIVE</span></span>
-          <span>SYSTEM: OPTIMAL</span>
-        </div>
-
-        {/* CTA + nav arrows row */}
-        <div className="sc-bottom-row">
-          {/* Prev / Next arrows */}
           <div className="sc-nav-arrows">
             <button
               className="sc-arrow-btn"
               onClick={() => handleSelect((activeIdx - 1 + stripMeta.length) % stripMeta.length)}
               aria-label="Previous project"
             >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} width={16} height={16}>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} width={14} height={14}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
               </svg>
             </button>
@@ -106,12 +99,16 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               onClick={() => handleSelect((activeIdx + 1) % stripMeta.length)}
               aria-label="Next project"
             >
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} width={16} height={16}>
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} width={14} height={14}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             </button>
           </div>
+          <span>SYSTEM: OPTIMAL</span>
+        </div>
 
+        {/* CTA — centered */}
+        <div className="sc-bottom-row">
           <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
             VIEW PROJECT
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
