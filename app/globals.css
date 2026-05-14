@@ -519,7 +519,7 @@ footer span{color:var(--accent-glow)}
 }
 .sc-mockup-overlay{
   position:absolute;inset:0;
-  background:linear-gradient(to top,rgba(7,7,7,.88) 0%,rgba(7,7,7,.25) 50%,transparent 100%);
+  background:linear-gradient(to top,rgba(7,7,7,.75) 0%,rgba(7,7,7,.1) 40%,transparent 100%);
   pointer-events:none;
 }
 .sc-mockup-info{position:absolute;bottom:1.6rem;left:1.8rem;right:1.8rem;z-index:2}

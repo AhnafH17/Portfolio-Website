@@ -39,11 +39,14 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   // Fade in after activeIdx changes (new content rendered)
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    const targets = getTargets();
-    gsap.fromTo(targets,
-      { opacity: 0, y: 16 },
-      { opacity: 1, y: 0, duration: 0.35, ease: 'power2.out', stagger: 0.045 }
-    );
+    const raf = requestAnimationFrame(() => {
+      const targets = getTargets();
+      gsap.fromTo(targets,
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out', stagger: 0.05 }
+      );
+    });
+    return () => cancelAnimationFrame(raf);
   }, [activeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMobilePrev = useCallback(() => {
@@ -91,7 +94,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
 
           <div className="sc-mockup-body" ref={imgRef}>
             <Image src={`/${project.image}`} alt={project.title} fill className="sc-mockup-img"
-              sizes="(max-width: 768px) 100vw, 60vw" priority />
+              sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.55 }} />
             <div className="sc-mockup-overlay" />
             <div className="sc-mockup-info">
               <h2 className="sc-mockup-title" ref={titleRef}>{project.title}</h2>
