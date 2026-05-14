@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Navbar from '@/components/Navbar';
-import AccordionHero from '@/components/AccordionHero';
+import ShowcaseSection from '@/components/ShowcaseSection';
 import MarqueeStrip from '@/components/MarqueeStrip';
 import HeroSection from '@/components/HeroSection';
 import AboutSection from '@/components/AboutSection';
@@ -22,7 +22,7 @@ export default function Home() {
       <CustomCursor />
       <Navbar />
       <main>
-        <AccordionHero onOpenModal={setActiveModal} />
+        <ShowcaseSection onOpenModal={setActiveModal} />
         <MarqueeStrip />
         <HeroSection />
         <AboutSection />
