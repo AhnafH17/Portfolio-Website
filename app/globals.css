@@ -477,8 +477,8 @@ footer span{color:var(--accent-glow)}
   border-radius:10px;
   border:1px solid rgba(201,168,76,0.2);
   overflow:hidden;
-  background:rgba(7,7,7,0.95);
-  box-shadow:0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.06);
+  background:transparent;
+  box-shadow:0 24px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(201,168,76,0.06);
   flex:1;
   max-height:70vh;
 }
@@ -501,8 +501,22 @@ footer span{color:var(--accent-glow)}
 .sc-mockup-dots{display:flex;gap:.35rem;align-items:center}
 .sc-mockup-dots span{width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,0.2)}
 .sc-mockup-dots span:first-child{background:var(--accent-glow);opacity:.9}
-.sc-mockup-body{position:relative;flex:1;overflow:hidden;min-height:0}
-.sc-mockup-img{object-fit:cover;object-position:center top;opacity:.75}
+.sc-mockup-body{
+  position:relative;flex:1;overflow:hidden;min-height:0;
+  cursor:pointer;
+}
+.sc-mockup-img{
+  object-fit:cover;object-position:center top;
+  opacity:.75;
+  transition:transform .5s cubic-bezier(.25,.46,.45,.94), opacity .4s;
+}
+.sc-mockup-body:hover .sc-mockup-img{
+  transform:scale(1.04);
+  opacity:.9;
+}
+.sc-mockup-body:hover .sc-mockup-overlay{
+  background:linear-gradient(to top,rgba(7,7,7,.7) 0%,rgba(7,7,7,.15) 50%,transparent 100%);
+}
 .sc-mockup-overlay{
   position:absolute;inset:0;
   background:linear-gradient(to top,rgba(7,7,7,.88) 0%,rgba(7,7,7,.25) 50%,transparent 100%);
