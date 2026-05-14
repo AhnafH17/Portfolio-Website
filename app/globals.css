@@ -721,16 +721,17 @@ footer span{color:var(--accent-glow)}
     padding:.5rem .6rem;z-index:2;
   }
   .sc-mobile-card-num{
-    font-family:var(--font-display);font-size:1.6rem;font-weight:700;
-    color:rgba(201,168,76,0.4);letter-spacing:-0.02em;flex-shrink:0;
+    font-family:var(--font-display);font-size:2.4rem;font-weight:700;
+    color:rgba(201,168,76,0.4);letter-spacing:-0.03em;flex-shrink:0;line-height:1;
   }
   .sc-mobile-card.active .sc-mobile-card-num{color:rgba(201,168,76,0.75)}
   .sc-mobile-tags{display:flex;flex-wrap:wrap;gap:.25rem}
   .sc-mobile-card-title{
-    font-family:var(--font-display);font-size:.85rem;font-weight:700;
-    text-transform:uppercase;letter-spacing:.06em;
+    font-family:var(--font-display);font-size:1.05rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.04em;
     color:var(--gold);line-height:1.2;margin-bottom:.3rem;
   }
+  .sc-mobile-card-footer .sc-card-tag{font-size:.55rem;padding:.15rem .35rem}
   .sc-mobile-bottom{
     display:flex;align-items:center;justify-content:center;
     flex-shrink:0;padding-bottom:.3rem;
