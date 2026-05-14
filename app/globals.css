@@ -647,9 +647,10 @@ footer span{color:var(--accent-glow)}
 /* tag row */
 .sc-card-top{display:flex;justify-content:flex-end;flex-shrink:0}
 .sc-card-tag{
-  font-size:.5rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  font-size:.62rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
   background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.22);
-  color:var(--accent-glow);border-radius:3px;padding:.15rem .4rem;white-space:nowrap;
+  color:var(--accent-glow);border-radius:3px;padding:.2rem .5rem;white-space:nowrap;
+  display:inline-block;
 }
 /* thumbnail */
 .sc-card-img-wrap{
@@ -720,14 +721,14 @@ footer span{color:var(--accent-glow)}
     padding:.5rem .6rem;z-index:2;
   }
   .sc-mobile-card-num{
-    font-family:var(--font-display);font-size:1.1rem;font-weight:700;
-    color:rgba(201,168,76,0.3);letter-spacing:-0.02em;flex-shrink:0;
+    font-family:var(--font-display);font-size:1.6rem;font-weight:700;
+    color:rgba(201,168,76,0.4);letter-spacing:-0.02em;flex-shrink:0;
   }
-  .sc-mobile-card.active .sc-mobile-card-num{color:rgba(201,168,76,0.6)}
+  .sc-mobile-card.active .sc-mobile-card-num{color:rgba(201,168,76,0.75)}
   .sc-mobile-card-title{
-    font-family:var(--font-display);font-size:.6rem;font-weight:700;
+    font-family:var(--font-display);font-size:.85rem;font-weight:700;
     text-transform:uppercase;letter-spacing:.06em;
-    color:var(--gold);line-height:1.2;margin-bottom:.2rem;
+    color:var(--gold);line-height:1.2;margin-bottom:.3rem;
   }
   .sc-mobile-bottom{
     display:flex;align-items:center;justify-content:center;
