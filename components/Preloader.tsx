@@ -9,7 +9,8 @@ interface PreloaderProps {
 
 export default function Preloader({ onComplete }: PreloaderProps) {
   const rootRef     = useRef<HTMLDivElement>(null);
-  const overlayRef  = useRef<HTMLDivElement>(null);
+  const leftRef     = useRef<HTMLDivElement>(null);
+  const rightRef    = useRef<HTMLDivElement>(null);
   const textRef     = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const fillRef     = useRef<HTMLDivElement>(null);
@@ -20,14 +21,14 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     window.scrollTo(0, 0);
 
     const root     = rootRef.current!;
-    const overlay  = overlayRef.current!;
+    const leftPanel  = leftRef.current!;
+    const rightPanel = rightRef.current!;
     const textEl   = textRef.current!;
     const fill     = fillRef.current!;
     const label    = labelRef.current!;
     const progress = progressRef.current!;
 
     const words = ['Ahnaf', 'Hussain'];
-    const GAP   = 20;
 
     // ── build char spans ──────────────────────────────────────────
     const wordEls: HTMLSpanElement[] = [];
@@ -64,7 +65,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
     function run() {
       progTween.kill();
-      gsap.to(fill,  { width: '100%', duration: 0.3, ease: 'power2.out' });
+      gsap.to(fill, { width: '100%', duration: 0.3, ease: 'power2.out' });
       gsap.to([label, progress], { opacity: 0, duration: 0.3, delay: 0.35 });
 
       const allInner = Array.from(textEl.querySelectorAll<HTMLSpanElement>('span > span[data-word]'));
@@ -72,9 +73,16 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       const g1 = allInner.filter(s => s.dataset.word === '1');
       const spaceEl = textEl.querySelector<HTMLSpanElement>('.pre-sp')!;
 
-      const textRect = textEl.getBoundingClientRect();
-      const spaceW   = spaceEl.getBoundingClientRect().width;
-      const halfPush = textRect.height * 0.7 + spaceW / 2 + GAP;
+      // Measure gap centre — this is where the curtains meet
+      const spaceRect = spaceEl.getBoundingClientRect();
+      const gapCX     = spaceRect.left + spaceRect.width / 2;
+      const vw        = window.innerWidth;
+      const vh        = window.innerHeight;
+
+      // Set left panel to cover left half up to gap centre
+      // Set right panel to cover right half from gap centre
+      gsap.set(leftPanel,  { width: gapCX, left: 0 });
+      gsap.set(rightPanel, { width: vw - gapCX, right: 0 });
 
       const tl = gsap.timeline();
 
@@ -82,27 +90,27 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       tl.to(g0, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.15)
         .to(g1, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.24);
 
-      // 2. words split apart
-      tl.to(wordEls[0], { x: -halfPush, duration: 0.85, ease: 'power4.inOut' }, '>+0.45');
-      tl.to(wordEls[1], { x:  halfPush, duration: 0.85, ease: 'power4.inOut' }, '<');
-      tl.to(spaceEl,    { width: 0,     duration: 0.85, ease: 'power4.inOut' }, '<');
+      // 2. curtains open + words follow them outward
+      const openDur = 1.0;
+      tl.to(leftPanel,  { x: -gapCX,        duration: openDur, ease: 'power4.inOut' }, '>+0.45');
+      tl.to(rightPanel, { x: vw - gapCX,    duration: openDur, ease: 'power4.inOut' }, '<');
+      tl.to(wordEls[0], { x: -gapCX * 0.6,  duration: openDur, ease: 'power4.inOut' }, '<');
+      tl.to(wordEls[1], { x:  (vw - gapCX) * 0.6, duration: openDur, ease: 'power4.inOut' }, '<');
+      tl.to(spaceEl,    { width: 0,          duration: openDur, ease: 'power4.inOut' }, '<');
 
-      // 3. fade the dark overlay — site reveals from behind as words split
-      tl.to(overlay, { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, '<+0.25');
+      // 3. fade text
+      tl.to(textEl, { opacity: 0, duration: 0.3 }, '<+0.3');
 
-      // 4. fade text out
-      tl.to(textEl, { opacity: 0, duration: 0.35 }, '<+0.2');
-
-      // 5. remove root entirely
+      // 4. done — remove root
       tl.call(() => {
         gsap.to(root, {
-          opacity: 0, duration: 0.25,
+          opacity: 0, duration: 0.3,
           onComplete: () => {
             document.body.style.overflow = '';
             onComplete();
           },
         });
-      }, [], '>-0.1');
+      }, [], '>-0.05');
     }
 
     document.fonts.ready.then(() => setTimeout(run, 250));
@@ -113,13 +121,28 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       ref={rootRef}
       style={{ position: 'fixed', inset: 0, zIndex: 99999, overflow: 'hidden' }}
     >
-      {/* dark overlay — this is what fades away to reveal the site */}
+      {/* LEFT curtain */}
       <div
-        ref={overlayRef}
-        style={{ position: 'absolute', inset: 0, background: '#0a0804', zIndex: 1 }}
+        ref={leftRef}
+        style={{
+          position: 'absolute', top: 0, bottom: 0, left: 0,
+          width: '50vw',
+          background: '#0a0804',
+          zIndex: 1,
+        }}
+      />
+      {/* RIGHT curtain */}
+      <div
+        ref={rightRef}
+        style={{
+          position: 'absolute', top: 0, bottom: 0, right: 0,
+          width: '50vw',
+          background: '#0a0804',
+          zIndex: 1,
+        }}
       />
 
-      {/* centered text — sits above overlay */}
+      {/* text — above curtains */}
       <div
         style={{
           position: 'absolute', inset: 0, zIndex: 2,
