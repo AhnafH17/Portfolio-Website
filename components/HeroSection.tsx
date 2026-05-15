@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import { useRef, useEffect } from 'react';
 import StarField from '@/components/StarField';
 
@@ -146,15 +145,13 @@ export default function HeroSection() {
             />
           </div>
 
-          {/* Arch photo frame — LCP element, priority + explicit sizes */}
+          {/* Arch photo frame */}
           <div className="hero-image-frame">
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/AhnafHussain.png"
               alt="Ahnaf Hussain, Head of Web Development at AurixLab"
-              fill
-              priority
-              sizes="(max-width: 768px) 260px, 340px"
-              style={{ objectFit: 'cover', objectPosition: 'center 30%', transform: 'scale(1.35)' }}
+              style={{ objectFit: 'cover', objectPosition: 'center 30%', transform: 'scale(1.35)', width: '100%', height: '100%' }}
             />
           </div>
 
