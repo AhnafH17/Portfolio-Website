@@ -18,7 +18,7 @@ function FloatingPaths({ position, count = 36 }: { position: number; count?: num
 
   return (
     <div className="sc-bg-paths">
-      <svg className="sc-bg-svg" viewBox="0 0 696 316" fill="none">
+      <svg className="sc-bg-svg" viewBox="0 -280 696 316" fill="none">
         {paths.map((path) => (
           <motion.path
             key={path.id}
