@@ -38,17 +38,20 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
     });
   }, [activeIdx, getTargets]);
 
-  // Fade in after activeIdx changes (new content rendered)
+  // Fade in after activeIdx changes — double rAF ensures new image src is painted
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
-    const raf = requestAnimationFrame(() => {
-      const targets = getTargets();
-      gsap.fromTo(targets,
-        { opacity: 0, y: 16 },
-        { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out', stagger: 0.05 }
-      );
+    let raf1: number, raf2: number;
+    // Kill any in-flight tweens on the targets first
+    const targets = getTargets();
+    gsap.killTweensOf(targets);
+    gsap.set(targets, { opacity: 0, y: 16 });
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        gsap.to(targets, { opacity: 1, y: 0, duration: 0.38, ease: 'power2.out', stagger: 0.05 });
+      });
     });
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf1); cancelAnimationFrame(raf2); };
   }, [activeIdx]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleMobilePrev = useCallback(() => {
@@ -203,7 +206,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             const isActive = idx === activeIdx;
             return (
               <button key={key} className={`sc-card${isActive ? ' active' : ''}`}
-                onClick={() => handleSelect(idx)} aria-label={`Select ${p.title}`}>
+                onClick={() => { handleSelect(idx); onOpenModal(key); }} aria-label={`Select ${p.title}`}>
                 <div className="sc-card-top">{tags.map((t) => <span key={t} className="sc-card-tag">{t}</span>)}</div>
                 <div className="sc-card-img-wrap">
                   <Image src={`/${p.image}`} alt={p.title} fill className="sc-card-img" sizes="15vw" />
