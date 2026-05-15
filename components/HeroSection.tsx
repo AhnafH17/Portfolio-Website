@@ -150,7 +150,7 @@ export default function HeroSection() {
           {/* Arch photo frame */}
           <div className="hero-image-frame">
             <Image
-              src="/ahnaf-photo.jpg"
+              src="/ahnafHussain.png"
               alt="Ahnaf Hussain, Head of Web Development at AurixLab"
               fill
               priority
