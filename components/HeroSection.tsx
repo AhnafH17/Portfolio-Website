@@ -115,17 +115,16 @@ export default function HeroSection() {
           <div className="hero-ring hero-ring-3" />
 
           {/* LEFT — 3.png top, 4.png bottom */}
-          {/* Outer div: CSS float animation. Inner img: JS mouse tilt */}
           <div className="hero-fc-wrap hero-fc-left-top">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/3.png" alt="" aria-hidden="true"
+            <img src="/3.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[0] = el; }}
               className="hero-fc-img"
             />
           </div>
           <div className="hero-fc-wrap hero-fc-left-bot">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/4.png" alt="" aria-hidden="true"
+            <img src="/4.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[1] = el; }}
               className="hero-fc-img"
             />
@@ -134,26 +133,27 @@ export default function HeroSection() {
           {/* RIGHT — 1.png top (mirrored), 2.png bottom (mirrored) */}
           <div className="hero-fc-wrap hero-fc-right-top">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/1.png" alt="" aria-hidden="true"
+            <img src="/1.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[2] = el; }}
               className="hero-fc-img"
             />
           </div>
           <div className="hero-fc-wrap hero-fc-right-bot">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/2.png" alt="" aria-hidden="true"
+            <img src="/2.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[3] = el; }}
               className="hero-fc-img"
             />
           </div>
 
-          {/* Arch photo frame */}
+          {/* Arch photo frame — LCP element, priority + explicit sizes */}
           <div className="hero-image-frame">
             <Image
               src="/AhnafHussain.png"
               alt="Ahnaf Hussain, Head of Web Development at AurixLab"
               fill
               priority
+              sizes="(max-width: 768px) 260px, 340px"
               style={{ objectFit: 'cover', objectPosition: 'center 30%', transform: 'scale(1.35)' }}
             />
           </div>
