@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 
 const navItems = [
   { href: '#hero', label: 'Home' },
@@ -89,12 +88,31 @@ export default function Navbar() {
     <>
       <nav ref={navRef} id="navbar" className={scrolled ? 'scrolled' : ''}>
         <div className="nav-logo">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo-placeholder.svg"
-            alt="Ahnaf Hussain logo"
+          <svg
+            viewBox="0 0 64 40"
+            width="64"
+            height="40"
+            aria-label="Ahnaf Hussain"
             className="nav-logo-img"
-          />
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <text
+              x="2"
+              y="32"
+              fontFamily="'Georgia', serif"
+              fontSize="36"
+              fontWeight="700"
+              letterSpacing="-1"
+              fill="url(#logoGrad)"
+            >AH</text>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="40" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor="#e2c973" />
+                <stop offset="100%" stopColor="#a07830" />
+              </linearGradient>
+            </defs>
+          </svg>
         </div>
 
         <ul className="nav-links">
