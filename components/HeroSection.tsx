@@ -154,7 +154,7 @@ export default function HeroSection() {
               alt="Ahnaf Hussain, Head of Web Development at AurixLab"
               fill
               priority
-              style={{ objectFit: 'cover', objectPosition: 'center 30%' }}
+              style={{ objectFit: 'cover', objectPosition: 'center 30%', transform: 'scale(1.35)' }}
             />
           </div>
 
