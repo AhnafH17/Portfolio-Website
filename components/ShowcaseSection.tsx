@@ -96,8 +96,8 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   return (
     <section id="showcase" className="sc-wrap">
 
-      <span className="sc-bg-desktop"><BackgroundPaths count={36} /></span>
-      <span className="sc-bg-mobile"><BackgroundPaths count={14} /></span>
+      <span className="sc-bg-desktop"><BackgroundPaths count={20} /></span>
+      <span className="sc-bg-mobile"><BackgroundPaths count={10} /></span>
       <div className="sc-glow" aria-hidden="true" />
 
       {/* ── DESKTOP LEFT PANEL ── */}
@@ -113,7 +113,6 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
           </div>
 
           <div className="sc-mockup-body" ref={imgRef}>
-            <BackgroundPaths />
             <Image src={`/${project.image}`} alt={project.title} fill className="sc-mockup-img"
               sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.82 }} />
             <div className="sc-mockup-overlay" />
