@@ -335,7 +335,8 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-fc-wrap img{display:block;filter:drop-shadow(0 24px 40px rgba(0,0,0,0.5))}
 /* No border/bg — PNG images have transparent backgrounds */
 .hero-float-card{border-radius:12px;overflow:hidden}
-.hero-float-card img{width:100%;height:auto;display:block}
+/* img is the tilt target — separate from the float animation on the wrapper */
+.hero-fc-img{width:100%;height:auto;display:block;transform-style:preserve-3d;will-change:transform}
 /* Glass overlay */
 .hero-float-glass{position:absolute;inset:0;background:rgba(10,8,4,0.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:12px}
 /* LEFT top — 3.png */
