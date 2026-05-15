@@ -82,11 +82,11 @@ export default function HeroSection() {
           <div className="hero-ring hero-ring-2" />
           <div className="hero-ring hero-ring-3" />
 
-          {/* LEFT cards — mostly behind arch, right edges hidden */}
+          {/* LEFT cards: 3 (top) + 4 (bottom) */}
           <motion.div className="hero-fc-wrap hero-fc-left-top" variants={floatA} animate="animate">
             <div className="hero-float-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/rtms.png" alt="" aria-hidden="true" />
+              <img src="/3.png" alt="" aria-hidden="true" />
               <div className="hero-float-glass" />
             </div>
           </motion.div>
@@ -94,16 +94,16 @@ export default function HeroSection() {
           <motion.div className="hero-fc-wrap hero-fc-left-bot" variants={floatB} animate="animate">
             <div className="hero-float-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/notion.png" alt="" aria-hidden="true" />
+              <img src="/4.png" alt="" aria-hidden="true" />
               <div className="hero-float-glass" />
             </div>
           </motion.div>
 
-          {/* RIGHT cards — mostly behind arch, left edges hidden */}
+          {/* RIGHT cards: 1 (top) + 2 (bottom) */}
           <motion.div className="hero-fc-wrap hero-fc-right-top" variants={floatC} animate="animate">
             <div className="hero-float-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/leadcraft.png" alt="" aria-hidden="true" />
+              <img src="/1.png" alt="" aria-hidden="true" />
               <div className="hero-float-glass" />
             </div>
           </motion.div>
@@ -111,7 +111,7 @@ export default function HeroSection() {
           <motion.div className="hero-fc-wrap hero-fc-right-bot" variants={floatD} animate="animate">
             <div className="hero-float-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/images/Budget_Promotion_image.png" alt="" aria-hidden="true" />
+              <img src="/2.png" alt="" aria-hidden="true" />
               <div className="hero-float-glass" />
             </div>
           </motion.div>
