@@ -55,8 +55,8 @@ export default function HeroSection() {
       tiltRefs.current.forEach((el, i) => {
         if (!el) return;
         const d = depths[i];
-        const tx = my * 10 * d;
-        const ty = mx * -10 * d;
+        const tx = my * 2.5 * d;
+        const ty = mx * -2.5 * d;
         el.style.transform = `${i >= 2 ? 'scaleX(-1) ' : ''}rotateX(${tx}deg) rotateY(${ty}deg)`;
       });
 
