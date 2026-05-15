@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 const navItems = [
-  { href: '#showcase', label: 'Work' },
   { href: '#hero', label: 'Home' },
+  { href: '#showcase', label: 'Work' },
   { href: '#about', label: 'About' },
   { href: '#contact', label: 'Contact' },
 ];

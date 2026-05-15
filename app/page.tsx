@@ -26,8 +26,8 @@ export default function Home() {
       <CustomCursor />
       <Navbar />
       <main>
-        <ShowcaseSection onOpenModal={setActiveModal} />
         <HeroSection />
+        <ShowcaseSection onOpenModal={setActiveModal} />
         <Suspense fallback={null}>
           <MarqueeStrip />
           <AboutSection />
