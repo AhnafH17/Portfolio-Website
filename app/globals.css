@@ -315,9 +315,9 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-cta svg{width:18px;height:18px;transition:transform .3s}
 .hero-cta:hover svg{transform:translateX(4px)}
 /* Image wrapper */
-.hero-image-wrapper{position:relative;display:flex;justify-content:center;align-items:center;opacity:0;transform:translateY(40px);animation:fadeUp 1s ease .6s forwards}
+.hero-image-wrapper{position:relative;display:flex;justify-content:center;align-items:center;opacity:0;transform:translateY(40px);animation:fadeUp 1s ease .6s forwards;overflow:visible}
 /* Arch frame — sits above float cards */
-.hero-image-frame{position:relative;width:340px;height:440px;overflow:hidden;border-radius:180px 180px 28px 28px;border:2px solid var(--gold-border-hover);z-index:2}
+.hero-image-frame{position:relative;width:340px;height:440px;overflow:hidden;border-radius:180px 180px 28px 28px;border:2px solid var(--gold-border-hover);z-index:3}
 .hero-image-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--black) 0%,transparent 30%)}
 /* Concentric rings */
 .hero-ring{position:absolute;border-style:solid;border-radius:220px 220px 40px 40px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
@@ -326,25 +326,27 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-ring-3{width:450px;height:564px;border-width:1px;border-color:rgba(201,168,76,0.12);z-index:0}
 /* Float card wrappers — absolute positioned, mostly behind the arch */
 .hero-fc-wrap{position:absolute;z-index:1;pointer-events:none}
-/* Left side: two cards stacked, pushed right so most is hidden behind arch */
-.hero-fc-left-top { left: -40px; top: calc(50% - 220px); }
-.hero-fc-left-bot { left: -20px; top: calc(50% + 10px); }
-/* Right side: two cards, pushed left so most is hidden behind arch */
-.hero-fc-right-top { right: -40px; top: calc(50% - 200px); }
-.hero-fc-right-bot { right: -20px; top: calc(50% + 30px); }
+/* Left top: upper-left of arch, card mostly behind, only bottom-right corner peeks */
+.hero-fc-left-top  { left: calc(50% - 310px); top: calc(50% - 290px); }
+/* Left bottom: lower-left of arch, only top-right corner peeks */
+.hero-fc-left-bot  { left: calc(50% - 290px); top: calc(50% + 60px);  }
+/* Right top: upper-right of arch, only bottom-left corner peeks */
+.hero-fc-right-top { left: calc(50% + 120px); top: calc(50% - 280px); }
+/* Right bottom: lower-right of arch, only top-left corner peeks */
+.hero-fc-right-bot { left: calc(50% + 100px); top: calc(50% + 70px);  }
 /* The card itself */
-.hero-float-card{position:relative;border-radius:10px;border:1px solid rgba(201,168,76,0.2);overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.7)}
+.hero-float-card{position:relative;border-radius:12px;border:1px solid rgba(201,168,76,0.22);overflow:hidden;box-shadow:0 16px 40px rgba(0,0,0,0.7)}
 .hero-float-card img{width:100%;height:100%;object-fit:cover;display:block}
-.hero-fc-left-top  .hero-float-card { width:180px; height:200px; transform:rotate(-7deg); }
-.hero-fc-left-bot  .hero-float-card { width:160px; height:180px; transform:rotate(-5deg); }
-.hero-fc-right-top .hero-float-card { width:165px; height:195px; transform:rotate(6deg);  }
-.hero-fc-right-bot .hero-float-card { width:150px; height:170px; transform:rotate(4deg);  }
+.hero-fc-left-top  .hero-float-card { width:200px; height:220px; transform:rotate(-8deg); }
+.hero-fc-left-bot  .hero-float-card { width:185px; height:200px; transform:rotate(-5deg); }
+.hero-fc-right-top .hero-float-card { width:195px; height:215px; transform:rotate(7deg);  }
+.hero-fc-right-bot .hero-float-card { width:175px; height:195px; transform:rotate(4deg);  }
 /* Glass overlay on each card */
-.hero-float-glass{position:absolute;inset:0;background:rgba(10,8,4,0.35);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);border-radius:10px}
+.hero-float-glass{position:absolute;inset:0;background:rgba(10,8,4,0.3);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);border-radius:12px}
 /* Bokeh particles */
 .hero-particle{position:absolute;border-radius:50%;background:rgba(201,168,76,0.7);box-shadow:0 0 10px 4px rgba(201,168,76,0.25);pointer-events:none;z-index:0}
 /* Floating tag */
-.hero-floating-tag{position:absolute;bottom:50px;right:-20px;background:rgba(13,13,13,0.92);backdrop-filter:blur(12px);border:1px solid rgba(201,168,76,0.2);padding:.8rem 1.4rem;border-radius:12px;font-size:.8rem;font-weight:500;letter-spacing:.05em;z-index:3;white-space:nowrap}
+.hero-floating-tag{position:absolute;bottom:50px;right:-20px;background:rgba(13,13,13,0.92);backdrop-filter:blur(12px);border:1px solid rgba(201,168,76,0.2);padding:.8rem 1.4rem;border-radius:12px;font-size:.8rem;font-weight:500;letter-spacing:.05em;z-index:4;white-space:nowrap}
 .hero-floating-tag span{color:var(--accent-glow);font-weight:700}
 .scroll-indicator{position:absolute;bottom:2rem;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:.5rem;font-size:.7rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-dim);opacity:0;animation:fadeUp .8s ease 1.2s forwards}
 .scroll-line{width:1px;height:40px;background:linear-gradient(to bottom,var(--gold-dim),transparent);animation:scrollPulse 2s ease infinite}
