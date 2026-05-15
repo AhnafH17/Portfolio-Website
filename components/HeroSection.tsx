@@ -1,32 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { motion } from 'framer-motion';
-
-const floatA = {
-  animate: {
-    y: [0, -12, 0],
-    transition: { duration: 4.5, ease: 'easeInOut' as const, repeat: Infinity },
-  },
-};
-const floatB = {
-  animate: {
-    y: [0, 10, 0],
-    transition: { duration: 5.2, ease: 'easeInOut' as const, repeat: Infinity, delay: 0.6 },
-  },
-};
-const floatC = {
-  animate: {
-    y: [0, -10, 0],
-    transition: { duration: 5.8, ease: 'easeInOut' as const, repeat: Infinity, delay: 1.2 },
-  },
-};
-const floatD = {
-  animate: {
-    y: [0, 14, 0],
-    transition: { duration: 4.2, ease: 'easeInOut' as const, repeat: Infinity, delay: 1.8 },
-  },
-};
 
 const PARTICLES = [
   { top: '10%', left: '72%', size: 8 },
@@ -82,41 +56,27 @@ export default function HeroSection() {
           <div className="hero-ring hero-ring-2" />
           <div className="hero-ring hero-ring-3" />
 
-          {/* LEFT cards: 3 (top) + 4 (bottom) */}
-          <motion.div className="hero-fc-wrap hero-fc-left-top" variants={floatA} animate="animate">
-            <div className="hero-float-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/3.png" alt="" aria-hidden="true" />
-              <div className="hero-float-glass" />
-            </div>
-          </motion.div>
+          {/* LEFT — 3.png top, 4.png bottom */}
+          <div className="hero-fc-wrap hero-fc-left-top">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/3.png" alt="" aria-hidden="true" />
+          </div>
+          <div className="hero-fc-wrap hero-fc-left-bot">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/4.png" alt="" aria-hidden="true" />
+          </div>
 
-          <motion.div className="hero-fc-wrap hero-fc-left-bot" variants={floatB} animate="animate">
-            <div className="hero-float-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/4.png" alt="" aria-hidden="true" />
-              <div className="hero-float-glass" />
-            </div>
-          </motion.div>
+          {/* RIGHT — 1.png top, 2.png bottom */}
+          <div className="hero-fc-wrap hero-fc-right-top">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/1.png" alt="" aria-hidden="true" />
+          </div>
+          <div className="hero-fc-wrap hero-fc-right-bot">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/2.png" alt="" aria-hidden="true" />
+          </div>
 
-          {/* RIGHT cards: 1 (top) + 2 (bottom) */}
-          <motion.div className="hero-fc-wrap hero-fc-right-top" variants={floatC} animate="animate">
-            <div className="hero-float-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/1.png" alt="" aria-hidden="true" />
-              <div className="hero-float-glass" />
-            </div>
-          </motion.div>
-
-          <motion.div className="hero-fc-wrap hero-fc-right-bot" variants={floatD} animate="animate">
-            <div className="hero-float-card">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/2.png" alt="" aria-hidden="true" />
-              <div className="hero-float-glass" />
-            </div>
-          </motion.div>
-
-          {/* Arch photo frame — highest z-index so cards hide behind it */}
+          {/* Arch photo frame — z-index 5, above all cards */}
           <div className="hero-image-frame">
             <Image
               src="/ahnaf-photo.jpg"
