@@ -22,8 +22,11 @@ export default function StarField({ className }: { className?: string }) {
     if (!ctx) return;
 
     let rafId: number;
-    const STAR_COUNT = 90;
+    // Scale star count by canvas area so desktop gets proportionally more
+    const STAR_COUNT = Math.max(160, Math.round((canvas.offsetWidth * canvas.offsetHeight) / 2800));
     const stars: Star[] = [];
+
+    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 
     const resize = () => {
       canvas.width = canvas.offsetWidth;
@@ -32,8 +35,6 @@ export default function StarField({ className }: { className?: string }) {
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
-
-    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 
     for (let i = 0; i < STAR_COUNT; i++) {
       stars.push({

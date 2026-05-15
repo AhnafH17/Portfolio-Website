@@ -334,7 +334,12 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-ring-3{width:450px;height:564px;border-width:1px;border-color:rgba(201,168,76,0.12)}
 /* Float card wrappers — 3D positioned, transform-style preserved */
 .hero-fc-wrap{position:absolute;pointer-events:none;transform-style:preserve-3d}
-.hero-fc-wrap img{display:block;filter:drop-shadow(0 24px 40px rgba(0,0,0,0.5))}
+.hero-fc-wrap img{display:block;
+  filter:
+    drop-shadow(0 0 8px rgba(201,168,76,0.55))
+    drop-shadow(0 0 22px rgba(201,168,76,0.25))
+    drop-shadow(0 24px 40px rgba(0,0,0,0.5));
+}
 /* No border/bg — PNG images have transparent backgrounds */
 .hero-float-card{border-radius:12px;overflow:hidden}
 /* img is the tilt target — separate from the float animation on the wrapper */
