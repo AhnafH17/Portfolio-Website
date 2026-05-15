@@ -339,19 +339,19 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 /* Glass overlay */
 .hero-float-glass{position:absolute;inset:0;background:rgba(10,8,4,0.18);backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);border-radius:12px}
 /* LEFT top — 3.png */
-.hero-fc-left-top{width:260px;top:90px;left:-60px;z-index:1;
+.hero-fc-left-top{width:260px;top:80px;left:20px;z-index:1;
   transform:translateZ(-120px) rotateY(-18deg) rotateX(8deg) rotateZ(-6deg);
   opacity:0.82;animation:heroFloatOne 6s ease-in-out infinite}
 /* LEFT bottom — 4.png */
-.hero-fc-left-bot{width:250px;top:330px;left:-20px;z-index:2;
+.hero-fc-left-bot{width:250px;top:320px;left:40px;z-index:2;
   transform:translateZ(-80px) rotateY(-14deg) rotateX(6deg) rotateZ(-4deg);
   opacity:0.78;animation:heroFloatTwo 7s ease-in-out infinite}
 /* RIGHT top — 1.png */
-.hero-fc-right-top{width:210px;top:130px;right:-40px;z-index:2;
+.hero-fc-right-top{width:210px;top:110px;right:20px;z-index:2;
   transform:translateZ(-60px) rotateY(16deg) rotateX(5deg) rotateZ(5deg);
   animation:heroFloatThree 5.5s ease-in-out infinite}
 /* RIGHT bottom — 2.png */
-.hero-fc-right-bot{width:190px;top:350px;right:-30px;z-index:3;
+.hero-fc-right-bot{width:190px;top:340px;right:30px;z-index:3;
   transform:translateZ(-30px) rotateY(12deg) rotateX(4deg) rotateZ(3deg);
   animation:heroFloatFour 6.5s ease-in-out infinite}
 /* Float keyframes — translateY appended to base 3D transform */
