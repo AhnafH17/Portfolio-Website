@@ -9,9 +9,8 @@ interface PreloaderProps {
 
 export default function Preloader({ onComplete }: PreloaderProps) {
   const rootRef     = useRef<HTMLDivElement>(null);
-  const bgRef       = useRef<HTMLDivElement>(null);
+  const overlayRef  = useRef<HTMLDivElement>(null);
   const textRef     = useRef<HTMLDivElement>(null);
-  const revealRef   = useRef<HTMLDivElement>(null);
   const progressRef = useRef<HTMLDivElement>(null);
   const fillRef     = useRef<HTMLDivElement>(null);
   const labelRef    = useRef<HTMLSpanElement>(null);
@@ -21,15 +20,14 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     window.scrollTo(0, 0);
 
     const root     = rootRef.current!;
-    const bg       = bgRef.current!;
+    const overlay  = overlayRef.current!;
     const textEl   = textRef.current!;
-    const reveal   = revealRef.current!;
     const fill     = fillRef.current!;
     const label    = labelRef.current!;
     const progress = progressRef.current!;
 
-    const words  = ['Ahnaf', 'Hussain'];
-    const GAP    = 28; // extra px each word moves outward beyond reveal edge
+    const words = ['Ahnaf', 'Hussain'];
+    const GAP   = 20;
 
     // ── build char spans ──────────────────────────────────────────
     const wordEls: HTMLSpanElement[] = [];
@@ -61,39 +59,22 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
     textEl.style.visibility = 'visible';
 
-    // progress ticks to 75% while waiting
+    // progress ticks to 75%
     const progTween = gsap.to(fill, { width: '75%', duration: 2.2, ease: 'power1.inOut' });
 
     function run() {
       progTween.kill();
       gsap.to(fill,  { width: '100%', duration: 0.3, ease: 'power2.out' });
-      gsap.to([label, progress], { opacity: 0, duration: 0.3, delay: 0.4 });
+      gsap.to([label, progress], { opacity: 0, duration: 0.3, delay: 0.35 });
 
-      const allInnerChars = Array.from(textEl.querySelectorAll<HTMLSpanElement>('span > span[data-word]'));
-      const g0 = allInnerChars.filter(s => s.dataset.word === '0');
-      const g1 = allInnerChars.filter(s => s.dataset.word === '1');
+      const allInner = Array.from(textEl.querySelectorAll<HTMLSpanElement>('span > span[data-word]'));
+      const g0 = allInner.filter(s => s.dataset.word === '0');
+      const g1 = allInner.filter(s => s.dataset.word === '1');
       const spaceEl = textEl.querySelector<HTMLSpanElement>('.pre-sp')!;
 
-      // measure after visibility:visible
-      const textRect  = textEl.getBoundingClientRect();
-      const textH     = textRect.height;
-      const spaceRect = spaceEl.getBoundingClientRect();
-      const slotCX    = spaceRect.left + spaceRect.width / 2;
-
-      // reveal panel starts as a thin sliver in the gap
-      const revealW = textH * 1.4;
-      gsap.set(reveal, {
-        width:    revealW,
-        height:   textH,
-        left:     slotCX - revealW / 2,
-        top:      textRect.top,
-        clipPath: 'inset(0 50% 0 50%)',
-        opacity:  1,
-      });
-
-      const halfPush  = revealW / 2 + GAP;
-      const splitDur  = 0.85;
-      const expandDur = 0.9;
+      const textRect = textEl.getBoundingClientRect();
+      const spaceW   = spaceEl.getBoundingClientRect().width;
+      const halfPush = textRect.height * 0.7 + spaceW / 2 + GAP;
 
       const tl = gsap.timeline();
 
@@ -101,39 +82,27 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       tl.to(g0, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.15)
         .to(g1, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.24);
 
-      // 2. panel opens + words split apart
-      tl.fromTo(reveal,
-        { clipPath: 'inset(0 50% 0 50%)' },
-        { clipPath: 'inset(0 0% 0 0%)', duration: splitDur, ease: 'power4.inOut' },
-        '>+0.4',
-      );
-      tl.to(wordEls[0], { x: -halfPush, duration: splitDur, ease: 'power4.inOut' }, '<');
-      tl.to(wordEls[1], { x:  halfPush, duration: splitDur, ease: 'power4.inOut' }, '<');
-      tl.to(spaceEl,    { width: 0,     duration: splitDur, ease: 'power4.inOut' }, '<');
+      // 2. words split apart
+      tl.to(wordEls[0], { x: -halfPush, duration: 0.85, ease: 'power4.inOut' }, '>+0.45');
+      tl.to(wordEls[1], { x:  halfPush, duration: 0.85, ease: 'power4.inOut' }, '<');
+      tl.to(spaceEl,    { width: 0,     duration: 0.85, ease: 'power4.inOut' }, '<');
 
-      // 3. panel expands to fill viewport — bg fades out simultaneously so the site shows through
-      tl.to(reveal, {
-        top: 0, left: 0,
-        width: '100vw', height: '100vh',
-        duration: expandDur,
-        ease: 'power3.inOut',
-      }, '>+0.15');
+      // 3. fade the dark overlay — site reveals from behind as words split
+      tl.to(overlay, { opacity: 0, duration: 1.1, ease: 'power2.inOut' }, '<+0.25');
 
-      // fade out text during expand
-      tl.to(textEl, { opacity: 0, duration: 0.3, ease: 'power2.in' }, '<+0.1');
-      // fade out the solid bg so site peeks through as panel expands
-      tl.to(bg, { opacity: 0, duration: expandDur * 0.7, ease: 'power2.in' }, '<');
+      // 4. fade text out
+      tl.to(textEl, { opacity: 0, duration: 0.35 }, '<+0.2');
 
-      // 4. once panel fills viewport, dissolve it to reveal the site
-      tl.to(reveal, {
-        opacity: 0,
-        duration: 0.45,
-        ease: 'power2.inOut',
-        onComplete: () => {
-          document.body.style.overflow = '';
-          onComplete();
-        },
-      }, '>');
+      // 5. remove root entirely
+      tl.call(() => {
+        gsap.to(root, {
+          opacity: 0, duration: 0.25,
+          onComplete: () => {
+            document.body.style.overflow = '';
+            onComplete();
+          },
+        });
+      }, [], '>-0.1');
     }
 
     document.fonts.ready.then(() => setTimeout(run, 250));
@@ -142,52 +111,45 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   return (
     <div
       ref={rootRef}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 99999,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden', pointerEvents: 'auto',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 99999, overflow: 'hidden' }}
     >
-      {/* solid background — fades out during expand so site bleeds through */}
-      <div ref={bgRef} style={{ position: 'absolute', inset: 0, background: '#0a0804', zIndex: 1 }} />
-
-      {/* expanding reveal panel — same colour as showcase bg */}
+      {/* dark overlay — this is what fades away to reveal the site */}
       <div
-        ref={revealRef}
-        style={{
-          position: 'absolute',
-          background: '#0a0804',
-          zIndex: 2,
-          opacity: 0,
-          pointerEvents: 'none',
-        }}
+        ref={overlayRef}
+        style={{ position: 'absolute', inset: 0, background: '#0a0804', zIndex: 1 }}
       />
 
-      {/* text */}
+      {/* centered text — sits above overlay */}
       <div
-        ref={textRef}
         style={{
-          position: 'relative', zIndex: 3,
-          fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(36px, 6.5vw, 90px)',
-          fontWeight: 700,
-          letterSpacing: '-0.02em',
-          textTransform: 'uppercase',
-          color: '#e2c973',
-          whiteSpace: 'nowrap',
-          visibility: 'hidden',
-          userSelect: 'none',
+          position: 'absolute', inset: 0, zIndex: 2,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}
-      />
+      >
+        <div
+          ref={textRef}
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: 'clamp(36px, 6.5vw, 90px)',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+            textTransform: 'uppercase',
+            color: '#e2c973',
+            whiteSpace: 'nowrap',
+            visibility: 'hidden',
+            userSelect: 'none',
+          }}
+        />
+      </div>
 
-      {/* progress */}
+      {/* progress bar */}
       <div
         ref={progressRef}
         style={{
           position: 'absolute', bottom: 48, left: '50%',
           transform: 'translateX(-50%)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          zIndex: 4,
+          zIndex: 3,
         }}
       >
         <div style={{ width: 120, height: 1, background: 'rgba(201,168,76,0.15)', overflow: 'hidden' }}>
