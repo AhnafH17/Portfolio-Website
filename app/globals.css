@@ -325,6 +325,8 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 /* Arch frame — highest z-index */
 .hero-image-frame{position:relative;width:340px;height:440px;overflow:hidden;border-radius:180px 180px 28px 28px;border:2px solid var(--gold-border-hover);z-index:5;flex-shrink:0}
 .hero-image-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--black) 0%,transparent 30%)}
+/* Star field canvas */
+.hero-starfield{z-index:0!important;border-radius:50%}
 /* Concentric rings */
 .hero-ring{position:absolute;border-style:solid;border-radius:220px 220px 40px 40px;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:4}
 .hero-ring-1{width:380px;height:480px;border-width:1.5px;border-color:rgba(201,168,76,0.35)}

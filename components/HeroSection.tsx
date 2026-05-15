@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useRef, useEffect } from 'react';
+import StarField from '@/components/StarField';
 
 const PARTICLES = [
   { top: '10%', left: '72%', size: 8 },
@@ -105,6 +106,9 @@ export default function HeroSection() {
         </div>
 
         <div className="hero-image-wrapper" ref={wrapperRef}>
+          {/* Star field — behind everything */}
+          <StarField className="hero-starfield" />
+
           {/* Concentric rings */}
           <div className="hero-ring hero-ring-1" />
           <div className="hero-ring hero-ring-2" />
