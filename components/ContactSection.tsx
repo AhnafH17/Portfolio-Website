@@ -28,25 +28,24 @@ function ContactShader() {
     };
 
     const draw = () => {
-      t += 0.003;
+      t += 0.0025;
       const w = canvas.width;
       const h = canvas.height;
 
-      // Dark base
-      ctx.fillStyle = '#080602';
+      ctx.fillStyle = '#060401';
       ctx.fillRect(0, 0, w, h);
 
-      // Large ambient gold blobs — more visible
+      // Deep ambient pools of gold light
       const blobs = [
-        { x: 0.15 + Math.sin(t * 0.6) * 0.05,  y: 0.28 + Math.cos(t * 0.4) * 0.07,  r: 0.42, a: 0.22 },
-        { x: 0.72 + Math.sin(t * 0.35 + 1) * 0.06, y: 0.55 + Math.cos(t * 0.5 + 1) * 0.06, r: 0.50, a: 0.16 },
-        { x: 0.45 + Math.sin(t * 0.25 + 2) * 0.07, y: 0.75 + Math.cos(t * 0.3 + 2) * 0.05, r: 0.30, a: 0.10 },
+        { x: 0.12 + Math.sin(t * 0.5) * 0.06,  y: 0.32 + Math.cos(t * 0.38) * 0.08, r: 0.52, a: 0.30 },
+        { x: 0.68 + Math.sin(t * 0.32 + 1) * 0.05, y: 0.50 + Math.cos(t * 0.42 + 1) * 0.07, r: 0.60, a: 0.24 },
+        { x: 0.40 + Math.sin(t * 0.22 + 2) * 0.07, y: 0.78 + Math.cos(t * 0.28 + 2) * 0.05, r: 0.35, a: 0.14 },
+        { x: 0.88 + Math.sin(t * 0.18 + 3) * 0.04, y: 0.20 + Math.cos(t * 0.24 + 3) * 0.06, r: 0.28, a: 0.18 },
       ];
-
       for (const b of blobs) {
         const grd = ctx.createRadialGradient(b.x * w, b.y * h, 0, b.x * w, b.y * h, b.r * w);
-        grd.addColorStop(0,   `rgba(201,168,76,${b.a})`);
-        grd.addColorStop(0.4, `rgba(160,120,48,${b.a * 0.5})`);
+        grd.addColorStop(0,   `rgba(226,185,80,${b.a})`);
+        grd.addColorStop(0.35,`rgba(180,130,45,${b.a * 0.55})`);
         grd.addColorStop(1,   'rgba(201,168,76,0)');
         ctx.beginPath();
         ctx.arc(b.x * w, b.y * h, b.r * w, 0, Math.PI * 2);
@@ -54,71 +53,94 @@ function ContactShader() {
         ctx.fill();
       }
 
-      // Bright curving light streaks — the signature look from reference
-      // Drawn as thick bezier curves with glow
+      // Bright bezier light streaks with multi-pass glow
       const curves = [
-        {
-          p0: { x: -0.05, y: 0.52 }, p1: { x: 0.25, y: 0.18 },
-          p2: { x: 0.60,  y: 0.22 }, p3: { x: 0.80, y: 0.30 },
-          phase: 0, baseAlpha: 0.55, width: 1.8,
-        },
-        {
-          p0: { x: 0.20, y: 0.60 }, p1: { x: 0.45, y: 0.30 },
-          p2: { x: 0.72, y: 0.26 }, p3: { x: 1.05, y: 0.38 },
-          phase: 1.8, baseAlpha: 0.38, width: 1.2,
-        },
+        { p0:{x:-0.04,y:0.55}, p1:{x:0.22,y:0.16}, p2:{x:0.58,y:0.20}, p3:{x:0.85,y:0.28}, phase:0,   base:0.85, w:2.2 },
+        { p0:{x:0.18,y:0.65},  p1:{x:0.42,y:0.28}, p2:{x:0.70,y:0.24}, p3:{x:1.06,y:0.36}, phase:1.7,  base:0.60, w:1.5 },
+        { p0:{x:0.30,y:0.90},  p1:{x:0.50,y:0.60}, p2:{x:0.78,y:0.48}, p3:{x:1.02,y:0.55}, phase:3.2,  base:0.35, w:1.0 },
       ];
 
       for (const c of curves) {
-        const pulse = (Math.sin(t * 1.1 + c.phase) + 1) / 2;
-        const alpha = c.baseAlpha * (0.55 + pulse * 0.45);
+        const pulse = (Math.sin(t * 1.0 + c.phase) + 1) / 2;
+        const alpha = c.base * (0.6 + pulse * 0.4);
 
-        // Glow pass — wider, lower alpha
-        ctx.save();
-        ctx.shadowColor = `rgba(226,201,115,${alpha * 0.6})`;
-        ctx.shadowBlur = 18;
         const g = ctx.createLinearGradient(c.p0.x * w, c.p0.y * h, c.p3.x * w, c.p3.y * h);
-        g.addColorStop(0,    'rgba(226,201,115,0)');
-        g.addColorStop(0.25, `rgba(226,201,115,${alpha})`);
-        g.addColorStop(0.55, `rgba(255,230,140,${alpha * 1.1})`);
-        g.addColorStop(0.8,  `rgba(201,168,76,${alpha * 0.7})`);
+        g.addColorStop(0,    'rgba(255,220,100,0)');
+        g.addColorStop(0.15, `rgba(255,230,120,${alpha * 0.7})`);
+        g.addColorStop(0.40, `rgba(255,240,160,${alpha})`);
+        g.addColorStop(0.65, `rgba(226,185,80,${alpha * 0.85})`);
         g.addColorStop(1,    'rgba(201,168,76,0)');
+
+        // Outer soft glow (widest)
+        ctx.save();
+        ctx.shadowColor = `rgba(255,210,80,${alpha * 0.9})`;
+        ctx.shadowBlur = 40;
         ctx.beginPath();
-        ctx.moveTo(c.p0.x * w, c.p0.y * h);
-        ctx.bezierCurveTo(c.p1.x * w, c.p1.y * h, c.p2.x * w, c.p2.y * h, c.p3.x * w, c.p3.y * h);
+        ctx.moveTo(c.p0.x*w, c.p0.y*h);
+        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
         ctx.strokeStyle = g;
-        ctx.lineWidth = c.width * 3;
+        ctx.lineWidth = c.w * 8;
+        ctx.globalAlpha = 0.18;
         ctx.stroke();
         ctx.restore();
 
-        // Sharp core line
+        // Mid glow
+        ctx.save();
+        ctx.shadowColor = `rgba(255,220,100,${alpha * 0.7})`;
+        ctx.shadowBlur = 22;
         ctx.beginPath();
-        ctx.moveTo(c.p0.x * w, c.p0.y * h);
-        ctx.bezierCurveTo(c.p1.x * w, c.p1.y * h, c.p2.x * w, c.p2.y * h, c.p3.x * w, c.p3.y * h);
+        ctx.moveTo(c.p0.x*w, c.p0.y*h);
+        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
         ctx.strokeStyle = g;
-        ctx.lineWidth = c.width;
+        ctx.lineWidth = c.w * 3;
+        ctx.globalAlpha = 0.55;
         ctx.stroke();
+        ctx.restore();
 
-        // Bright flare dots along the curve
-        for (let i = 0; i < 3; i++) {
-          const flarePulse = (Math.sin(t * 2.2 + c.phase + i * 1.1) + 1) / 2;
-          const fAlpha = flarePulse * alpha * 1.2;
-          const fx = lerp3(c.p0.x, c.p1.x, c.p2.x, c.p3.x, 0.2 + i * 0.3) * w;
-          const fy = lerp3(c.p0.y, c.p1.y, c.p2.y, c.p3.y, 0.2 + i * 0.3) * h;
-          const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, 12);
-          fg.addColorStop(0, `rgba(255,240,180,${fAlpha})`);
-          fg.addColorStop(1, 'rgba(226,201,115,0)');
+        // Sharp bright core
+        ctx.save();
+        ctx.shadowColor = `rgba(255,245,180,${alpha})`;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(c.p0.x*w, c.p0.y*h);
+        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = c.w * 0.8;
+        ctx.globalAlpha = 1;
+        ctx.stroke();
+        ctx.restore();
+
+        // Star flares at key points
+        for (let i = 0; i < 4; i++) {
+          const fp = (Math.sin(t * 1.8 + c.phase + i * 0.9) + 1) / 2;
+          const fa = fp * alpha * 1.4;
+          const fx = lerp3(c.p0.x, c.p1.x, c.p2.x, c.p3.x, 0.15 + i * 0.22) * w;
+          const fy = lerp3(c.p0.y, c.p1.y, c.p2.y, c.p3.y, 0.15 + i * 0.22) * h;
+          const fr = 18 + fp * 14;
+          const fg2 = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
+          fg2.addColorStop(0,   `rgba(255,248,200,${fa})`);
+          fg2.addColorStop(0.3, `rgba(255,220,100,${fa * 0.6})`);
+          fg2.addColorStop(1,   'rgba(201,168,76,0)');
           ctx.beginPath();
-          ctx.arc(fx, fy, 12, 0, Math.PI * 2);
-          ctx.fillStyle = fg;
+          ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+          ctx.fillStyle = fg2;
           ctx.fill();
         }
       }
 
-      // Edge vignette
-      const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, h * 0.15, w * 0.5, h * 0.5, h * 0.9);
+      // Bright corner accent — top-left warm flood
+      const cornerG = ctx.createRadialGradient(0, 0, 0, 0, 0, w * 0.45);
+      const cornerPulse = (Math.sin(t * 0.7) + 1) / 2;
+      cornerG.addColorStop(0,   `rgba(200,155,40,${0.18 + cornerPulse * 0.10})`);
+      cornerG.addColorStop(0.5, `rgba(160,110,20,${0.06 + cornerPulse * 0.04})`);
+      cornerG.addColorStop(1,   'rgba(201,168,76,0)');
+      ctx.fillStyle = cornerG;
+      ctx.fillRect(0, 0, w, h);
+
+      // Edge vignette — tighter so center stays bright
+      const vig = ctx.createRadialGradient(w*0.5, h*0.5, h*0.05, w*0.5, h*0.5, h*0.85);
       vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+      vig.addColorStop(1, 'rgba(0,0,0,0.65)');
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, w, h);
 
@@ -143,6 +165,7 @@ function DashboardMockup() {
     <div className="ct-mockup">
       {/* Main dashboard panel */}
       <div className="ct-dash">
+       <div className="ct-dash-inner">
         <div className="ct-dash-header">
           <span className="ct-dash-title">Dashboard</span>
           <div className="ct-dash-icons">
@@ -175,9 +198,10 @@ function DashboardMockup() {
             </div>
           ))}
         </div>
+       </div>
       </div>
 
-      {/* Floating message bubbles */}
+      {/* Floating message bubbles — overlaying the dashboard */}
       <div className="ct-bubble ct-bubble-1">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         <div className="ct-bubble-lines"><span/><span/></div>
