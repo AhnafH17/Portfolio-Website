@@ -51,82 +51,88 @@ function ContactSparkles() {
 
     interface Sparkle {
       x3: number; y3: number; z: number;
-      vz: number; vx: number; vy: number;
-      phase: number; freq: number;
+      vz: number;
       col: { r: number; g: number; b: number };
       baseSize: number;
+      // previous projected position for streak
+      px: number; py: number; pscale: number;
     }
 
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
 
-    const makeSparkle = (initial = false): Sparkle => ({
-      x3: (Math.random() - 0.5) * W * 2.4,
-      y3: (Math.random() - 0.5) * H * 2.4,
-      z: initial ? Math.random() * MAX_Z : MAX_Z + 10,
-      vz: rand(0.25, 1.35),
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      phase: Math.random() * Math.PI * 2,
-      freq: rand(0.008, 0.03),
-      col: PALETTE[Math.floor(Math.random() * PALETTE.length)],
-      baseSize: rand(0.4, 1.6),
-    });
+    const project = (x3: number, y3: number, z: number) => {
+      const scale = FL / (z + FL);
+      return { sx: x3 * scale + W * 0.5, sy: y3 * scale + H * 0.5, scale };
+    };
 
-    const project = (s: Sparkle) => {
-      const scale = FL / (s.z + FL);
-      return { sx: s.x3 * scale + W * 0.5, sy: s.y3 * scale + H * 0.5, scale };
+    const makeSparkle = (initial = false): Sparkle => {
+      const x3 = (Math.random() - 0.5) * W * 2.0;
+      const y3 = (Math.random() - 0.5) * H * 2.0;
+      const z  = initial ? Math.random() * MAX_Z : MAX_Z;
+      const { sx, sy, scale } = project(x3, y3, z);
+      return {
+        x3, y3, z,
+        vz: rand(3.5, 8.0),   // fast — creates long streaks
+        col: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+        baseSize: rand(0.5, 1.4),
+        px: sx, py: sy, pscale: scale,
+      };
     };
 
     let sparkles: Sparkle[] = Array.from({ length: COUNT }, () => makeSparkle(true));
     let t = 0;
 
     const draw = () => {
-      ctx.clearRect(0, 0, W, H);
+      // Fade trail instead of full clear — creates motion blur effect
+      ctx.fillStyle = 'rgba(8,6,3,0.18)';
+      ctx.fillRect(0, 0, W, H);
       t++;
 
       for (const s of sparkles) {
-        // Update
+        // Save previous projected position
+        const { sx: px, sy: py, scale: ps } = project(s.x3, s.y3, s.z);
+
+        // Move forward
         s.z -= s.vz;
-        s.x3 += s.vx;
-        s.y3 += s.vy;
-        if (s.z <= 0) {
+        if (s.z <= 1) {
           Object.assign(s, makeSparkle(false));
+          continue;
         }
 
-        // Project
-        const { sx, sy, scale } = project(s);
-        if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
+        // Current projected position
+        const { sx, sy, scale } = project(s.x3, s.y3, s.z);
+        if (sx < -120 || sx > W + 120 || sy < -120 || sy > H + 120) {
+          Object.assign(s, makeSparkle(false));
+          continue;
+        }
 
-        // Twinkle
-        const twinkle = Math.sin(t * s.freq + s.phase) * 0.5 + 0.5;
-        const size = s.baseSize * scale * 3.5 * (0.5 + twinkle * 0.5);
-
-        // Mouse proximity boost
+        // Mouse proximity boost to alpha
         const dx = sx - mx, dy = sy - my;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const mouseBoost = mx !== -9999 && dist < 160 ? (1 - dist / 160) * 1.8 : 0;
+        const mouseBoost = mx !== -9999 && dist < 180 ? (1 - dist / 180) * 0.5 : 0;
 
-        const alpha = Math.min(1, (0.25 + twinkle * 0.65 + mouseBoost * 0.35) * scale * 1.4);
+        const alpha = Math.min(0.95, (0.3 + mouseBoost) * scale * 2.2);
         const { r, g, b } = s.col;
+        const lineW = Math.max(0.5, s.baseSize * scale * 2.5);
+
+        // Streak: gradient from transparent (tail) to bright (head)
+        const grad = ctx.createLinearGradient(px, py, sx, sy);
+        grad.addColorStop(0, `rgba(${r},${g},${b},0)`);
+        grad.addColorStop(1, `rgba(${r},${g},${b},${alpha})`);
 
         ctx.save();
-        ctx.globalAlpha = alpha;
-
-        // Glow halo
-        if (size > 0.8) {
-          const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * 3.5);
-          glow.addColorStop(0, `rgba(${r},${g},${b},0.45)`);
-          glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
-          ctx.beginPath();
-          ctx.arc(sx, sy, size * 3.5, 0, Math.PI * 2);
-          ctx.fillStyle = glow;
-          ctx.fill();
-        }
-
-        // Core dot
         ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(0.3, size), 0, Math.PI * 2);
-        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.moveTo(px, py);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Bright head dot
+        ctx.beginPath();
+        ctx.arc(sx, sy, lineW * 0.9, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${r},${g},${b},${alpha})`;
         ctx.fill();
         ctx.restore();
       }
