@@ -16,19 +16,23 @@ export default function CustomCursor() {
 
     let mx = 0, my = 0, rx = 0, ry = 0;
     let rafId: number;
+    let moved = false;
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX;
       my = e.clientY;
-      dot.style.left = mx - 4 + 'px';
-      dot.style.top = my - 4 + 'px';
+      moved = true;
+      // dot snaps instantly — use transform (compositor, no layout)
+      dot.style.transform = `translate(${mx - 4}px,${my - 4}px)`;
     };
 
     const animate = () => {
-      rx += (mx - rx) * 0.12;
-      ry += (my - ry) * 0.12;
-      ring.style.left = rx - 20 + 'px';
-      ring.style.top = ry - 20 + 'px';
+      if (moved || Math.abs(mx - rx) > 0.1 || Math.abs(my - ry) > 0.1) {
+        rx += (mx - rx) * 0.12;
+        ry += (my - ry) * 0.12;
+        ring.style.transform = `translate(${rx - 20}px,${ry - 20}px)`;
+        moved = false;
+      }
       rafId = requestAnimationFrame(animate);
     };
 

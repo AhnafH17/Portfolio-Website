@@ -18,6 +18,7 @@ function ContactSparkles() {
     let rafId: number;
     let W = 1, H = 1;
     let mx = -9999, my = -9999;
+    let visible = false;
 
     const resize = () => {
       W = canvas.width = section.offsetWidth || window.innerWidth;
@@ -26,6 +27,13 @@ function ContactSparkles() {
     resize();
     const ro = new ResizeObserver(resize);
     ro.observe(section);
+
+    // Only run rAF when section is in view
+    const io = new IntersectionObserver((entries) => {
+      visible = entries[0].isIntersecting;
+      if (visible) rafId = requestAnimationFrame(draw);
+    }, { threshold: 0.01 });
+    io.observe(section);
 
     const onMouseMove = (e: MouseEvent) => {
       const r = canvas.getBoundingClientRect();
@@ -137,13 +145,14 @@ function ContactSparkles() {
         ctx.restore();
       }
 
-      rafId = requestAnimationFrame(draw);
+      if (visible) rafId = requestAnimationFrame(draw);
     };
 
-    rafId = requestAnimationFrame(draw);
+    // Don't start immediately — IO observer will start it when visible
     return () => {
       cancelAnimationFrame(rafId);
       ro.disconnect();
+      io.disconnect();
       section.removeEventListener('mousemove', onMouseMove);
       section.removeEventListener('mouseleave', onMouseLeave);
     };

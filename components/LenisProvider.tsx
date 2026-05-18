@@ -20,8 +20,16 @@ export default function LenisProvider() {
 
     window.__lenis = lenis;
 
+    // Only dispatch scroll when actually scrolling (not every rAF tick)
+    let scrolling = false;
+    let scrollTimer: ReturnType<typeof setTimeout>;
     lenis.on('scroll', () => {
-      window.dispatchEvent(new Event('scroll'));
+      if (!scrolling) {
+        scrolling = true;
+        window.dispatchEvent(new Event('scroll'));
+      }
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(() => { scrolling = false; }, 100);
     });
 
     function raf(time: number) {
