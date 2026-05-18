@@ -22,60 +22,103 @@ function ContactShader() {
     const ro = new ResizeObserver(resize);
     ro.observe(canvas);
 
+    const lerp3 = (p0: number, p1: number, p2: number, p3: number, t2: number) => {
+      const mt = 1 - t2;
+      return mt * mt * mt * p0 + 3 * mt * mt * t2 * p1 + 3 * mt * t2 * t2 * p2 + t2 * t2 * t2 * p3;
+    };
+
     const draw = () => {
-      t += 0.004;
+      t += 0.003;
       const w = canvas.width;
       const h = canvas.height;
-      ctx.clearRect(0, 0, w, h);
 
-      // Base dark background
-      ctx.fillStyle = '#0a0804';
+      // Dark base
+      ctx.fillStyle = '#080602';
       ctx.fillRect(0, 0, w, h);
 
-      // Slow moving gold nebula blobs
+      // Large ambient gold blobs — more visible
       const blobs = [
-        { x: 0.18 + Math.sin(t * 0.7) * 0.06,  y: 0.3  + Math.cos(t * 0.5) * 0.08,  r: 0.38, a: 0.13 },
-        { x: 0.55 + Math.sin(t * 0.4 + 1) * 0.07, y: 0.6 + Math.cos(t * 0.6 + 1) * 0.06, r: 0.45, a: 0.10 },
-        { x: 0.82 + Math.sin(t * 0.55 + 2) * 0.05, y: 0.25 + Math.cos(t * 0.45 + 2) * 0.09, r: 0.32, a: 0.09 },
-        { x: 0.35 + Math.sin(t * 0.3 + 3) * 0.08, y: 0.75 + Math.cos(t * 0.35 + 3) * 0.05, r: 0.28, a: 0.07 },
+        { x: 0.15 + Math.sin(t * 0.6) * 0.05,  y: 0.28 + Math.cos(t * 0.4) * 0.07,  r: 0.42, a: 0.22 },
+        { x: 0.72 + Math.sin(t * 0.35 + 1) * 0.06, y: 0.55 + Math.cos(t * 0.5 + 1) * 0.06, r: 0.50, a: 0.16 },
+        { x: 0.45 + Math.sin(t * 0.25 + 2) * 0.07, y: 0.75 + Math.cos(t * 0.3 + 2) * 0.05, r: 0.30, a: 0.10 },
       ];
 
       for (const b of blobs) {
         const grd = ctx.createRadialGradient(b.x * w, b.y * h, 0, b.x * w, b.y * h, b.r * w);
-        grd.addColorStop(0, `rgba(201,168,76,${b.a})`);
-        grd.addColorStop(0.5, `rgba(160,120,48,${b.a * 0.4})`);
-        grd.addColorStop(1, 'rgba(201,168,76,0)');
+        grd.addColorStop(0,   `rgba(201,168,76,${b.a})`);
+        grd.addColorStop(0.4, `rgba(160,120,48,${b.a * 0.5})`);
+        grd.addColorStop(1,   'rgba(201,168,76,0)');
         ctx.beginPath();
         ctx.arc(b.x * w, b.y * h, b.r * w, 0, Math.PI * 2);
         ctx.fillStyle = grd;
         ctx.fill();
       }
 
-      // Thin gold light streaks
-      const streaks = [
-        { x1: 0.0, y1: 0.38, x2: 0.65, y2: 0.22, phase: 0 },
-        { x1: 0.3, y1: 0.55, x2: 1.0,  y2: 0.42, phase: 1.5 },
+      // Bright curving light streaks — the signature look from reference
+      // Drawn as thick bezier curves with glow
+      const curves = [
+        {
+          p0: { x: -0.05, y: 0.52 }, p1: { x: 0.25, y: 0.18 },
+          p2: { x: 0.60,  y: 0.22 }, p3: { x: 0.80, y: 0.30 },
+          phase: 0, baseAlpha: 0.55, width: 1.8,
+        },
+        {
+          p0: { x: 0.20, y: 0.60 }, p1: { x: 0.45, y: 0.30 },
+          p2: { x: 0.72, y: 0.26 }, p3: { x: 1.05, y: 0.38 },
+          phase: 1.8, baseAlpha: 0.38, width: 1.2,
+        },
       ];
 
-      for (const s of streaks) {
-        const alpha = (Math.sin(t * 1.2 + s.phase) + 1) / 2 * 0.12 + 0.03;
-        const g = ctx.createLinearGradient(s.x1 * w, s.y1 * h, s.x2 * w, s.y2 * h);
-        g.addColorStop(0, 'rgba(201,168,76,0)');
-        g.addColorStop(0.3, `rgba(226,201,115,${alpha})`);
-        g.addColorStop(0.6, `rgba(201,168,76,${alpha * 0.7})`);
-        g.addColorStop(1, 'rgba(201,168,76,0)');
+      for (const c of curves) {
+        const pulse = (Math.sin(t * 1.1 + c.phase) + 1) / 2;
+        const alpha = c.baseAlpha * (0.55 + pulse * 0.45);
+
+        // Glow pass — wider, lower alpha
+        ctx.save();
+        ctx.shadowColor = `rgba(226,201,115,${alpha * 0.6})`;
+        ctx.shadowBlur = 18;
+        const g = ctx.createLinearGradient(c.p0.x * w, c.p0.y * h, c.p3.x * w, c.p3.y * h);
+        g.addColorStop(0,    'rgba(226,201,115,0)');
+        g.addColorStop(0.25, `rgba(226,201,115,${alpha})`);
+        g.addColorStop(0.55, `rgba(255,230,140,${alpha * 1.1})`);
+        g.addColorStop(0.8,  `rgba(201,168,76,${alpha * 0.7})`);
+        g.addColorStop(1,    'rgba(201,168,76,0)');
         ctx.beginPath();
-        ctx.moveTo(s.x1 * w, s.y1 * h);
-        ctx.lineTo(s.x2 * w, s.y2 * h);
+        ctx.moveTo(c.p0.x * w, c.p0.y * h);
+        ctx.bezierCurveTo(c.p1.x * w, c.p1.y * h, c.p2.x * w, c.p2.y * h, c.p3.x * w, c.p3.y * h);
         ctx.strokeStyle = g;
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = c.width * 3;
         ctx.stroke();
+        ctx.restore();
+
+        // Sharp core line
+        ctx.beginPath();
+        ctx.moveTo(c.p0.x * w, c.p0.y * h);
+        ctx.bezierCurveTo(c.p1.x * w, c.p1.y * h, c.p2.x * w, c.p2.y * h, c.p3.x * w, c.p3.y * h);
+        ctx.strokeStyle = g;
+        ctx.lineWidth = c.width;
+        ctx.stroke();
+
+        // Bright flare dots along the curve
+        for (let i = 0; i < 3; i++) {
+          const flarePulse = (Math.sin(t * 2.2 + c.phase + i * 1.1) + 1) / 2;
+          const fAlpha = flarePulse * alpha * 1.2;
+          const fx = lerp3(c.p0.x, c.p1.x, c.p2.x, c.p3.x, 0.2 + i * 0.3) * w;
+          const fy = lerp3(c.p0.y, c.p1.y, c.p2.y, c.p3.y, 0.2 + i * 0.3) * h;
+          const fg = ctx.createRadialGradient(fx, fy, 0, fx, fy, 12);
+          fg.addColorStop(0, `rgba(255,240,180,${fAlpha})`);
+          fg.addColorStop(1, 'rgba(226,201,115,0)');
+          ctx.beginPath();
+          ctx.arc(fx, fy, 12, 0, Math.PI * 2);
+          ctx.fillStyle = fg;
+          ctx.fill();
+        }
       }
 
-      // Subtle vignette
-      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.2, w / 2, h / 2, h * 0.85);
+      // Edge vignette
+      const vig = ctx.createRadialGradient(w * 0.5, h * 0.5, h * 0.15, w * 0.5, h * 0.5, h * 0.9);
       vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(0,0,0,0.55)');
+      vig.addColorStop(1, 'rgba(0,0,0,0.6)');
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, w, h);
 
