@@ -578,18 +578,14 @@ footer span{color:var(--accent-glow)}
   contain-intrinsic-size:0 100svh;
 }
 
-/* BACKGROUND PATHS */
-.sc-bg-desktop{ display:contents }
-.sc-bg-mobile{ display:none }
-.sc-bg-paths{
-  position:absolute;inset:0;
-  pointer-events:none;z-index:0;
-}
-.sc-bg-svg{
-  width:100%;height:100%;
-  overflow:visible;
-  will-change:transform;
-}
+/* BACKGROUND PATHS — pure CSS, no JS */
+.sc-bg-lines{position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.sc-bg-svg{width:100%;height:100%;overflow:visible}
+@keyframes scDash{0%{stroke-dashoffset:2000}100%{stroke-dashoffset:0}}
+.sc-path{stroke-dasharray:1800;stroke-dashoffset:2000;animation:scDash 18s linear infinite}
+.sc-path-0{animation-duration:22s}
+.sc-path-1{animation-duration:28s;animation-delay:-8s}
+.sc-path-2{animation-duration:34s;animation-delay:-16s}
 
 /* Right panel structural lines */
 .sc-vlines-right{
@@ -835,8 +831,7 @@ footer span{color:var(--accent-glow)}
   /* hide desktop panels */
   .sc-left{display:none}
   .sc-right{display:none}
-  .sc-bg-desktop{display:none}
-  .sc-bg-mobile{display:none}
+  .sc-bg-lines{display:none}
   /* show mobile panel */
   .sc-mobile-panel{
     display:flex;flex-direction:column;

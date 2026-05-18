@@ -4,7 +4,6 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
 import gsap from 'gsap';
-import BackgroundPaths from '@/components/BackgroundPaths';
 
 interface ShowcaseSectionProps {
   onOpenModal: (key: ProjectKey) => void;
@@ -96,8 +95,27 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
   return (
     <section id="showcase" className="sc-wrap">
 
-      <span className="sc-bg-desktop"><BackgroundPaths count={20} /></span>
-      <span className="sc-bg-mobile"><BackgroundPaths count={10} /></span>
+      <div className="sc-bg-lines" aria-hidden="true">
+        <svg viewBox="0 200 696 316" fill="none" preserveAspectRatio="none" className="sc-bg-svg">
+          <defs>
+            <linearGradient id="scGold" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%"  stopColor="#c9a84c" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#e2c973" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#a07830" stopOpacity="0.3" />
+            </linearGradient>
+          </defs>
+          {[...Array(14)].map((_, i) => (
+            <path
+              key={i}
+              d={`M-${380 - i * 5} -${189 + i * 6}C-${380 - i * 5} -${189 + i * 6} -${312 - i * 5} ${216 - i * 6} ${152 - i * 5} ${343 - i * 6}C${616 - i * 5} ${470 - i * 6} ${684 - i * 5} ${875 - i * 6} ${684 - i * 5} ${875 - i * 6}`}
+              stroke="url(#scGold)"
+              strokeWidth={0.5 + i * 0.03}
+              strokeOpacity={0.08 + i * 0.025}
+              className={`sc-path sc-path-${i % 3}`}
+            />
+          ))}
+        </svg>
+      </div>
       <div className="sc-glow" aria-hidden="true" />
 
       {/* ── DESKTOP LEFT PANEL ── */}
