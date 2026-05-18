@@ -2,8 +2,9 @@
 
 import { useRef, useState, useEffect } from 'react';
 
-function ContactShader() {
+function ContactSparkles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const sectionRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -11,151 +12,142 @@ function ContactShader() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const section = canvas.parentElement as HTMLElement;
+    sectionRef.current = section;
+
     let rafId: number;
-    let t = 0;
+    let W = 1, H = 1;
+    let mx = -9999, my = -9999;
 
     const resize = () => {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+      W = canvas.width = section.offsetWidth || window.innerWidth;
+      H = canvas.height = section.offsetHeight || 700;
     };
     resize();
     const ro = new ResizeObserver(resize);
-    ro.observe(canvas);
+    ro.observe(section);
 
-    const lerp3 = (p0: number, p1: number, p2: number, p3: number, t2: number) => {
-      const mt = 1 - t2;
-      return mt * mt * mt * p0 + 3 * mt * mt * t2 * p1 + 3 * mt * t2 * t2 * p2 + t2 * t2 * t2 * p3;
+    const onMouseMove = (e: MouseEvent) => {
+      const r = canvas.getBoundingClientRect();
+      mx = e.clientX - r.left;
+      my = e.clientY - r.top;
+    };
+    const onMouseLeave = () => { mx = -9999; my = -9999; };
+    section.addEventListener('mousemove', onMouseMove, { passive: true });
+    section.addEventListener('mouseleave', onMouseLeave);
+
+    const COUNT = 220;
+    const FL = 380;
+    const MAX_Z = 900;
+
+    // Gold palette matching portfolio
+    const PALETTE = [
+      { r: 201, g: 168, b: 76  },
+      { r: 226, g: 201, b: 115 },
+      { r: 255, g: 232, b: 140 },
+      { r: 180, g: 130, b: 48  },
+      { r: 255, g: 248, b: 200 },
+    ];
+
+    interface Sparkle {
+      x3: number; y3: number; z: number;
+      vz: number; vx: number; vy: number;
+      phase: number; freq: number;
+      col: { r: number; g: number; b: number };
+      baseSize: number;
+    }
+
+    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const makeSparkle = (initial = false): Sparkle => ({
+      x3: (Math.random() - 0.5) * W * 2.4,
+      y3: (Math.random() - 0.5) * H * 2.4,
+      z: initial ? Math.random() * MAX_Z : MAX_Z + 10,
+      vz: rand(0.25, 1.35),
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      phase: Math.random() * Math.PI * 2,
+      freq: rand(0.008, 0.03),
+      col: PALETTE[Math.floor(Math.random() * PALETTE.length)],
+      baseSize: rand(0.4, 1.6),
+    });
+
+    const project = (s: Sparkle) => {
+      const scale = FL / (s.z + FL);
+      return { sx: s.x3 * scale + W * 0.5, sy: s.y3 * scale + H * 0.5, scale };
     };
 
+    let sparkles: Sparkle[] = Array.from({ length: COUNT }, () => makeSparkle(true));
+    let t = 0;
+
     const draw = () => {
-      t += 0.0025;
-      const w = canvas.width;
-      const h = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      t++;
 
-      ctx.fillStyle = '#060401';
-      ctx.fillRect(0, 0, w, h);
+      for (const s of sparkles) {
+        // Update
+        s.z -= s.vz;
+        s.x3 += s.vx;
+        s.y3 += s.vy;
+        if (s.z <= 0) {
+          Object.assign(s, makeSparkle(false));
+        }
 
-      // Deep ambient pools of gold light
-      const blobs = [
-        { x: 0.12 + Math.sin(t * 0.5) * 0.06,  y: 0.32 + Math.cos(t * 0.38) * 0.08, r: 0.52, a: 0.30 },
-        { x: 0.68 + Math.sin(t * 0.32 + 1) * 0.05, y: 0.50 + Math.cos(t * 0.42 + 1) * 0.07, r: 0.60, a: 0.24 },
-        { x: 0.40 + Math.sin(t * 0.22 + 2) * 0.07, y: 0.78 + Math.cos(t * 0.28 + 2) * 0.05, r: 0.35, a: 0.14 },
-        { x: 0.88 + Math.sin(t * 0.18 + 3) * 0.04, y: 0.20 + Math.cos(t * 0.24 + 3) * 0.06, r: 0.28, a: 0.18 },
-      ];
-      for (const b of blobs) {
-        const grd = ctx.createRadialGradient(b.x * w, b.y * h, 0, b.x * w, b.y * h, b.r * w);
-        grd.addColorStop(0,   `rgba(226,185,80,${b.a})`);
-        grd.addColorStop(0.35,`rgba(180,130,45,${b.a * 0.55})`);
-        grd.addColorStop(1,   'rgba(201,168,76,0)');
-        ctx.beginPath();
-        ctx.arc(b.x * w, b.y * h, b.r * w, 0, Math.PI * 2);
-        ctx.fillStyle = grd;
-        ctx.fill();
-      }
+        // Project
+        const { sx, sy, scale } = project(s);
+        if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
 
-      // Bright bezier light streaks with multi-pass glow
-      const curves = [
-        { p0:{x:-0.04,y:0.55}, p1:{x:0.22,y:0.16}, p2:{x:0.58,y:0.20}, p3:{x:0.85,y:0.28}, phase:0,   base:0.85, w:2.2 },
-        { p0:{x:0.18,y:0.65},  p1:{x:0.42,y:0.28}, p2:{x:0.70,y:0.24}, p3:{x:1.06,y:0.36}, phase:1.7,  base:0.60, w:1.5 },
-        { p0:{x:0.30,y:0.90},  p1:{x:0.50,y:0.60}, p2:{x:0.78,y:0.48}, p3:{x:1.02,y:0.55}, phase:3.2,  base:0.35, w:1.0 },
-      ];
+        // Twinkle
+        const twinkle = Math.sin(t * s.freq + s.phase) * 0.5 + 0.5;
+        const size = s.baseSize * scale * 3.5 * (0.5 + twinkle * 0.5);
 
-      for (const c of curves) {
-        const pulse = (Math.sin(t * 1.0 + c.phase) + 1) / 2;
-        const alpha = c.base * (0.6 + pulse * 0.4);
+        // Mouse proximity boost
+        const dx = sx - mx, dy = sy - my;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const mouseBoost = mx !== -9999 && dist < 160 ? (1 - dist / 160) * 1.8 : 0;
 
-        const g = ctx.createLinearGradient(c.p0.x * w, c.p0.y * h, c.p3.x * w, c.p3.y * h);
-        g.addColorStop(0,    'rgba(255,220,100,0)');
-        g.addColorStop(0.15, `rgba(255,230,120,${alpha * 0.7})`);
-        g.addColorStop(0.40, `rgba(255,240,160,${alpha})`);
-        g.addColorStop(0.65, `rgba(226,185,80,${alpha * 0.85})`);
-        g.addColorStop(1,    'rgba(201,168,76,0)');
+        const alpha = Math.min(1, (0.25 + twinkle * 0.65 + mouseBoost * 0.35) * scale * 1.4);
+        const { r, g, b } = s.col;
 
-        // Outer soft glow (widest)
         ctx.save();
-        ctx.shadowColor = `rgba(255,210,80,${alpha * 0.9})`;
-        ctx.shadowBlur = 40;
-        ctx.beginPath();
-        ctx.moveTo(c.p0.x*w, c.p0.y*h);
-        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
-        ctx.strokeStyle = g;
-        ctx.lineWidth = c.w * 8;
-        ctx.globalAlpha = 0.18;
-        ctx.stroke();
-        ctx.restore();
+        ctx.globalAlpha = alpha;
 
-        // Mid glow
-        ctx.save();
-        ctx.shadowColor = `rgba(255,220,100,${alpha * 0.7})`;
-        ctx.shadowBlur = 22;
-        ctx.beginPath();
-        ctx.moveTo(c.p0.x*w, c.p0.y*h);
-        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
-        ctx.strokeStyle = g;
-        ctx.lineWidth = c.w * 3;
-        ctx.globalAlpha = 0.55;
-        ctx.stroke();
-        ctx.restore();
-
-        // Sharp bright core
-        ctx.save();
-        ctx.shadowColor = `rgba(255,245,180,${alpha})`;
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.moveTo(c.p0.x*w, c.p0.y*h);
-        ctx.bezierCurveTo(c.p1.x*w,c.p1.y*h,c.p2.x*w,c.p2.y*h,c.p3.x*w,c.p3.y*h);
-        ctx.strokeStyle = g;
-        ctx.lineWidth = c.w * 0.8;
-        ctx.globalAlpha = 1;
-        ctx.stroke();
-        ctx.restore();
-
-        // Star flares at key points
-        for (let i = 0; i < 4; i++) {
-          const fp = (Math.sin(t * 1.8 + c.phase + i * 0.9) + 1) / 2;
-          const fa = fp * alpha * 1.4;
-          const fx = lerp3(c.p0.x, c.p1.x, c.p2.x, c.p3.x, 0.15 + i * 0.22) * w;
-          const fy = lerp3(c.p0.y, c.p1.y, c.p2.y, c.p3.y, 0.15 + i * 0.22) * h;
-          const fr = 18 + fp * 14;
-          const fg2 = ctx.createRadialGradient(fx, fy, 0, fx, fy, fr);
-          fg2.addColorStop(0,   `rgba(255,248,200,${fa})`);
-          fg2.addColorStop(0.3, `rgba(255,220,100,${fa * 0.6})`);
-          fg2.addColorStop(1,   'rgba(201,168,76,0)');
+        // Glow halo
+        if (size > 0.8) {
+          const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, size * 3.5);
+          glow.addColorStop(0, `rgba(${r},${g},${b},0.45)`);
+          glow.addColorStop(1, `rgba(${r},${g},${b},0)`);
           ctx.beginPath();
-          ctx.arc(fx, fy, fr, 0, Math.PI * 2);
-          ctx.fillStyle = fg2;
+          ctx.arc(sx, sy, size * 3.5, 0, Math.PI * 2);
+          ctx.fillStyle = glow;
           ctx.fill();
         }
+
+        // Core dot
+        ctx.beginPath();
+        ctx.arc(sx, sy, Math.max(0.3, size), 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${r},${g},${b})`;
+        ctx.fill();
+        ctx.restore();
       }
-
-      // Bright corner accent — top-left warm flood
-      const cornerG = ctx.createRadialGradient(0, 0, 0, 0, 0, w * 0.45);
-      const cornerPulse = (Math.sin(t * 0.7) + 1) / 2;
-      cornerG.addColorStop(0,   `rgba(200,155,40,${0.18 + cornerPulse * 0.10})`);
-      cornerG.addColorStop(0.5, `rgba(160,110,20,${0.06 + cornerPulse * 0.04})`);
-      cornerG.addColorStop(1,   'rgba(201,168,76,0)');
-      ctx.fillStyle = cornerG;
-      ctx.fillRect(0, 0, w, h);
-
-      // Edge vignette — tighter so center stays bright
-      const vig = ctx.createRadialGradient(w*0.5, h*0.5, h*0.05, w*0.5, h*0.5, h*0.85);
-      vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(0,0,0,0.65)');
-      ctx.fillStyle = vig;
-      ctx.fillRect(0, 0, w, h);
 
       rafId = requestAnimationFrame(draw);
     };
 
     rafId = requestAnimationFrame(draw);
-    return () => { cancelAnimationFrame(rafId); ro.disconnect(); };
+    return () => {
+      cancelAnimationFrame(rafId);
+      ro.disconnect();
+      section.removeEventListener('mousemove', onMouseMove);
+      section.removeEventListener('mouseleave', onMouseLeave);
+    };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
       aria-hidden="true"
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0 }}
     />
   );
 }
@@ -254,7 +246,7 @@ export default function ContactSection() {
 
   return (
     <section id="contact" className="ct-section">
-      <ContactShader />
+      <ContactSparkles />
 
       <div className="ct-wrap">
         {/* LEFT — heading + form */}
