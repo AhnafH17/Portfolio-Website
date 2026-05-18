@@ -130,7 +130,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             <div className="sc-mockup-dots"><span /><span /><span /></div>
           </div>
 
-          <div className="sc-mockup-body" ref={imgRef}>
+          <div className="sc-mockup-body" ref={imgRef} onClick={() => onOpenModal(active.key)} style={{ cursor: 'pointer' }}>
             <Image src={`/${project.image}`} alt={project.title} fill className="sc-mockup-img"
               sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.82 }} />
             <div className="sc-mockup-overlay" />
@@ -138,7 +138,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               <h2 className="sc-mockup-title" ref={titleRef}>{project.title}</h2>
               <p className="sc-mockup-subtitle" ref={subtitleRef}>{project.label}</p>
             </div>
-            <button className="sc-cta" onClick={() => onOpenModal(active.key)}>
+            <button className="sc-cta" onClick={(e) => { e.stopPropagation(); onOpenModal(active.key); }}>
               VIEW PROJECT
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -223,7 +223,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             const isActive = idx === activeIdx;
             return (
               <button key={key} className={`sc-card${isActive ? ' active' : ''}`}
-                onClick={() => { handleSelect(idx); onOpenModal(key); }} aria-label={`Select ${p.title}`}>
+                onClick={() => handleSelect(idx)} aria-label={`Select ${p.title}`}>
                 <div className="sc-card-top">{tags.map((t) => <span key={t} className="sc-card-tag">{t}</span>)}</div>
                 <div className="sc-card-img-wrap">
                   <Image src={`/${p.image}`} alt={p.title} fill className="sc-card-img" sizes="15vw" />
