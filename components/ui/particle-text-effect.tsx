@@ -246,7 +246,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
             onWordCycle?.(nextIdx, words[nextIdx])
             // Fire onCycleComplete after last word has had time to form
             if (nextIdx === words.length - 1) {
-              setTimeout(() => onCycleComplete?.(), intervalMs * 0.7)
+              setTimeout(() => onCycleComplete?.(), intervalMs)
             }
           }
         }
