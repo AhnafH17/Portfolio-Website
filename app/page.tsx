@@ -24,8 +24,8 @@ export default function Home() {
   useEffect(() => {
     if (preloaderDone && siteRef.current) {
       gsap.fromTo(siteRef.current,
-        { opacity: 0 },
-        { opacity: 1, duration: 0.6, ease: 'power2.out' }
+        { opacity: 0, scale: 1.08 },
+        { opacity: 1, scale: 1, duration: 0.75, ease: 'power3.out' }
       );
     }
   }, [preloaderDone]);
@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <>
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
-      <div ref={siteRef} style={{ opacity: preloaderDone ? undefined : 0 }}>
+      <div ref={siteRef} style={{ opacity: preloaderDone ? undefined : 0, transformOrigin: 'center top' }}>
         <LenisProvider />
         <CustomCursor />
         <Navbar />
