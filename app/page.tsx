@@ -23,11 +23,12 @@ export default function Home() {
 
   useEffect(() => {
     if (!preloaderDone || !siteRef.current) return;
-    gsap.fromTo(
-      siteRef.current,
-      { opacity: 0, scale: 1.08 },
-      { opacity: 1, scale: 1, duration: 0.85, ease: 'power3.out' }
-    );
+    // Force opacity 0 before GSAP runs so there's no flash
+    gsap.set(siteRef.current, { opacity: 0, scale: 1.08 });
+    // rAF ensures the set() has painted before we start the tween
+    requestAnimationFrame(() => {
+      gsap.to(siteRef.current!, { opacity: 1, scale: 1, duration: 0.85, ease: 'power3.out' });
+    });
   }, [preloaderDone]);
 
   return (
@@ -35,10 +36,8 @@ export default function Home() {
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
       <div
         ref={siteRef}
-        style={{
-          opacity: preloaderDone ? undefined : 0,
-          transformOrigin: '50% 50vh',
-        }}
+        style={{ transformOrigin: '50% 50vh' }}
+        data-site-content
       >
         <LenisProvider />
         <CustomCursor />
