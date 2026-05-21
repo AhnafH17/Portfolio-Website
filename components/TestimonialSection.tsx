@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -34,10 +34,10 @@ const TESTIMONIALS = [
 ];
 
 const ARCS = [
-  { startLat: 23.68, startLng: 90.36, endLat: 43.65, endLng: -79.38 },  // BD -> Canada
-  { startLat: 23.68, startLng: 90.36, endLat: 37.77, endLng: -122.4 },  // BD -> USA
-  { startLat: 23.68, startLng: 90.36, endLat: 51.5,  endLng: -0.12 },   // BD -> Europe
-  { startLat: 23.68, startLng: 90.36, endLat: -33.87, endLng: 151.2 },  // BD -> Australia
+  { startLat: 23.68, startLng: 90.36, endLat: 43.65, endLng: -79.38 },
+  { startLat: 23.68, startLng: 90.36, endLat: 37.77, endLng: -122.4 },
+  { startLat: 23.68, startLng: 90.36, endLat: 51.5,  endLng: -0.12 },
+  { startLat: 23.68, startLng: 90.36, endLat: -33.87, endLng: 151.2 },
 ];
 
 const POINTS = [
@@ -57,7 +57,6 @@ function GlobeViz() {
     const container = containerRef.current;
     if (!container) return;
 
-    let globeInstance: any = null;
     let rafId: number;
 
     const init = () => {
@@ -66,7 +65,6 @@ function GlobeViz() {
         return;
       }
 
-      // Dynamically import globe.gl
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/globe.gl@2/dist/globe.gl.min.js';
       script.onload = () => {
@@ -79,7 +77,7 @@ function GlobeViz() {
         const W = container.clientWidth;
         const H = container.clientHeight;
 
-        globeInstance = Globe()(container)
+        const globeInstance = Globe()(container)
           .width(W)
           .height(H)
           .backgroundColor('rgba(0,0,0,0)')
@@ -108,7 +106,6 @@ function GlobeViz() {
         globeInstance.controls().autoRotateSpeed = 0.9;
         globeInstance.controls().enableZoom = false;
 
-        // Boost lights
         setTimeout(() => {
           globeInstance.scene().children.forEach((obj: any) => {
             if (obj.type?.includes('Light')) obj.intensity *= 2.2;
@@ -141,15 +138,60 @@ function GlobeViz() {
 export default function TestimonialSection() {
   const [active, setActive] = useState(0);
   const sectionRef = useRef<HTMLElement>(null);
-  const cardsRef = useRef<HTMLDivElement>(null);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAnimating = useRef(false);
 
+  const goTo = useCallback((next: number, dir: 1 | -1 = 1) => {
+    if (isAnimating.current) return;
+    const slider = sliderRef.current;
+    if (!slider) return;
+
+    const cards = slider.querySelectorAll<HTMLElement>('.ts-slide');
+    const current = cards[active];
+    const nextCard = cards[next];
+    if (!current || !nextCard) return;
+
+    isAnimating.current = true;
+
+    gsap.set(nextCard, { opacity: 0, x: dir * 60, position: 'absolute', top: 0, left: 0, width: '100%' });
+    gsap.set(current, { position: 'relative' });
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        gsap.set(current, { clearProps: 'all', position: '', opacity: 0, x: 0 });
+        gsap.set(nextCard, { clearProps: 'all', position: '', opacity: 1, x: 0 });
+        setActive(next);
+        isAnimating.current = false;
+      },
+    });
+
+    tl.to(current, { opacity: 0, x: -dir * 40, duration: 0.35, ease: 'power2.in' }, 0)
+      .to(nextCard, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 0.15);
+  }, [active]);
+
+  const advance = useCallback((dir: 1 | -1) => {
+    const next = (active + dir + TESTIMONIALS.length) % TESTIMONIALS.length;
+    goTo(next, dir);
+  }, [active, goTo]);
+
+  // Auto-advance
+  useEffect(() => {
+    timerRef.current = setTimeout(() => advance(1), 4500);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [active, advance]);
+
+  // Entrance animation
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-    gsap.fromTo(section.querySelectorAll('.ts-card'),
-      { opacity: 0, y: 32 },
+
+    gsap.fromTo(section.querySelector('.ts-left'),
+      { opacity: 0, x: -40 },
       {
-        opacity: 1, y: 0, duration: 0.7, stagger: 0.1, ease: 'power3.out',
+        opacity: 1, x: 0, duration: 0.8, ease: 'power3.out',
         scrollTrigger: { trigger: section, start: 'top 75%', once: true },
       }
     );
@@ -166,36 +208,60 @@ export default function TestimonialSection() {
     <section ref={sectionRef} className="ts-section">
       <div className="ts-wrap">
 
-        {/* LEFT — stacked accordion cards */}
+        {/* LEFT — slider */}
         <div className="ts-left">
           <p className="section-label">Client Testimonials</p>
           <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
 
-          <div className="ts-cards" ref={cardsRef}>
-            {TESTIMONIALS.map((t, i) => (
-              <div
-                key={i}
-                className={`ts-card${active === i ? ' active' : ''}`}
-                onClick={() => setActive(i)}
-              >
-                <div className="ts-card-header">
-                  <div className="ts-card-meta">
-                    <span className="ts-company">{t.company}</span>
-                    <span className="ts-role">{t.role}</span>
+          <div className="ts-slider-wrap">
+            <div className="ts-slider" ref={sliderRef}>
+              {TESTIMONIALS.map((t, i) => (
+                <div
+                  key={i}
+                  className="ts-slide"
+                  style={{ display: i === active ? 'block' : (i === (active + 1) % TESTIMONIALS.length || i === (active - 1 + TESTIMONIALS.length) % TESTIMONIALS.length) ? 'block' : 'none', opacity: i === active ? 1 : 0 }}
+                >
+                  <div className="ts-slide-inner">
+                    <div className="ts-slide-top">
+                      <span className="ts-company">{t.company}</span>
+                      <span className="ts-role">{t.role}</span>
+                    </div>
+                    <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
+                    <div className="ts-tags">
+                      {t.tags.map(tag => (
+                        <span key={tag} className="ts-tag">{tag}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="ts-card-num">0{i + 1}</div>
                 </div>
+              ))}
+            </div>
 
-                <div className="ts-card-body">
-                  <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
-                  <div className="ts-tags">
-                    {t.tags.map(tag => (
-                      <span key={tag} className="ts-tag">{tag}</span>
-                    ))}
-                  </div>
-                </div>
+            {/* Controls */}
+            <div className="ts-controls">
+              <div className="ts-dots">
+                {TESTIMONIALS.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`ts-dot${i === active ? ' active' : ''}`}
+                    onClick={() => goTo(i, i > active ? 1 : -1)}
+                    aria-label={`Go to testimonial ${i + 1}`}
+                  />
+                ))}
               </div>
-            ))}
+              <div className="ts-arrows">
+                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M11 14L6 9l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next">
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
