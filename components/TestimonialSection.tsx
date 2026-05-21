@@ -150,9 +150,9 @@ export default function TestimonialSection() {
   }, []);
 
   const variants = {
-    enter: (d: number) => ({ x: d > 0 ? 60 : -60, opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit: (d: number) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
+    enter: (d: number) => ({ x: d > 0 ? 80 : -80, opacity: 0, rotateY: d > 0 ? 12 : -12, scale: 0.92 }),
+    center: { x: 0, opacity: 1, rotateY: 0, scale: 1 },
+    exit: (d: number) => ({ x: d > 0 ? -80 : 80, opacity: 0, rotateY: d > 0 ? -12 : 12, scale: 0.92 }),
   };
 
   const t = TESTIMONIALS[current];
@@ -165,7 +165,7 @@ export default function TestimonialSection() {
           <p className="section-label">Client Testimonials</p>
           <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
 
-          <div className="ts-stack-outer">
+          <div className="ts-stack-outer" style={{ perspective: '900px' }}>
             <AnimatePresence custom={dir} mode="wait">
               <motion.div
                 key={current}

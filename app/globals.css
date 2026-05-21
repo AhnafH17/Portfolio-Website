@@ -1015,7 +1015,7 @@ footer span{color:var(--accent-glow)}
     transparent 100%
   );
   background-size:250% 100%;
-  animation:tsShimmer 3.5s linear infinite;
+  animation:tsShimmer 8s linear infinite;
   -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite:xor;
   mask-composite:exclude;
