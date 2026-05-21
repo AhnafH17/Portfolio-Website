@@ -90,7 +90,7 @@ export default function HeroSection() {
       <div className="hero-content">
         <div className="hero-text">
           <h1 className="hero-name">
-            <span className="hero-greeting-line">Hi, I&apos;m</span><br />
+            <span className="hero-greeting-line">Hi, I&apos;m</span>
             <span className="gold-glow">Ahnaf Hussain</span>
           </h1>
           <p className="hero-tagline">

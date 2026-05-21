@@ -5,7 +5,7 @@ export default function AboutSection() {
         <div className="about-bio reveal">
           <p className="section-label">About Me</p>
           <h2 className="section-title">
-            <span className="accent">Technical leader by role,</span>
+            <span className="gold-glow">Technical leader by role,</span>
             <br />
             architect by craft.
           </h2>
