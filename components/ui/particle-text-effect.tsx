@@ -143,17 +143,8 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       offscreen.height = canvas.height
       const ctx2 = offscreen.getContext("2d")!
 
-      // Canvas ctx can't use CSS variables — resolve them first
-      let resolvedFont = fontFamily
-      if (fontFamily.includes('var(')) {
-        const varMatch = fontFamily.match(/var\((--[\w-]+)\)/)
-        if (varMatch) {
-          const val = getComputedStyle(document.documentElement).getPropertyValue(varMatch[1]).trim()
-          resolvedFont = val ? `${val}, ${fontFamily.replace(/var\([^)]+\),?\s*/, '')}` : fontFamily.replace(/var\([^)]+\),?\s*/, '')
-        }
-      }
       ctx2.fillStyle = "white"
-      ctx2.font = `${fontSize}px ${resolvedFont}`
+      ctx2.font = `${fontSize}px ${fontFamily}`
       ctx2.textAlign = "center"
       ctx2.textBaseline = "middle"
       ctx2.fillText(word, canvas.width / 2, canvas.height / 2)
