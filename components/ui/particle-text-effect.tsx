@@ -162,22 +162,10 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
         const x = (idx / 4) % canvas.width
         const y = Math.floor(idx / 4 / canvas.width)
 
-        let p: Particle
-        if (particleIndex < particles.length) {
-          p = particles[particleIndex]
-          p.isKilled = false
-          particleIndex++
-        } else {
-          p = new Particle()
-          const spawn = randomPosOnEdge(canvas.width / 2, canvas.height / 2, (canvas.width + canvas.height) / 2)
-          p.pos.x = spawn.x
-          p.pos.y = spawn.y
-          p.maxSpeed = Math.random() * 5 + 5
-          p.maxForce = p.maxSpeed * 0.08
-          p.particleSize = Math.random() * 6 + 6
-          p.colorBlendRate = Math.random() * 0.025 + 0.015
-          particles.push(p)
-        }
+        if (particleIndex >= particles.length) continue
+        const p = particles[particleIndex]
+        p.isKilled = false
+        particleIndex++
 
         p.startColor = {
           r: p.startColor.r + (p.targetColor.r - p.startColor.r) * p.colorWeight,
@@ -215,6 +203,37 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       // Set once — resizing mid-animation clears canvas and causes lag
       canvas.width = canvas.offsetWidth || window.innerWidth
       canvas.height = canvas.offsetHeight || window.innerHeight
+
+      // Pre-measure all words to find the max particle count needed
+      const maxParticles = words.reduce((max, word) => {
+        const off = document.createElement('canvas')
+        off.width = canvas.width
+        off.height = canvas.height
+        const c = off.getContext('2d')!
+        c.fillStyle = 'white'
+        c.font = `${fontSize}px ${fontFamily}`
+        c.textAlign = 'center'
+        c.textBaseline = 'middle'
+        c.fillText(word, canvas.width / 2, canvas.height / 2)
+        const px = c.getImageData(0, 0, canvas.width, canvas.height).data
+        let count = 0
+        for (let i = 0; i < px.length; i += 6 * 4) if (px[i + 3] > 0) count++
+        return Math.max(max, count)
+      }, 0)
+
+      // Pre-spawn all particles randomly across the canvas so none fly in from edges
+      const particles = particlesRef.current
+      for (let i = 0; i < maxParticles; i++) {
+        const p = new Particle()
+        p.pos.x = Math.random() * canvas.width
+        p.pos.y = Math.random() * canvas.height
+        p.maxSpeed = Math.random() * 5 + 5
+        p.maxForce = p.maxSpeed * 0.08
+        p.particleSize = Math.random() * 6 + 6
+        p.colorBlendRate = Math.random() * 0.025 + 0.015
+        p.isKilled = true // start killed so they don't render before first word
+        particles.push(p)
+      }
 
       showWord(words[0], canvas)
       lastAdvanceRef.current = performance.now()
