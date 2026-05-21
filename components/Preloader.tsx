@@ -84,7 +84,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             ref={particleRef}
             words={WORDS}
             autoAdvance
-            intervalMs={2600}
+            intervalMs={1600}
             onCycleComplete={triggerExit}
             fontSize={120}
           />

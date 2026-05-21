@@ -251,12 +251,15 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
         // Auto-advance words on interval
         if (autoAdvance && now - lastAdvanceRef.current >= intervalMs) {
           lastAdvanceRef.current = now
-          const nextIdx = (wordIndexRef.current + 1) % words.length
-          wordIndexRef.current = nextIdx
-          showWord(words[nextIdx], canvas)
-          onWordCycle?.(nextIdx, words[nextIdx])
-          if (nextIdx === words.length - 1) {
-            onCycleComplete?.()
+          const nextIdx = wordIndexRef.current + 1
+          if (nextIdx < words.length) {
+            wordIndexRef.current = nextIdx
+            showWord(words[nextIdx], canvas)
+            onWordCycle?.(nextIdx, words[nextIdx])
+            // Fire onCycleComplete after last word has had time to form
+            if (nextIdx === words.length - 1) {
+              setTimeout(() => onCycleComplete?.(), intervalMs * 0.7)
+            }
           }
         }
 
