@@ -33,7 +33,7 @@ export default function Home() {
   return (
     <>
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
-      <div ref={siteRef} style={{ opacity: preloaderDone ? undefined : 0, transformOrigin: 'center top' }}>
+      <div ref={siteRef} style={{ opacity: preloaderDone ? undefined : 0, transformOrigin: 'center center' }}>
         <LenisProvider />
         <CustomCursor />
         <Navbar />

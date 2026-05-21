@@ -14,15 +14,15 @@ class Particle {
   target: Vector2D = { x: 0, y: 0 }
 
   closeEnoughTarget = 100
-  maxSpeed = 8.0
-  maxForce = 0.96
+  maxSpeed = 5.0
+  maxForce = 0.5
   particleSize = 10
   isKilled = false
 
   startColor = { r: 0, g: 0, b: 0 }
   targetColor = { r: 0, g: 0, b: 0 }
   colorWeight = 0
-  colorBlendRate = 0.04
+  colorBlendRate = 0.025
 
   move() {
     let proximityMult = 1
@@ -143,8 +143,17 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       offscreen.height = canvas.height
       const ctx2 = offscreen.getContext("2d")!
 
+      // Canvas ctx can't use CSS variables — resolve them first
+      let resolvedFont = fontFamily
+      if (fontFamily.includes('var(')) {
+        const varMatch = fontFamily.match(/var\((--[\w-]+)\)/)
+        if (varMatch) {
+          const val = getComputedStyle(document.documentElement).getPropertyValue(varMatch[1]).trim()
+          resolvedFont = val ? `${val}, ${fontFamily.replace(/var\([^)]+\),?\s*/, '')}` : fontFamily.replace(/var\([^)]+\),?\s*/, '')
+        }
+      }
       ctx2.fillStyle = "white"
-      ctx2.font = `bold ${fontSize}px ${fontFamily}`
+      ctx2.font = `${fontSize}px ${resolvedFont}`
       ctx2.textAlign = "center"
       ctx2.textBaseline = "middle"
       ctx2.fillText(word, canvas.width / 2, canvas.height / 2)
@@ -179,10 +188,10 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
           const spawn = randomPosOnEdge(canvas.width / 2, canvas.height / 2, (canvas.width + canvas.height) / 2)
           p.pos.x = spawn.x
           p.pos.y = spawn.y
-          p.maxSpeed = Math.random() * 8 + 8
-          p.maxForce = p.maxSpeed * 0.12
+          p.maxSpeed = Math.random() * 5 + 5
+          p.maxForce = p.maxSpeed * 0.08
           p.particleSize = Math.random() * 6 + 6
-          p.colorBlendRate = Math.random() * 0.04 + 0.02
+          p.colorBlendRate = Math.random() * 0.025 + 0.015
           particles.push(p)
         }
 

@@ -93,7 +93,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             autoAdvance
             intervalMs={1600}
             onCycleComplete={triggerExit}
-            fontSize={120}
+            fontSize={130}
+            fontFamily="var(--font-preloader), 'Bebas Neue', sans-serif"
           />
         )}
       </div>
