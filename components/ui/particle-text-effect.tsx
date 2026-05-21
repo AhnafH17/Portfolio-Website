@@ -14,15 +14,15 @@ class Particle {
   target: Vector2D = { x: 0, y: 0 }
 
   closeEnoughTarget = 100
-  maxSpeed = 1.0
-  maxForce = 0.1
+  maxSpeed = 8.0
+  maxForce = 0.96
   particleSize = 10
   isKilled = false
 
   startColor = { r: 0, g: 0, b: 0 }
   targetColor = { r: 0, g: 0, b: 0 }
   colorWeight = 0
-  colorBlendRate = 0.01
+  colorBlendRate = 0.04
 
   move() {
     let proximityMult = 1
@@ -179,10 +179,10 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
           const spawn = randomPosOnEdge(canvas.width / 2, canvas.height / 2, (canvas.width + canvas.height) / 2)
           p.pos.x = spawn.x
           p.pos.y = spawn.y
-          p.maxSpeed = Math.random() * 6 + 4
-          p.maxForce = p.maxSpeed * 0.05
+          p.maxSpeed = Math.random() * 8 + 8
+          p.maxForce = p.maxSpeed * 0.12
           p.particleSize = Math.random() * 6 + 6
-          p.colorBlendRate = Math.random() * 0.0275 + 0.0025
+          p.colorBlendRate = Math.random() * 0.04 + 0.02
           particles.push(p)
         }
 
