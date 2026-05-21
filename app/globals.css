@@ -316,28 +316,15 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-name{font-family:'Sddystopian',var(--font-display);font-size:clamp(3.8rem,8vw,8rem);font-weight:400;line-height:1.0;letter-spacing:0.01em;margin-bottom:1.4rem;opacity:0;transform:translateY(30px);animation:fadeUp .8s ease .5s forwards}
 .hero-name .accent{color:var(--accent-glow)}
 .accent{color:var(--accent-glow)}
-/* Gold moving inner-glow text highlight */
+/* Gold moving glow — text-shadow only, zero background box */
 .gold-glow{
   color:var(--accent-glow);
-  display:inline;
-  -webkit-box-decoration-break:clone;
-  box-decoration-break:clone;
-  background:
-    radial-gradient(ellipse 55% 140% at 0% 50%,
-      rgba(201,168,76,0.22) 0%,
-      rgba(201,168,76,0.07) 50%,
-      transparent 80%
-    );
-  background-size:220% 100%;
-  background-position:0% 0%;
   animation:goldGlowMove 3s ease-in-out infinite;
-  border-radius:4px;
-  padding:0 0.08em;
 }
 @keyframes goldGlowMove{
-  0%  { background-position: 0%   0%; }
-  50% { background-position: 100% 0%; }
-  100%{ background-position: 0%   0%; }
+  0%  { text-shadow: -8px 0 18px rgba(201,168,76,0.0), 0 0 12px rgba(201,168,76,0.55); }
+  50% { text-shadow:  8px 0 22px rgba(201,168,76,0.7), 0 0 8px  rgba(201,168,76,0.2); }
+  100%{ text-shadow: -8px 0 18px rgba(201,168,76,0.0), 0 0 12px rgba(201,168,76,0.55); }
 }
 /* hero greeting line */
 .hero-greeting-line{
