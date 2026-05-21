@@ -81,7 +81,7 @@ function GlobeViz() {
           .width(W)
           .height(H)
           .backgroundColor('rgba(0,0,0,0)')
-          .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-day.jpg')
+          .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
           .atmosphereColor('rgba(220,180,60,0.85)')
           .atmosphereAltitude(0.22)
           .arcsData(ARCS)

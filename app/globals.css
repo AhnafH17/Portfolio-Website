@@ -1119,7 +1119,7 @@ footer span{color:var(--accent-glow)}
   height:100%;
   position:relative;
   z-index:1;
-  clip-path:circle(48% at 50% 50%);
+  filter:sepia(0.9) hue-rotate(5deg) saturate(1.4) brightness(0.85);
 }
 .ts-globe-label{
   position:absolute;
