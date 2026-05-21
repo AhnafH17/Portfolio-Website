@@ -93,14 +93,7 @@ function randomPosOnEdge(cx: number, cy: number, mag: number): Vector2D {
   return { x: cx + Math.cos(angle) * mag, y: cy + Math.sin(angle) * mag }
 }
 
-// Gold color palette matching portfolio
-const GOLD_COLORS = [
-  { r: 201, g: 168, b: 76 },
-  { r: 226, g: 201, b: 115 },
-  { r: 255, g: 232, b: 140 },
-  { r: 180, g: 130, b: 48 },
-  { r: 255, g: 248, b: 200 },
-]
+const GOLD = { r: 201, g: 168, b: 76 }
 
 export interface ParticleTextHandle {
   nextWord: (word: string) => void
@@ -151,7 +144,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
 
       const imageData = ctx2.getImageData(0, 0, canvas.width, canvas.height)
       const pixels = imageData.data
-      const newColor = GOLD_COLORS[Math.floor(Math.random() * GOLD_COLORS.length)]
+      const newColor = GOLD
 
       const particles = particlesRef.current
       let particleIndex = 0
@@ -219,14 +212,9 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       const canvas = canvasRef.current
       if (!canvas) return
 
-      // Fill the full container (viewport when used as preloader)
-      const setSize = () => {
-        canvas.width = canvas.offsetWidth || window.innerWidth
-        canvas.height = canvas.offsetHeight || window.innerHeight
-      }
-      setSize()
-      const ro = new ResizeObserver(setSize)
-      ro.observe(canvas.parentElement || canvas)
+      // Set once — resizing mid-animation clears canvas and causes lag
+      canvas.width = canvas.offsetWidth || window.innerWidth
+      canvas.height = canvas.offsetHeight || window.innerHeight
 
       showWord(words[0], canvas)
       lastAdvanceRef.current = performance.now()
@@ -271,7 +259,6 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
 
       return () => {
         cancelAnimationFrame(animationRef.current)
-        ro.disconnect()
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
