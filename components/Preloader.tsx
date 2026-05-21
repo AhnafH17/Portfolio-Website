@@ -1,194 +1,169 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { ParticleTextEffect, ParticleTextHandle } from '@/components/ui/particle-text-effect';
 
 interface PreloaderProps {
   onComplete: () => void;
 }
 
+const WORDS = ['AHNAF', 'HUSSAIN', 'DEVELOPER'];
+
 export default function Preloader({ onComplete }: PreloaderProps) {
-  const rootRef     = useRef<HTMLDivElement>(null);
-  const leftRef     = useRef<HTMLDivElement>(null);
-  const rightRef    = useRef<HTMLDivElement>(null);
-  const textRef     = useRef<HTMLDivElement>(null);
-  const progressRef = useRef<HTMLDivElement>(null);
-  const fillRef     = useRef<HTMLDivElement>(null);
-  const labelRef    = useRef<HTMLSpanElement>(null);
+  const rootRef      = useRef<HTMLDivElement>(null);
+  const canvasWrapRef = useRef<HTMLDivElement>(null);
+  const particleRef  = useRef<ParticleTextHandle>(null);
+  const labelRef     = useRef<HTMLSpanElement>(null);
+  const dotRefs      = [useRef<HTMLSpanElement>(null), useRef<HTMLSpanElement>(null), useRef<HTMLSpanElement>(null)];
+  const [ready, setReady] = useState(false);
+  // Track which word is showing so we can highlight the corresponding dot
+  const [activeWord, setActiveWord] = useState(0);
+  const exitStarted = useRef(false);
+
+  // Mount canvas only after first paint (avoids SSR flash)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  const triggerExit = () => {
+    if (exitStarted.current) return;
+    exitStarted.current = true;
+
+    const root       = rootRef.current!;
+    const canvasWrap = canvasWrapRef.current!;
+    const label      = labelRef.current;
+
+    // Kill any remaining particles before zoom
+    particleRef.current?.killAll();
+
+    const tl = gsap.timeline();
+
+    // 1. Fade out the label and dots
+    tl.to([label, ...dotRefs.map(r => r.current)], {
+      opacity: 0, duration: 0.3, ease: 'power2.in',
+    }, 0);
+
+    // 2. Scale the canvas wrapper UP — zoom out into the site
+    //    simultaneously fade it so the site bleeds through
+    tl.to(canvasWrap, {
+      scale: 1.35,
+      opacity: 0,
+      duration: 0.9,
+      ease: 'power3.in',
+    }, 0.2);
+
+    // 3. The root itself punches out with a radial-clip reveal
+    //    We animate a CSS custom property driving clip-path circle
+    gsap.set(root, { '--clip-r': '150%' });
+    tl.to(root, {
+      opacity: 0,
+      duration: 0.5,
+      ease: 'power2.out',
+      onComplete: () => {
+        document.body.style.overflow = '';
+        onComplete();
+      },
+    }, 0.7);
+  };
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
+  }, []);
 
-    const root     = rootRef.current!;
-    const leftPanel  = leftRef.current!;
-    const rightPanel = rightRef.current!;
-    const textEl   = textRef.current!;
-    const fill     = fillRef.current!;
-    const label    = labelRef.current!;
-    const progress = progressRef.current!;
-
-    const words = ['Ahnaf', 'Hussain'];
-
-    // ── build char spans ──────────────────────────────────────────
-    const wordEls: HTMLSpanElement[] = [];
-    words.forEach((word, wi) => {
-      const wordWrap = document.createElement('span');
-      wordWrap.style.cssText = 'display:inline-block;';
-
-      word.split('').forEach(ch => {
-        const cw = document.createElement('span');
-        cw.style.cssText = 'display:inline-block;overflow:hidden;vertical-align:top;';
-        const cs = document.createElement('span');
-        cs.dataset.word = String(wi);
-        cs.textContent = ch;
-        cs.style.cssText = 'display:inline-block;transform:translateY(115%);will-change:transform;';
-        cw.appendChild(cs);
-        wordWrap.appendChild(cw);
+  // Animate dot indicator when word changes
+  useEffect(() => {
+    dotRefs.forEach((ref, i) => {
+      if (!ref.current) return;
+      gsap.to(ref.current, {
+        scale: i === activeWord ? 1.6 : 1,
+        opacity: i === activeWord ? 1 : 0.3,
+        duration: 0.25,
+        ease: 'power2.out',
       });
-
-      textEl.appendChild(wordWrap);
-      wordEls.push(wordWrap);
-
-      if (wi < words.length - 1) {
-        const sp = document.createElement('span');
-        sp.className = 'pre-sp';
-        sp.style.cssText = 'display:inline-block;width:0.38em;';
-        textEl.appendChild(sp);
-      }
     });
-
-    textEl.style.visibility = 'visible';
-
-    // progress ticks to 75%
-    const progTween = gsap.to(fill, { width: '75%', duration: 2.2, ease: 'power1.inOut' });
-
-    function run() {
-      progTween.kill();
-      gsap.to(fill, { width: '100%', duration: 0.3, ease: 'power2.out' });
-      gsap.to([label, progress], { opacity: 0, duration: 0.3, delay: 0.35 });
-
-      const allInner = Array.from(textEl.querySelectorAll<HTMLSpanElement>('span > span[data-word]'));
-      const g0 = allInner.filter(s => s.dataset.word === '0');
-      const g1 = allInner.filter(s => s.dataset.word === '1');
-      const spaceEl = textEl.querySelector<HTMLSpanElement>('.pre-sp')!;
-
-      // Measure gap centre — this is where the curtains meet
-      const spaceRect = spaceEl.getBoundingClientRect();
-      const gapCX     = spaceRect.left + spaceRect.width / 2;
-      const vw        = window.innerWidth;
-      const vh        = window.innerHeight;
-
-      // Set left panel to cover left half up to gap centre
-      // Set right panel to cover right half from gap centre
-      gsap.set(leftPanel,  { width: gapCX, left: 0 });
-      gsap.set(rightPanel, { width: vw - gapCX, right: 0 });
-
-      const tl = gsap.timeline();
-
-      // 1. chars rise in
-      tl.to(g0, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.15)
-        .to(g1, { y: '0%', duration: 0.5, ease: 'power3.out', stagger: 0.04 }, 0.24);
-
-      // 2. curtains open + words follow them outward
-      const openDur = 1.0;
-      tl.to(leftPanel,  { x: -gapCX,        duration: openDur, ease: 'power4.inOut' }, '>+0.45');
-      tl.to(rightPanel, { x: vw - gapCX,    duration: openDur, ease: 'power4.inOut' }, '<');
-      tl.to(wordEls[0], { x: -gapCX * 0.6,  duration: openDur, ease: 'power4.inOut' }, '<');
-      tl.to(wordEls[1], { x:  (vw - gapCX) * 0.6, duration: openDur, ease: 'power4.inOut' }, '<');
-      tl.to(spaceEl,    { width: 0,          duration: openDur, ease: 'power4.inOut' }, '<');
-
-      // 3. fade text
-      tl.to(textEl, { opacity: 0, duration: 0.3 }, '<+0.3');
-
-      // 4. done — remove root
-      tl.call(() => {
-        gsap.to(root, {
-          opacity: 0, duration: 0.3,
-          onComplete: () => {
-            document.body.style.overflow = '';
-            onComplete();
-          },
-        });
-      }, [], '>-0.05');
-    }
-
-    document.fonts.ready.then(() => setTimeout(run, 250));
-  }, [onComplete]);
+  }, [activeWord]);
 
   return (
     <div
       ref={rootRef}
-      style={{ position: 'fixed', inset: 0, zIndex: 99999, overflow: 'hidden' }}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 99999,
+        background: '#080603',
+        display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        overflow: 'hidden',
+      }}
     >
-      {/* LEFT curtain */}
-      <div
-        ref={leftRef}
-        style={{
-          position: 'absolute', top: 0, bottom: 0, left: 0,
-          width: '50vw',
-          background: '#0a0804',
-          zIndex: 1,
-        }}
-      />
-      {/* RIGHT curtain */}
-      <div
-        ref={rightRef}
-        style={{
-          position: 'absolute', top: 0, bottom: 0, right: 0,
-          width: '50vw',
-          background: '#0a0804',
-          zIndex: 1,
-        }}
-      />
+      {/* Ambient gold glow behind canvas */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(201,168,76,0.07) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
 
-      {/* text — above curtains */}
+      {/* Canvas wrapper — this is what zooms */}
       <div
+        ref={canvasWrapRef}
         style={{
-          position: 'absolute', inset: 0, zIndex: 2,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: '100%', maxWidth: 900,
+          height: 360,
+          position: 'relative',
+          transformOrigin: 'center center',
         }}
       >
-        <div
-          ref={textRef}
-          style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 'clamp(36px, 6.5vw, 90px)',
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            textTransform: 'uppercase',
-            color: '#e2c973',
-            whiteSpace: 'nowrap',
-            visibility: 'hidden',
-            userSelect: 'none',
-          }}
-        />
+        {ready && (
+          <ParticleTextEffect
+            ref={particleRef}
+            words={WORDS}
+            autoAdvance
+            intervalMs={2600}
+            onWordCycle={(idx) => setActiveWord(idx)}
+            onCycleComplete={triggerExit}
+            fontSize={120}
+          />
+        )}
       </div>
 
-      {/* progress bar */}
-      <div
-        ref={progressRef}
+      {/* Word dots indicator */}
+      <div style={{
+        display: 'flex', gap: 10, marginTop: 32,
+        alignItems: 'center',
+      }}>
+        {WORDS.map((_, i) => (
+          <span
+            key={i}
+            ref={dotRefs[i]}
+            style={{
+              display: 'inline-block',
+              width: 6, height: 6,
+              borderRadius: '50%',
+              background: '#c9a84c',
+              opacity: i === 0 ? 1 : 0.3,
+              transform: i === 0 ? 'scale(1.6)' : 'scale(1)',
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Label */}
+      <span
+        ref={labelRef}
         style={{
-          position: 'absolute', bottom: 48, left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-          zIndex: 3,
+          marginTop: 20,
+          fontFamily: 'var(--font-body)',
+          fontSize: 10,
+          fontWeight: 300,
+          letterSpacing: '0.22em',
+          textTransform: 'uppercase',
+          color: 'rgba(201,168,76,0.4)',
+          userSelect: 'none',
         }}
       >
-        <div style={{ width: 120, height: 1, background: 'rgba(201,168,76,0.15)', overflow: 'hidden' }}>
-          <div ref={fillRef} style={{ height: '100%', width: '0%', background: '#c9a84c' }} />
-        </div>
-        <span
-          ref={labelRef}
-          style={{
-            fontFamily: 'var(--font-body)', fontSize: 10, fontWeight: 300,
-            letterSpacing: '0.22em', textTransform: 'uppercase',
-            color: 'rgba(201,168,76,0.45)',
-          }}
-        >
-          Loading
-        </span>
-      </div>
+        Portfolio
+      </span>
     </div>
   );
 }
