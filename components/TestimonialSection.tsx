@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { motion, PanInfo, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -8,28 +9,36 @@ gsap.registerPlugin(ScrollTrigger);
 
 const TESTIMONIALS = [
   {
+    id: 1,
     company: 'CPC Clinics',
     role: 'Healthcare Provider',
     quote: 'Ahnaf rebuilt our entire web presence from the ground up. The site now ranks on page one for every key search term and our patient inquiry volume has more than doubled since launch.',
     tags: ['WordPress', 'SEO', 'Performance'],
+    initials: 'CC',
   },
   {
+    id: 2,
     company: 'Budget Promotion',
     role: 'Promotional Products',
     quote: 'The Shopify build was exactly what we needed. Custom product configurator, full Printavo integration, checkout optimized. Our conversion rate jumped considerably within the first month.',
     tags: ['Shopify', 'Integration', 'E-Commerce'],
+    initials: 'BP',
   },
   {
+    id: 3,
     company: 'LeadCraft IT Solutions',
     role: 'BPO & ITES Company',
     quote: 'Delivered a world-class website with WebGL shaders, smooth animations, and a globe visualization that genuinely impressed our US clients. Exactly the premium feel we were going for.',
     tags: ['Next.js', 'WebGL', 'GSAP'],
+    initials: 'LC',
   },
   {
+    id: 4,
     company: 'AurixLab',
     role: 'Digital Agency',
     quote: 'Ahnaf leads our entire development team with precision. He set the technical direction, built our internal tooling, and consistently delivers at a level that makes every client renew.',
     tags: ['Leadership', 'SaaS', 'Full-Stack'],
+    initials: 'AL',
   },
 ];
 
@@ -132,50 +141,34 @@ function GlobeViz() {
 }
 
 export default function TestimonialSection() {
-  const [active, setActive] = useState(0);
-  const [prev, setPrev] = useState<number | null>(null);
+  const [current, setCurrent] = useState(0);
+  const [exitX, setExitX] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
-  const isAnimating = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const goTo = useCallback((next: number, dir: 1 | -1) => {
-    if (isAnimating.current || next === active) return;
-    isAnimating.current = true;
+  const advance = useCallback((dir: 1 | -1 = 1) => {
+    setExitX(dir * -300);
+    setTimeout(() => {
+      setCurrent(prev => (prev + (dir === 1 ? 1 : TESTIMONIALS.length - 1)) % TESTIMONIALS.length);
+      setExitX(0);
+    }, 220);
+  }, []);
 
-    const currentEl = slideRefs.current[active];
-    const nextEl = slideRefs.current[next];
-    if (!currentEl || !nextEl) { isAnimating.current = false; return; }
+  const handleDragEnd = useCallback((_: any, info: PanInfo) => {
+    setDragging(false);
+    if (Math.abs(info.offset.x) > 80) {
+      advance(info.offset.x < 0 ? 1 : -1);
+    }
+  }, [advance]);
 
-    // Make next slide visible but off-screen
-    gsap.set(nextEl, { opacity: 0, x: dir * 55, visibility: 'visible' });
-
-    const tl = gsap.timeline({
-      onComplete: () => {
-        gsap.set(currentEl, { visibility: 'hidden', opacity: 0, x: 0 });
-        gsap.set(nextEl, { x: 0 });
-        setActive(next);
-        setPrev(null);
-        isAnimating.current = false;
-      },
-    });
-
-    tl.to(currentEl, { opacity: 0, x: -dir * 40, duration: 0.32, ease: 'power2.in' }, 0)
-      .to(nextEl,    { opacity: 1, x: 0,          duration: 0.42, ease: 'power2.out' }, 0.18);
-  }, [active]);
-
-  const advance = useCallback((dir: 1 | -1) => {
-    const next = (active + dir + TESTIMONIALS.length) % TESTIMONIALS.length;
-    goTo(next, dir);
-  }, [active, goTo]);
-
-  // Auto-advance every 4.5s
+  // Auto-advance
   useEffect(() => {
     timerRef.current = setTimeout(() => advance(1), 4500);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [active, advance]);
+  }, [current, advance]);
 
-  // Entrance animations
+  // Entrance
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -195,59 +188,85 @@ export default function TestimonialSection() {
     <section ref={sectionRef} className="ts-section">
       <div className="ts-wrap">
 
-        {/* LEFT — slider */}
+        {/* LEFT — stacked card carousel */}
         <div className="ts-left">
           <p className="section-label">Client Testimonials</p>
           <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
 
-          <div className="ts-slider-wrap">
-            <div className="ts-slider">
-              {TESTIMONIALS.map((t, i) => (
-                <div
-                  key={i}
-                  ref={el => { slideRefs.current[i] = el; }}
-                  className="ts-slide"
-                  style={{
-                    position: i === active ? 'relative' : 'absolute',
-                    top: 0, left: 0, width: '100%',
-                    visibility: i === active ? 'visible' : 'hidden',
-                    opacity: i === active ? 1 : 0,
-                  }}
-                >
-                  <div className="ts-slide-inner">
-                    <div className="ts-slide-top">
-                      <span className="ts-company">{t.company}</span>
-                      <span className="ts-role">{t.role}</span>
+          <div className="ts-stack-outer">
+            {/* Shimmer ring */}
+            <div className="ts-shimmer-ring" />
+
+            <div className="ts-stack">
+              {[2, 1, 0].map(offset => {
+                const idx = (current + offset) % TESTIMONIALS.length;
+                const t = TESTIMONIALS[idx];
+                const isTop = offset === 0;
+
+                return (
+                  <motion.div
+                    key={`${current}-${offset}`}
+                    className="ts-stack-card"
+                    style={{ zIndex: 3 - offset }}
+                    drag={isTop ? 'x' : false}
+                    dragConstraints={{ left: 0, right: 0 }}
+                    dragElastic={0.6}
+                    onDragStart={() => setDragging(true)}
+                    onDragEnd={handleDragEnd}
+                    initial={{ scale: 0.94, opacity: 0, y: offset * 10, x: 0 }}
+                    animate={{
+                      scale: isTop ? 1 : offset === 1 ? 0.96 : 0.92,
+                      opacity: isTop ? 1 : offset === 1 ? 0.55 : 0.28,
+                      y: offset * 12,
+                      x: isTop ? exitX : 0,
+                      rotate: isTop ? exitX / 22 : offset === 1 ? -1.5 : -3,
+                    }}
+                    transition={{ type: 'spring', stiffness: 280, damping: 22 }}
+                    whileDrag={{ cursor: 'grabbing' }}
+                  >
+                    {/* Card shimmer border */}
+                    <div className="ts-card-shimmer" />
+
+                    <div className="ts-card-content">
+                      <div className="ts-card-top">
+                        <div className="ts-avatar">{t.initials}</div>
+                        <div className="ts-card-meta">
+                          <span className="ts-company">{t.company}</span>
+                          <span className="ts-role">{t.role}</span>
+                        </div>
+                        <span className="ts-card-num">0{idx + 1}</span>
+                      </div>
+                      <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
+                      <div className="ts-tags">
+                        {t.tags.map(tag => (
+                          <span key={tag} className="ts-tag">{tag}</span>
+                        ))}
+                      </div>
                     </div>
-                    <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
-                    <div className="ts-tags">
-                      {t.tags.map(tag => (
-                        <span key={tag} className="ts-tag">{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </motion.div>
+                );
+              })}
             </div>
 
+            {/* Controls */}
             <div className="ts-controls">
               <div className="ts-dots">
                 {TESTIMONIALS.map((_, i) => (
                   <button
                     key={i}
-                    className={`ts-dot${i === active ? ' active' : ''}`}
-                    onClick={() => goTo(i, i > active ? 1 : -1)}
+                    className={`ts-dot${i === current ? ' active' : ''}`}
+                    onClick={() => advance(i > current ? 1 : -1)}
                     aria-label={`Testimonial ${i + 1}`}
                   />
                 ))}
               </div>
               <div className="ts-arrows">
-                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous testimonial">
+                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next testimonial">
+                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
