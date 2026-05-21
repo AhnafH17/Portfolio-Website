@@ -219,8 +219,14 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       const canvas = canvasRef.current
       if (!canvas) return
 
-      canvas.width = 1000
-      canvas.height = 400
+      // Fill the full container (viewport when used as preloader)
+      const setSize = () => {
+        canvas.width = canvas.offsetWidth || window.innerWidth
+        canvas.height = canvas.offsetHeight || window.innerHeight
+      }
+      setSize()
+      const ro = new ResizeObserver(setSize)
+      ro.observe(canvas.parentElement || canvas)
 
       showWord(words[0], canvas)
       lastAdvanceRef.current = performance.now()
@@ -262,6 +268,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
 
       return () => {
         cancelAnimationFrame(animationRef.current)
+        ro.disconnect()
       }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
@@ -269,7 +276,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
     return (
       <canvas
         ref={canvasRef}
-        style={{ width: "100%", height: "100%", display: "block" }}
+        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
         aria-hidden="true"
       />
     )
