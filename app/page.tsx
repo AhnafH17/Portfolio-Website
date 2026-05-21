@@ -19,44 +19,27 @@ const Modal = lazy(() => import('@/components/Modal'));
 export default function Home() {
   const [activeModal, setActiveModal] = useState<ProjectKey | null>(null);
   const [preloaderDone, setPreloaderDone] = useState(false);
-  // After animation completes we release the fixed wrapper
-  const [transitionDone, setTransitionDone] = useState(false);
   const siteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!preloaderDone || !siteRef.current) return;
-
     gsap.fromTo(
       siteRef.current,
-      { opacity: 0, scale: 1.1 },
-      {
-        opacity: 1,
-        scale: 1,
-        duration: 0.8,
-        ease: 'power3.out',
-        onComplete: () => setTransitionDone(true),
-      }
+      { opacity: 0, scale: 1.08 },
+      { opacity: 1, scale: 1, duration: 0.85, ease: 'power3.out' }
     );
   }, [preloaderDone]);
-
-  // While transitioning: fixed+overflow-hidden so scale anchor = viewport center
-  // After: back to normal flow
-  const wrapStyle: React.CSSProperties = !preloaderDone
-    ? { opacity: 0 }
-    : !transitionDone
-    ? {
-        position: 'fixed',
-        inset: 0,
-        overflowY: 'hidden',
-        transformOrigin: '50vw 50vh',
-        zIndex: 1,
-      }
-    : {};
 
   return (
     <>
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
-      <div ref={siteRef} style={wrapStyle}>
+      <div
+        ref={siteRef}
+        style={{
+          opacity: preloaderDone ? undefined : 0,
+          transformOrigin: '50% 50vh',
+        }}
+      >
         <LenisProvider />
         <CustomCursor />
         <Navbar />

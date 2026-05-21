@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Syne, DM_Sans, Bebas_Neue } from 'next/font/google';
+import { Syne, DM_Sans, Anton } from 'next/font/google';
 import './globals.css';
 
 const syne = Syne({
@@ -9,7 +9,7 @@ const syne = Syne({
   display: 'swap',
 });
 
-const bebasNeue = Bebas_Neue({
+const anton = Anton({
   subsets: ['latin'],
   weight: ['400'],
   variable: '--font-preloader',
@@ -99,7 +99,7 @@ const schemaOrg = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmSans.variable} ${bebasNeue.variable}`}>
+    <html lang="en" className={`${syne.variable} ${dmSans.variable} ${anton.variable}`}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />

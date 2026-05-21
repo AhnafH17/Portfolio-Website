@@ -1,11 +1,3 @@
-@font-face {
-  font-family: 'Distruction';
-  src: url('/fonts/Distruction.ttf') format('truetype'),
-       url('/fonts/Distruction.woff2') format('woff2');
-  font-weight: 400;
-  font-display: swap;
-}
-
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 
 :root{
