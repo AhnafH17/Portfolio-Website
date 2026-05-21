@@ -34,19 +34,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
     particleRef.current?.killAll();
 
-    const tl = gsap.timeline({
-      onComplete: () => {
-        // Fully restore scroll before removing preloader
-        document.body.style.overflow = '';
-        window.scrollTo(0, 0);
-        if (window.__lenis) {
-          window.__lenis.scrollTo(0, { immediate: true });
-          window.__lenis.start();
-        }
-        setMounted(false);
-        onComplete();
-      },
-    });
+    const tl = gsap.timeline();
 
     // Canvas zooms and fades
     tl.to(canvasWrapRef.current, {
@@ -56,12 +44,24 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       ease: 'power3.in',
     }, 0);
 
-    // Root fades out slightly after
+    // Root fades out
     tl.to(rootRef.current, {
       opacity: 0,
       duration: 0.4,
       ease: 'power2.out',
-    }, 0.5);
+      // Fire onComplete early — site starts fading in while preloader is still fading out
+      onComplete: () => {
+        document.body.style.overflow = '';
+        window.scrollTo(0, 0);
+        if (window.__lenis) {
+          window.__lenis.scrollTo(0, { immediate: true });
+          window.__lenis.start();
+        }
+        onComplete();
+        // Unmount after site is already visible
+        setTimeout(() => setMounted(false), 100);
+      },
+    }, 0.45);
   };
 
   if (!mounted) return null;
