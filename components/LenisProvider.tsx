@@ -20,6 +20,9 @@ export default function LenisProvider() {
 
     window.__lenis = lenis;
 
+    // Start stopped — Preloader will call .start() when it exits
+    lenis.stop();
+
     // Only dispatch scroll when actually scrolling (not every rAF tick)
     let scrolling = false;
     let scrollTimer: ReturnType<typeof setTimeout>;

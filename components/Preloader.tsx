@@ -15,17 +15,17 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const particleRef   = useRef<ParticleTextHandle>(null);
   const [ready, setReady] = useState(false);
+  const [mounted, setMounted] = useState(true);
   const exitStarted   = useRef(false);
-
-  // Mount canvas after first paint to avoid SSR mismatch
-  useEffect(() => {
-    const id = requestAnimationFrame(() => setReady(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
+    // Stop Lenis while preloader is running
+    if (window.__lenis) window.__lenis.stop();
+
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
   }, []);
 
   const triggerExit = () => {
@@ -34,27 +34,37 @@ export default function Preloader({ onComplete }: PreloaderProps) {
 
     particleRef.current?.killAll();
 
-    const tl = gsap.timeline();
+    const tl = gsap.timeline({
+      onComplete: () => {
+        // Fully restore scroll before removing preloader
+        document.body.style.overflow = '';
+        window.scrollTo(0, 0);
+        if (window.__lenis) {
+          window.__lenis.scrollTo(0, { immediate: true });
+          window.__lenis.start();
+        }
+        setMounted(false);
+        onComplete();
+      },
+    });
 
-    // Canvas zooms up and fades — site bleeds through
+    // Canvas zooms and fades
     tl.to(canvasWrapRef.current, {
       scale: 1.4,
       opacity: 0,
-      duration: 1.0,
+      duration: 0.85,
       ease: 'power3.in',
     }, 0);
 
-    // Root fades away
+    // Root fades out slightly after
     tl.to(rootRef.current, {
       opacity: 0,
-      duration: 0.45,
+      duration: 0.4,
       ease: 'power2.out',
-      onComplete: () => {
-        document.body.style.overflow = '';
-        onComplete();
-      },
-    }, 0.6);
+    }, 0.5);
   };
+
+  if (!mounted) return null;
 
   return (
     <div
@@ -65,19 +75,16 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient radial glow */}
+      {/* Ambient glow */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 70%)',
       }} />
 
-      {/* Canvas fills the full screen */}
+      {/* Canvas fills full screen */}
       <div
         ref={canvasWrapRef}
-        style={{
-          position: 'absolute', inset: 0,
-          transformOrigin: 'center center',
-        }}
+        style={{ position: 'absolute', inset: 0, transformOrigin: 'center center' }}
       >
         {ready && (
           <ParticleTextEffect
