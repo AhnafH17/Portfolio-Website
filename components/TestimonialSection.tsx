@@ -163,7 +163,7 @@ export default function TestimonialSection() {
 
         <div className="ts-left">
           <p className="section-label">Client Testimonials</p>
-          <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
+          <h2 className="ts-heading"><span className="gold-glow">Trusted</span> by teams<br />across the <span className="gold-glow">globe.</span></h2>
 
           <div className="ts-stack-outer" style={{ perspective: '900px' }}>
             <AnimatePresence custom={dir} mode="wait">

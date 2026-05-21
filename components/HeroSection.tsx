@@ -90,8 +90,8 @@ export default function HeroSection() {
       <div className="hero-content">
         <div className="hero-text">
           <h1 className="hero-name">
-            Hi, I&apos;m<br />
-            <span className="accent">Ahnaf Hussain</span>
+            <span className="hero-greeting-line">Hi, I&apos;m</span><br />
+            <span className="gold-glow">Ahnaf Hussain</span>
           </h1>
           <p className="hero-tagline">
             Architecting high-performance SaaS frontends and interactive digital experiences. Leading the development team at AurixLab to bridge the gap between complex data and world-class UI.

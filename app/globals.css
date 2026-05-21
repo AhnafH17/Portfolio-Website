@@ -314,8 +314,18 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-content{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1300px;margin:0 auto;width:100%;position:relative;z-index:1}
 .hero-text{position:relative;z-index:2}
 .hero-name{font-family:'Sddystopian',var(--font-display);font-size:clamp(3.8rem,8vw,8rem);font-weight:400;line-height:1.0;letter-spacing:0.01em;margin-bottom:1.4rem;opacity:0;transform:translateY(30px);animation:fadeUp .8s ease .5s forwards}
+.hero-greeting-line{font-size:0.52em;letter-spacing:0.04em;color:var(--gold-dim);display:block}
 .hero-name .accent{color:var(--accent-glow)}
 .accent{color:var(--accent-glow)}
+/* Gold inner-glow text highlight */
+.gold-glow{
+  color:var(--accent-glow);
+  background:radial-gradient(ellipse 80% 60% at 50% 55%, rgba(201,168,76,0.18) 0%, rgba(201,168,76,0.06) 55%, transparent 100%);
+  -webkit-box-decoration-break:clone;
+  box-decoration-break:clone;
+  border-radius:4px;
+  padding:0 0.12em;
+}
 .hero-tagline{font-size:1.05rem;color:var(--gold-dim);max-width:460px;margin-bottom:2.5rem;opacity:0;transform:translateY(20px);animation:fadeUp .8s ease .7s forwards}
 .hero-cta{display:inline-flex;align-items:center;gap:.8rem;background:transparent;border:1.5px solid var(--accent);color:var(--gold);padding:.9rem 2rem;font-family:var(--font-display);font-weight:600;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;position:relative;overflow:hidden;touch-action:manipulation;transition:color .4s,border-color .4s;opacity:0;transform:translateY(20px);animation:fadeUp .8s ease .9s forwards}
 .hero-cta::before{content:'';position:absolute;inset:0;background:var(--accent-glow);transform:scaleX(0);transform-origin:left;transition:transform .4s;z-index:-1}

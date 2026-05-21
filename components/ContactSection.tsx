@@ -268,7 +268,7 @@ export default function ContactSection() {
         <div className="ct-left reveal">
           <p className="section-label">Work With Us</p>
           <h2 className="ct-heading">
-            Let&apos;s build your next<br />product together.
+            <span className="gold-glow">Let&apos;s build</span> your next<br />product together.
           </h2>
           <p className="ct-sub">
             Looking for a technical partner or a high-capacity development team? Whether you&apos;re a SaaS founder or a digital agency, let&apos;s discuss how my team at AurixLab can help you scale.
