@@ -987,63 +987,46 @@ footer span{color:var(--accent-glow)}
   margin-bottom:48px;
 }
 
-/* Stacked card carousel */
+/* Card carousel */
 .ts-stack-outer{
   position:relative;
 }
-.ts-shimmer-ring{
-  position:absolute;
-  inset:-18px;
-  border-radius:20px;
-  background:transparent;
-  pointer-events:none;
-  z-index:0;
-  /* Animated shimmer border */
-  border:1px solid transparent;
-  background-clip:padding-box;
-}
-.ts-shimmer-ring::before{
-  content:'';
-  position:absolute;
-  inset:-1px;
-  border-radius:21px;
-  background:linear-gradient(
-    120deg,
-    transparent 0%,
-    rgba(201,168,76,0.0) 30%,
-    rgba(226,201,115,0.55) 50%,
-    rgba(201,168,76,0.0) 70%,
-    transparent 100%
-  );
-  background-size:200% 200%;
-  animation:tsShimmer 3s linear infinite;
-  -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-  -webkit-mask-composite:xor;
-  mask-composite:exclude;
-  padding:1px;
-}
-@keyframes tsShimmer{
-  0%{background-position:200% 0}
-  100%{background-position:-200% 0}
-}
-.ts-stack{
-  position:relative;
-  height:320px;
-  cursor:grab;
-}
 .ts-stack-card{
-  position:absolute;
-  inset:0;
   border-radius:16px;
   background:rgba(16,14,10,0.95);
   border:1px solid rgba(201,168,76,0.14);
   box-shadow:0 24px 64px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,168,76,0.06);
   overflow:hidden;
-  cursor:grab;
-  transform-origin:50% 110%;
+  position:relative;
+  /* Shimmer border via pseudo-element */
 }
-.ts-stack-card:active{cursor:grabbing}
-/* Per-card shimmer border */
+.ts-stack-card::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  padding:1px;
+  background:linear-gradient(
+    120deg,
+    transparent 0%,
+    rgba(201,168,76,0.0) 25%,
+    rgba(226,201,115,0.5) 50%,
+    rgba(201,168,76,0.0) 75%,
+    transparent 100%
+  );
+  background-size:250% 100%;
+  animation:tsShimmer 3.5s linear infinite;
+  -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+  z-index:3;
+}
+@keyframes tsShimmer{
+  0%  { background-position: 250% 0 }
+  100%{ background-position:-250% 0 }
+}
+/* Inner diagonal sheen */
 .ts-card-shimmer{
   position:absolute;
   inset:0;
@@ -1051,10 +1034,10 @@ footer span{color:var(--accent-glow)}
   pointer-events:none;
   background:linear-gradient(
     135deg,
-    rgba(201,168,76,0.08) 0%,
+    rgba(201,168,76,0.06) 0%,
     transparent 40%,
     transparent 60%,
-    rgba(201,168,76,0.05) 100%
+    rgba(201,168,76,0.04) 100%
   );
   z-index:1;
 }

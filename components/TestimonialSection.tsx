@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, PanInfo, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -65,74 +65,46 @@ function GlobeViz() {
     if (initialized.current) return;
     const container = containerRef.current;
     if (!container) return;
-
     let rafId: number;
 
     const init = () => {
-      if (container.clientWidth === 0) {
-        rafId = requestAnimationFrame(init);
-        return;
-      }
-
+      if (container.clientWidth === 0) { rafId = requestAnimationFrame(init); return; }
       const script = document.createElement('script');
       script.src = 'https://unpkg.com/globe.gl@2/dist/globe.gl.min.js';
       script.onload = () => {
         if (initialized.current) return;
         initialized.current = true;
-
         const Globe = (window as any).Globe;
         if (!Globe) return;
-
-        const W = container.clientWidth;
-        const H = container.clientHeight;
-
         const globeInstance = Globe()(container)
-          .width(W)
-          .height(H)
+          .width(container.clientWidth).height(container.clientHeight)
           .backgroundColor('rgba(0,0,0,0)')
           .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-          .atmosphereColor('rgba(220,180,60,0.85)')
-          .atmosphereAltitude(0.22)
-          .arcsData(ARCS)
-          .arcColor(() => ['#c9a84c', '#e2c973'])
-          .arcDashLength(0.35)
-          .arcDashGap(0.2)
-          .arcDashAnimateTime(2200)
-          .arcStroke(1.2)
-          .arcAltitude(0.28)
-          .pointsData(POINTS)
-          .pointColor((d: any) => d.color)
-          .pointAltitude(0.015)
-          .pointRadius(0.6)
-          .labelsData(POINTS)
-          .labelText((d: any) => d.label)
-          .labelColor((d: any) => d.color)
-          .labelSize(1.8)
-          .labelAltitude(0.02)
-          .labelDotRadius(0);
-
+          .atmosphereColor('rgba(220,180,60,0.85)').atmosphereAltitude(0.22)
+          .arcsData(ARCS).arcColor(() => ['#c9a84c', '#e2c973'])
+          .arcDashLength(0.35).arcDashGap(0.2).arcDashAnimateTime(2200)
+          .arcStroke(1.2).arcAltitude(0.28)
+          .pointsData(POINTS).pointColor((d: any) => d.color)
+          .pointAltitude(0.015).pointRadius(0.6)
+          .labelsData(POINTS).labelText((d: any) => d.label)
+          .labelColor((d: any) => d.color).labelSize(1.8)
+          .labelAltitude(0.02).labelDotRadius(0);
         globeInstance.controls().autoRotate = true;
         globeInstance.controls().autoRotateSpeed = 0.9;
         globeInstance.controls().enableZoom = false;
-
         setTimeout(() => {
           globeInstance.scene().children.forEach((obj: any) => {
             if (obj.type?.includes('Light')) obj.intensity *= 2.2;
           });
         }, 150);
-
         globeInstance.pointOfView({ lat: 23.68, lng: 90.36, altitude: 1.8 });
-
         const ro = new ResizeObserver(() => {
-          if (!container) return;
-          globeInstance.width(container.clientWidth);
-          globeInstance.height(container.clientHeight);
+          globeInstance.width(container.clientWidth).height(container.clientHeight);
         });
         ro.observe(container);
       };
       document.head.appendChild(script);
     };
-
     rafId = requestAnimationFrame(init);
     return () => cancelAnimationFrame(rafId);
   }, []);
@@ -141,34 +113,27 @@ function GlobeViz() {
 }
 
 export default function TestimonialSection() {
-  const [current, setCurrent] = useState(0);
-  const [exitX, setExitX] = useState(0);
-  const [dragging, setDragging] = useState(false);
+  const [[current, dir], setCurrent] = useState([0, 0]);
   const sectionRef = useRef<HTMLElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAnimating = useRef(false);
 
-  const advance = useCallback((dir: 1 | -1 = 1) => {
-    setExitX(dir * -300);
-    setTimeout(() => {
-      setCurrent(prev => (prev + (dir === 1 ? 1 : TESTIMONIALS.length - 1)) % TESTIMONIALS.length);
-      setExitX(0);
-    }, 220);
+  const paginate = useCallback((newDir: 1 | -1) => {
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setCurrent(([c]) => [(c + newDir + TESTIMONIALS.length) % TESTIMONIALS.length, newDir]);
+    setTimeout(() => { isAnimating.current = false; }, 520);
   }, []);
 
   const handleDragEnd = useCallback((_: any, info: PanInfo) => {
-    setDragging(false);
-    if (Math.abs(info.offset.x) > 80) {
-      advance(info.offset.x < 0 ? 1 : -1);
-    }
-  }, [advance]);
+    if (Math.abs(info.offset.x) > 70) paginate(info.offset.x < 0 ? 1 : -1);
+  }, [paginate]);
 
-  // Auto-advance
   useEffect(() => {
-    timerRef.current = setTimeout(() => advance(1), 4500);
+    timerRef.current = setTimeout(() => paginate(1), 4500);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [current, advance]);
+  }, [current, paginate]);
 
-  // Entrance
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -184,89 +149,78 @@ export default function TestimonialSection() {
     );
   }, []);
 
+  const variants = {
+    enter: (d: number) => ({ x: d > 0 ? 60 : -60, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (d: number) => ({ x: d > 0 ? -60 : 60, opacity: 0 }),
+  };
+
+  const t = TESTIMONIALS[current];
+
   return (
     <section ref={sectionRef} className="ts-section">
       <div className="ts-wrap">
 
-        {/* LEFT — stacked card carousel */}
         <div className="ts-left">
           <p className="section-label">Client Testimonials</p>
           <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
 
           <div className="ts-stack-outer">
-            {/* Shimmer ring */}
-            <div className="ts-shimmer-ring" />
-
-            <div className="ts-stack">
-              {[2, 1, 0].map(offset => {
-                const idx = (current + offset) % TESTIMONIALS.length;
-                const t = TESTIMONIALS[idx];
-                const isTop = offset === 0;
-
-                return (
-                  <motion.div
-                    key={`${current}-${offset}`}
-                    className="ts-stack-card"
-                    style={{ zIndex: 3 - offset }}
-                    drag={isTop ? 'x' : false}
-                    dragConstraints={{ left: 0, right: 0 }}
-                    dragElastic={0.6}
-                    onDragStart={() => setDragging(true)}
-                    onDragEnd={handleDragEnd}
-                    initial={{ scale: 0.94, opacity: 0, y: offset * 10, x: 0 }}
-                    animate={{
-                      scale: isTop ? 1 : offset === 1 ? 0.96 : 0.92,
-                      opacity: isTop ? 1 : offset === 1 ? 0.55 : 0.28,
-                      y: offset * 12,
-                      x: isTop ? exitX : 0,
-                      rotate: isTop ? exitX / 22 : offset === 1 ? -1.5 : -3,
-                    }}
-                    transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-                    whileDrag={{ cursor: 'grabbing' }}
-                  >
-                    {/* Card shimmer border */}
-                    <div className="ts-card-shimmer" />
-
-                    <div className="ts-card-content">
-                      <div className="ts-card-top">
-                        <div className="ts-avatar">{t.initials}</div>
-                        <div className="ts-card-meta">
-                          <span className="ts-company">{t.company}</span>
-                          <span className="ts-role">{t.role}</span>
-                        </div>
-                        <span className="ts-card-num">0{idx + 1}</span>
-                      </div>
-                      <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
-                      <div className="ts-tags">
-                        {t.tags.map(tag => (
-                          <span key={tag} className="ts-tag">{tag}</span>
-                        ))}
-                      </div>
+            <AnimatePresence custom={dir} mode="wait">
+              <motion.div
+                key={current}
+                custom={dir}
+                variants={variants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.42, ease: [0.4, 0, 0.2, 1] }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.12}
+                onDragEnd={handleDragEnd}
+                className="ts-stack-card"
+                style={{ cursor: 'grab', position: 'relative' }}
+                whileDrag={{ cursor: 'grabbing', scale: 0.99 }}
+              >
+                <div className="ts-card-shimmer" />
+                <div className="ts-card-content">
+                  <div className="ts-card-top">
+                    <div className="ts-avatar">{t.initials}</div>
+                    <div className="ts-card-meta">
+                      <span className="ts-company">{t.company}</span>
+                      <span className="ts-role">{t.role}</span>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </div>
+                    <span className="ts-card-num">0{current + 1}</span>
+                  </div>
+                  <p className="ts-quote">&ldquo;{t.quote}&rdquo;</p>
+                  <div className="ts-tags">
+                    {t.tags.map(tag => (
+                      <span key={tag} className="ts-tag">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
 
-            {/* Controls */}
             <div className="ts-controls">
               <div className="ts-dots">
                 {TESTIMONIALS.map((_, i) => (
                   <button
                     key={i}
                     className={`ts-dot${i === current ? ' active' : ''}`}
-                    onClick={() => advance(i > current ? 1 : -1)}
+                    onClick={() => paginate(i > current ? 1 : -1)}
                     aria-label={`Testimonial ${i + 1}`}
                   />
                 ))}
               </div>
               <div className="ts-arrows">
-                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous">
+                <button className="ts-arrow" onClick={() => paginate(-1)} aria-label="Previous">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next">
+                <button className="ts-arrow" onClick={() => paginate(1)} aria-label="Next">
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
@@ -276,13 +230,10 @@ export default function TestimonialSection() {
           </div>
         </div>
 
-        {/* RIGHT — globe */}
         <div className="ts-right">
           <div className="ts-globe-wrap">
             <div className="ts-globe-glow" />
-            <div className="ts-globe-clip">
-              <GlobeViz />
-            </div>
+            <div className="ts-globe-clip"><GlobeViz /></div>
             <div className="ts-globe-label">
               <span className="ts-globe-dot" />
               Bangladesh to the world
