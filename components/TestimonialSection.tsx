@@ -125,49 +125,43 @@ function GlobeViz() {
     };
 
     rafId = requestAnimationFrame(init);
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
+    return () => cancelAnimationFrame(rafId);
   }, []);
 
-  return (
-    <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-  );
+  return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;
 }
 
 export default function TestimonialSection() {
   const [active, setActive] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isAnimating = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const slideRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const goTo = useCallback((next: number, dir: 1 | -1 = 1) => {
-    if (isAnimating.current) return;
-    const slider = sliderRef.current;
-    if (!slider) return;
-
-    const cards = slider.querySelectorAll<HTMLElement>('.ts-slide');
-    const current = cards[active];
-    const nextCard = cards[next];
-    if (!current || !nextCard) return;
-
+  const goTo = useCallback((next: number, dir: 1 | -1) => {
+    if (isAnimating.current || next === active) return;
     isAnimating.current = true;
 
-    gsap.set(nextCard, { opacity: 0, x: dir * 60, position: 'absolute', top: 0, left: 0, width: '100%' });
-    gsap.set(current, { position: 'relative' });
+    const currentEl = slideRefs.current[active];
+    const nextEl = slideRefs.current[next];
+    if (!currentEl || !nextEl) { isAnimating.current = false; return; }
+
+    // Make next slide visible but off-screen
+    gsap.set(nextEl, { opacity: 0, x: dir * 55, visibility: 'visible' });
 
     const tl = gsap.timeline({
       onComplete: () => {
-        gsap.set(current, { clearProps: 'all', position: '', opacity: 0, x: 0 });
-        gsap.set(nextCard, { clearProps: 'all', position: '', opacity: 1, x: 0 });
+        gsap.set(currentEl, { visibility: 'hidden', opacity: 0, x: 0 });
+        gsap.set(nextEl, { x: 0 });
         setActive(next);
+        setPrev(null);
         isAnimating.current = false;
       },
     });
 
-    tl.to(current, { opacity: 0, x: -dir * 40, duration: 0.35, ease: 'power2.in' }, 0)
-      .to(nextCard, { opacity: 1, x: 0, duration: 0.45, ease: 'power2.out' }, 0.15);
+    tl.to(currentEl, { opacity: 0, x: -dir * 40, duration: 0.32, ease: 'power2.in' }, 0)
+      .to(nextEl,    { opacity: 1, x: 0,          duration: 0.42, ease: 'power2.out' }, 0.18);
   }, [active]);
 
   const advance = useCallback((dir: 1 | -1) => {
@@ -175,32 +169,25 @@ export default function TestimonialSection() {
     goTo(next, dir);
   }, [active, goTo]);
 
-  // Auto-advance
+  // Auto-advance every 4.5s
   useEffect(() => {
     timerRef.current = setTimeout(() => advance(1), 4500);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [active, advance]);
 
-  // Entrance animation
+  // Entrance animations
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
-
     gsap.fromTo(section.querySelector('.ts-left'),
       { opacity: 0, x: -40 },
-      {
-        opacity: 1, x: 0, duration: 0.8, ease: 'power3.out',
-        scrollTrigger: { trigger: section, start: 'top 75%', once: true },
-      }
+      { opacity: 1, x: 0, duration: 0.8, ease: 'power3.out',
+        scrollTrigger: { trigger: section, start: 'top 75%', once: true } }
     );
     gsap.fromTo(section.querySelector('.ts-globe-wrap'),
       { opacity: 0, scale: 0.92 },
-      {
-        opacity: 1, scale: 1, duration: 0.9, ease: 'power3.out',
-        scrollTrigger: { trigger: section, start: 'top 70%', once: true },
-      }
+      { opacity: 1, scale: 1, duration: 0.9, ease: 'power3.out',
+        scrollTrigger: { trigger: section, start: 'top 70%', once: true } }
     );
   }, []);
 
@@ -214,12 +201,18 @@ export default function TestimonialSection() {
           <h2 className="ts-heading">Trusted by teams<br />across the globe.</h2>
 
           <div className="ts-slider-wrap">
-            <div className="ts-slider" ref={sliderRef}>
+            <div className="ts-slider">
               {TESTIMONIALS.map((t, i) => (
                 <div
                   key={i}
+                  ref={el => { slideRefs.current[i] = el; }}
                   className="ts-slide"
-                  style={{ display: i === active ? 'block' : (i === (active + 1) % TESTIMONIALS.length || i === (active - 1 + TESTIMONIALS.length) % TESTIMONIALS.length) ? 'block' : 'none', opacity: i === active ? 1 : 0 }}
+                  style={{
+                    position: i === active ? 'relative' : 'absolute',
+                    top: 0, left: 0, width: '100%',
+                    visibility: i === active ? 'visible' : 'hidden',
+                    opacity: i === active ? 1 : 0,
+                  }}
                 >
                   <div className="ts-slide-inner">
                     <div className="ts-slide-top">
@@ -237,7 +230,6 @@ export default function TestimonialSection() {
               ))}
             </div>
 
-            {/* Controls */}
             <div className="ts-controls">
               <div className="ts-dots">
                 {TESTIMONIALS.map((_, i) => (
@@ -245,19 +237,19 @@ export default function TestimonialSection() {
                     key={i}
                     className={`ts-dot${i === active ? ' active' : ''}`}
                     onClick={() => goTo(i, i > active ? 1 : -1)}
-                    aria-label={`Go to testimonial ${i + 1}`}
+                    aria-label={`Testimonial ${i + 1}`}
                   />
                 ))}
               </div>
               <div className="ts-arrows">
-                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous">
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M11 14L6 9l5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <button className="ts-arrow" onClick={() => advance(-1)} aria-label="Previous testimonial">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M10 12L6 8l4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
-                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next">
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M7 4l5 5-5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <button className="ts-arrow" onClick={() => advance(1)} aria-label="Next testimonial">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </button>
               </div>
