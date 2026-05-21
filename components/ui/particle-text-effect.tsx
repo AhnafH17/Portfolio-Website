@@ -129,8 +129,11 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
     const frameCountRef = useRef(0)
     const wordIndexRef = useRef(0)
     const lastAdvanceRef = useRef(0)
+    const isFirstWordRef = useRef(true)
 
     const showWord = (word: string, canvas: HTMLCanvasElement) => {
+      const firstWord = isFirstWordRef.current
+      isFirstWordRef.current = false
       const offscreen = document.createElement("canvas")
       offscreen.width = canvas.width
       offscreen.height = canvas.height
@@ -165,9 +168,9 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
         if (particleIndex >= particles.length) continue
         const p = particles[particleIndex]
 
-        // If reusing a killed particle, snap it to near its new target
-        // so it doesn't fly in from wherever it drifted to
-        if (p.isKilled) {
+        // Snap reused killed particles near their target to avoid corner fly-ins
+        // but only for words after the first — AHNAF gets the full fly-in animation
+        if (p.isKilled && !firstWord) {
           p.pos.x = x + (Math.random() - 0.5) * 60
           p.pos.y = y + (Math.random() - 0.5) * 60
           p.vel.x = 0
