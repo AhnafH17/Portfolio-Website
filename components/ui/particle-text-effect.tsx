@@ -164,6 +164,16 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
 
         if (particleIndex >= particles.length) continue
         const p = particles[particleIndex]
+
+        // If reusing a killed particle, snap it to near its new target
+        // so it doesn't fly in from wherever it drifted to
+        if (p.isKilled) {
+          p.pos.x = x + (Math.random() - 0.5) * 60
+          p.pos.y = y + (Math.random() - 0.5) * 60
+          p.vel.x = 0
+          p.vel.y = 0
+        }
+
         p.isKilled = false
         particleIndex++
 
