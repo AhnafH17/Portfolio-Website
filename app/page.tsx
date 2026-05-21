@@ -12,6 +12,7 @@ import gsap from 'gsap';
 
 const MarqueeStrip = lazy(() => import('@/components/MarqueeStrip'));
 const AboutSection = lazy(() => import('@/components/AboutSection'));
+const TestimonialSection = lazy(() => import('@/components/TestimonialSection'));
 const ContactSection = lazy(() => import('@/components/ContactSection'));
 const Footer = lazy(() => import('@/components/Footer'));
 const Modal = lazy(() => import('@/components/Modal'));
@@ -48,6 +49,7 @@ export default function Home() {
           <Suspense fallback={null}>
             <MarqueeStrip />
             <AboutSection />
+            <TestimonialSection />
             <ContactSection />
           </Suspense>
         </main>
