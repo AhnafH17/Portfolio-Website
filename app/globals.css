@@ -1,3 +1,10 @@
+@font-face {
+  font-family: 'Sddystopian';
+  src: url('/fonts/Sddystopiandemo-GO7xa.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 /* Hidden until GSAP entrance animation fires */
 [data-site-content]{opacity:0}

@@ -94,7 +94,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             intervalMs={1600}
             onCycleComplete={triggerExit}
             fontSize={130}
-            fontFamily="'Anton', sans-serif"
+            fontFamily="'Sddystopian', sans-serif"
           />
         )}
       </div>
