@@ -3,9 +3,11 @@
 import { useEffect } from 'react';
 import Lenis from 'lenis';
 
-// Global instance so Modal can pause/resume it
 declare global {
-  interface Window { __lenis?: Lenis; }
+  interface Window {
+    __lenis?: Lenis;
+    __lenisEnabled?: boolean;
+  }
 }
 
 export default function LenisProvider() {
@@ -18,11 +20,8 @@ export default function LenisProvider() {
     });
 
     window.__lenis = lenis;
+    window.__lenisEnabled = false; // Preloader starts it
 
-    // Start stopped — Preloader will call .start() when it exits
-    lenis.stop();
-
-    // Only dispatch scroll when actually scrolling (not every rAF tick)
     let scrolling = false;
     let scrollTimer: ReturnType<typeof setTimeout>;
     lenis.on('scroll', () => {
@@ -34,15 +33,19 @@ export default function LenisProvider() {
       scrollTimer = setTimeout(() => { scrolling = false; }, 100);
     });
 
+    let rafId: number;
     function raf(time: number) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
+      // Only tick Lenis when enabled — stops all event processing when modal is open
+      if (window.__lenisEnabled) lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
     }
-    requestAnimationFrame(raf);
+    rafId = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafId);
       lenis.destroy();
       window.__lenis = undefined;
+      window.__lenisEnabled = undefined;
     };
   }, []);
 

@@ -4,6 +4,10 @@ import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import { ParticleTextEffect, ParticleTextHandle } from '@/components/ui/particle-text-effect';
 
+declare global {
+  interface Window { __lenis?: import('lenis').default; __lenisEnabled?: boolean; }
+}
+
 interface PreloaderProps {
   onComplete: () => void;
 }
@@ -55,8 +59,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         window.scrollTo(0, 0);
         if (window.__lenis) {
           window.__lenis.scrollTo(0, { immediate: true });
-          window.__lenis.start();
         }
+        window.__lenisEnabled = true;
         onComplete();
         // Unmount after site is already visible
         setTimeout(() => setMounted(false), 100);

@@ -5,7 +5,7 @@ import { projectData, ProjectKey } from '@/lib/projects';
 import type Lenis from 'lenis';
 
 declare global {
-  interface Window { __lenis?: Lenis; }
+  interface Window { __lenis?: Lenis; __lenisEnabled?: boolean; }
 }
 
 interface ModalProps {
@@ -21,12 +21,12 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     if (!overlay) return;
 
     if (!projectKey) {
-      window.__lenis?.start();
+      window.__lenisEnabled = true;
       return;
     }
 
     overlay.scrollTop = 0;
-    window.__lenis?.stop();
+    window.__lenisEnabled = false;
 
     // Intercept wheel on overlay BEFORE it bubbles to Lenis on window
     const onWheel = (e: WheelEvent) => {
@@ -45,7 +45,7 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     return () => {
       overlay.removeEventListener('wheel', onWheel);
       window.removeEventListener('wheel', blockPage);
-      window.__lenis?.start();
+      window.__lenisEnabled = true;
     };
   }, [projectKey]);
 
