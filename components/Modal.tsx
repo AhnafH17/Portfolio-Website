@@ -18,17 +18,12 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
   useEffect(() => {
     if (projectKey) {
-      document.documentElement.classList.add('modal-open');
       scrollAreaRef.current?.scrollTo({ top: 0 });
       window.__lenis?.stop();
     } else {
-      document.documentElement.classList.remove('modal-open');
       window.__lenis?.start();
     }
-    return () => {
-      document.documentElement.classList.remove('modal-open');
-      window.__lenis?.start();
-    };
+    return () => { window.__lenis?.start(); };
   }, [projectKey]);
 
 

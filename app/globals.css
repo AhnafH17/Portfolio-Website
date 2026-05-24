@@ -455,14 +455,13 @@ section{padding:7rem 3rem;position:relative}
 .skill-tag:hover{background:var(--accent-glow);color:var(--black-deep);border-color:var(--accent-glow)}
 
 /* ===== MODAL ===== */
-html.modal-open body{overflow:hidden}
-.modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(7,7,7,0.75);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .25s;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-overlay{position:fixed;inset:0;z-index:2000;background:rgba(7,7,7,0.75);backdrop-filter:blur(12px);opacity:0;pointer-events:none;transition:opacity .25s;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .modal-overlay.open{opacity:1;pointer-events:all;transition:opacity .4s}
 .modal-close{position:absolute;top:1.5rem;right:2rem;z-index:2001;width:48px;height:48px;border-radius:50%;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.2);display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all .3s;flex-shrink:0}
 .modal-close:hover{background:var(--accent-glow)}
 .modal-close:hover svg{stroke:var(--black-deep)}
 .modal-close svg{width:20px;height:20px;stroke:var(--gold);stroke-width:2}
-.modal-scroll-area{width:100%;padding:4rem 1rem 3rem;overflow-y:visible}
+.modal-scroll-area{width:100%;padding:4rem 1rem 3rem}
 .modal-container{max-width:900px;margin:3rem auto;padding:2.5rem 3rem;transform:translateY(30px);transition:transform .4s;background:var(--black);border:1px solid rgba(201,168,76,0.15);border-radius:24px;box-shadow:0 24px 80px rgba(0,0,0,0.5)}
 .modal-overlay.open .modal-container{transform:translateY(0)}
 .modal-header{margin-bottom:3rem;padding-top:1rem}

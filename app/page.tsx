@@ -35,13 +35,14 @@ export default function Home() {
   return (
     <>
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
+      {/* Cursor outside site wrapper — must not inherit opacity:0 animation */}
+      <CustomCursor />
       <div
         ref={siteRef}
         style={{ transformOrigin: '50% 50vh' }}
         data-site-content
       >
         <LenisProvider />
-        <CustomCursor />
         <Navbar />
         <main>
           <HeroSection />
