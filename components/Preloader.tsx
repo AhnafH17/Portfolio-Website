@@ -93,7 +93,7 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             autoAdvance
             intervalMs={1600}
             onCycleComplete={triggerExit}
-            fontSize={130}
+            fontSize={Math.min(130, Math.floor(window.innerWidth / 6.5))}
             fontFamily="'Sddystopian', sans-serif"
           />
         )}

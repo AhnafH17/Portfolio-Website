@@ -20,10 +20,16 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     if (projectKey) {
       document.body.style.overflow = 'hidden';
       scrollAreaRef.current?.scrollTo({ top: 0 });
+      // Stop Lenis so it doesn't intercept wheel/touch events inside the modal
+      window.__lenis?.stop();
     } else {
       document.body.style.overflow = '';
+      window.__lenis?.start();
     }
-    return () => { document.body.style.overflow = ''; };
+    return () => {
+      document.body.style.overflow = '';
+      window.__lenis?.start();
+    };
   }, [projectKey]);
 
   useEffect(() => {
