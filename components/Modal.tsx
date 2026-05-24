@@ -31,14 +31,6 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     };
   }, [projectKey]);
 
-  // Prevent wheel events from bubbling out of the modal scroll area to Lenis
-  useEffect(() => {
-    const el = scrollAreaRef.current;
-    if (!el) return;
-    const stopProp = (e: WheelEvent) => e.stopPropagation();
-    el.addEventListener('wheel', stopProp, { passive: true });
-    return () => el.removeEventListener('wheel', stopProp);
-  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -52,6 +44,9 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     <div
       className={`modal-overlay${project ? ' open' : ''}`}
       id="projectModal"
+      ref={scrollAreaRef}
+      data-lenis-prevent
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <button className="modal-close" onClick={onClose} aria-label="Close">
         <svg fill="none" viewBox="0 0 24 24">
@@ -62,8 +57,6 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
       <div
         className="modal-scroll-area"
-        ref={scrollAreaRef}
-        data-lenis-prevent
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         {project && (
