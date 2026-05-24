@@ -21,27 +21,30 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     if (!overlay) return;
 
     if (!projectKey) {
-      document.body.style.overflow = '';
       window.__lenis?.start();
       return;
     }
 
     overlay.scrollTop = 0;
     window.__lenis?.stop();
-    document.body.style.overflow = 'hidden';
 
-    // Lenis attaches a wheel listener to window. Even when stopped it can
-    // consume events. Intercept wheel on the overlay (non-passive so we can
-    // stopPropagation) and drive the overlay scroll directly.
+    // Intercept wheel on overlay BEFORE it bubbles to Lenis on window
     const onWheel = (e: WheelEvent) => {
       e.stopPropagation();
       overlay.scrollTop += e.deltaY;
     };
     overlay.addEventListener('wheel', onWheel, { passive: false });
 
+    // Block page scroll without touching overflow (which kills the scrollbar)
+    // Use a wheel blocker on window that runs AFTER the overlay's listener
+    const blockPage = (e: WheelEvent) => {
+      if (!overlay.contains(e.target as Node)) e.preventDefault();
+    };
+    window.addEventListener('wheel', blockPage, { passive: false });
+
     return () => {
       overlay.removeEventListener('wheel', onWheel);
-      document.body.style.overflow = '';
+      window.removeEventListener('wheel', blockPage);
       window.__lenis?.start();
     };
   }, [projectKey]);
