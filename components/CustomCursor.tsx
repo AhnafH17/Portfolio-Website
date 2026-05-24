@@ -3,69 +3,78 @@
 import { useEffect, useRef } from 'react';
 
 export default function CustomCursor() {
-  const dotRef = useRef<HTMLDivElement>(null);
+  const dotRef  = useRef<HTMLDivElement>(null);
   const ringRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Touch devices — hide cursor elements entirely
+    if (window.matchMedia('(pointer: coarse)').matches) return;
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) return;
 
-    const dot = dotRef.current;
+    const dot  = dotRef.current;
     const ring = ringRef.current;
     if (!dot || !ring) return;
 
-    let mx = 0, my = 0, rx = 0, ry = 0;
+    // Hide until first mouse move so they don't flash at 0,0
+    dot.style.opacity  = '0';
+    ring.style.opacity = '0';
+
+    let mx = -999, my = -999, rx = -999, ry = -999;
     let rafId: number;
-    let moved = false;
+    let visible = false;
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX;
       my = e.clientY;
-      moved = true;
-      // dot snaps instantly — use transform (compositor, no layout)
+      if (!visible) {
+        visible = true;
+        dot.style.opacity  = '1';
+        ring.style.opacity = '1';
+      }
       dot.style.transform = `translate(${mx - 4}px,${my - 4}px)`;
     };
 
     const animate = () => {
-      if (moved || Math.abs(mx - rx) > 0.1 || Math.abs(my - ry) > 0.1) {
+      if (!prefersReduced) {
         rx += (mx - rx) * 0.12;
         ry += (my - ry) * 0.12;
         ring.style.transform = `translate(${rx - 20}px,${ry - 20}px)`;
-        moved = false;
       }
       rafId = requestAnimationFrame(animate);
     };
 
-    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mousemove', onMove, { passive: true });
     rafId = requestAnimationFrame(animate);
 
-    const expand = () => {
-      Object.assign(ring.style, { width: '60px', height: '60px', borderColor: 'var(--accent-glow)' });
+    // Use event delegation — one listener on document covers all elements
+    // including those added later by lazy-loaded components
+    const expand   = () => Object.assign(ring.style, { width: '60px', height: '60px', borderColor: 'var(--accent-glow)' });
+    const contract = () => Object.assign(ring.style, { width: '40px', height: '40px', borderColor: '' });
+
+    const onOver = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (target.closest('a, button, [data-cursor-expand]')) expand();
     };
-    const contract = () => {
-      Object.assign(ring.style, { width: '40px', height: '40px', borderColor: 'var(--gold-dim)' });
+    const onOut = (e: MouseEvent) => {
+      const target = e.target as Element;
+      if (target.closest('a, button, [data-cursor-expand]')) contract();
     };
 
-    const targets = document.querySelectorAll('a, button, .acc-strip, .acc-cta');
-    targets.forEach((el) => {
-      el.addEventListener('mouseenter', expand);
-      el.addEventListener('mouseleave', contract);
-    });
+    document.addEventListener('mouseover',  onOver,  { passive: true });
+    document.addEventListener('mouseout',   onOut,   { passive: true });
 
     return () => {
       document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseover',  onOver);
+      document.removeEventListener('mouseout',   onOut);
       cancelAnimationFrame(rafId);
-      targets.forEach((el) => {
-        el.removeEventListener('mouseenter', expand);
-        el.removeEventListener('mouseleave', contract);
-      });
     };
   }, []);
 
   return (
     <>
-      <div className="cursor-dot" ref={dotRef} id="cursorDot" />
-      <div className="cursor-ring" ref={ringRef} id="cursorRing" />
+      <div className="cursor-dot"  ref={dotRef}  />
+      <div className="cursor-ring" ref={ringRef} />
     </>
   );
 }

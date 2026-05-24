@@ -18,17 +18,13 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
   useEffect(() => {
     if (projectKey) {
-      document.body.style.overflow = 'hidden';
+      document.documentElement.classList.add('modal-open');
       scrollAreaRef.current?.scrollTo({ top: 0 });
-      // Stop Lenis so it doesn't intercept wheel/touch events inside the modal
-      window.__lenis?.stop();
     } else {
-      document.body.style.overflow = '';
-      window.__lenis?.start();
+      document.documentElement.classList.remove('modal-open');
     }
     return () => {
-      document.body.style.overflow = '';
-      window.__lenis?.start();
+      document.documentElement.classList.remove('modal-open');
     };
   }, [projectKey]);
 
@@ -55,6 +51,7 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
       <div
         className="modal-scroll-area"
         ref={scrollAreaRef}
+        data-lenis-prevent
         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       >
         {project && (
