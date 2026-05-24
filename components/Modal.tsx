@@ -17,13 +17,33 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (projectKey) {
-      scrollAreaRef.current?.scrollTo({ top: 0 });
-      window.__lenis?.stop();
-    } else {
+    const overlay = scrollAreaRef.current;
+    if (!overlay) return;
+
+    if (!projectKey) {
+      document.body.style.overflow = '';
       window.__lenis?.start();
+      return;
     }
-    return () => { window.__lenis?.start(); };
+
+    overlay.scrollTop = 0;
+    window.__lenis?.stop();
+    document.body.style.overflow = 'hidden';
+
+    // Lenis attaches a wheel listener to window. Even when stopped it can
+    // consume events. Intercept wheel on the overlay (non-passive so we can
+    // stopPropagation) and drive the overlay scroll directly.
+    const onWheel = (e: WheelEvent) => {
+      e.stopPropagation();
+      overlay.scrollTop += e.deltaY;
+    };
+    overlay.addEventListener('wheel', onWheel, { passive: false });
+
+    return () => {
+      overlay.removeEventListener('wheel', onWheel);
+      document.body.style.overflow = '';
+      window.__lenis?.start();
+    };
   }, [projectKey]);
 
 
