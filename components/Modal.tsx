@@ -20,13 +20,25 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
     if (projectKey) {
       document.documentElement.classList.add('modal-open');
       scrollAreaRef.current?.scrollTo({ top: 0 });
+      window.__lenis?.stop();
     } else {
       document.documentElement.classList.remove('modal-open');
+      window.__lenis?.start();
     }
     return () => {
       document.documentElement.classList.remove('modal-open');
+      window.__lenis?.start();
     };
   }, [projectKey]);
+
+  // Prevent wheel events from bubbling out of the modal scroll area to Lenis
+  useEffect(() => {
+    const el = scrollAreaRef.current;
+    if (!el) return;
+    const stopProp = (e: WheelEvent) => e.stopPropagation();
+    el.addEventListener('wheel', stopProp, { passive: true });
+    return () => el.removeEventListener('wheel', stopProp);
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };

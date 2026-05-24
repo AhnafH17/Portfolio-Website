@@ -15,7 +15,6 @@ export default function LenisProvider() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       smoothWheel: true,
-      prevent: (node) => node.closest('.modal-scroll-area') !== null,
     });
 
     window.__lenis = lenis;
