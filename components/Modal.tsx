@@ -17,34 +17,25 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const overlay = scrollAreaRef.current;
-    if (!overlay) return;
-
     if (!projectKey) {
       window.__lenisEnabled = true;
       return;
     }
 
+    const overlay = scrollAreaRef.current;
+    if (!overlay) return;
+
     overlay.scrollTop = 0;
     window.__lenisEnabled = false;
 
-    // Intercept wheel on overlay BEFORE it bubbles to Lenis on window
-    const onWheel = (e: WheelEvent) => {
-      e.stopPropagation();
-      overlay.scrollTop += e.deltaY;
-    };
-    overlay.addEventListener('wheel', onWheel, { passive: false });
-
-    // Block page scroll without touching overflow (which kills the scrollbar)
-    // Use a wheel blocker on window that runs AFTER the overlay's listener
-    const blockPage = (e: WheelEvent) => {
-      if (!overlay.contains(e.target as Node)) e.preventDefault();
-    };
-    window.addEventListener('wheel', blockPage, { passive: false });
+    // Capture-phase intercept: fires before Lenis's bubble-phase listener on window.
+    // stopPropagation keeps the event on the overlay so Lenis never sees it.
+    // NOT calling preventDefault() lets the browser natively scroll the overflow-y:auto overlay.
+    const onWheel = (e: WheelEvent) => { e.stopPropagation(); };
+    overlay.addEventListener('wheel', onWheel, { capture: true, passive: false });
 
     return () => {
-      overlay.removeEventListener('wheel', onWheel);
-      window.removeEventListener('wheel', blockPage);
+      overlay.removeEventListener('wheel', onWheel, { capture: true });
       window.__lenisEnabled = true;
     };
   }, [projectKey]);
