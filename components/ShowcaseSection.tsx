@@ -2,16 +2,14 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
 import gsap from 'gsap';
 
-interface ShowcaseSectionProps {
-  onOpenModal: (key: ProjectKey) => void;
-}
-
-export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
+export default function ShowcaseSection() {
+  const router = useRouter();
   const [activeIdx, setActiveIdx] = useState(0);
-  const [mobilePair, setMobilePair] = useState(0); // 0,2,4,6 — pair start index
+  const [mobilePair, setMobilePair] = useState(0);
   const imgRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
@@ -37,11 +35,13 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
     });
   }, [activeIdx, getTargets]);
 
-  // Fade in after activeIdx changes — double rAF ensures new image src is painted
+  const openProject = useCallback((key: ProjectKey) => {
+    router.push(`/projects/${key}`);
+  }, [router]);
+
   useEffect(() => {
     if (isFirstRender.current) { isFirstRender.current = false; return; }
     let raf1: number, raf2: number;
-    // Kill any in-flight tweens on the targets first
     const targets = getTargets();
     gsap.killTweensOf(targets);
     gsap.set(targets, { opacity: 0, y: 16 });
@@ -67,7 +67,6 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
     });
   }, [mobilePair]);
 
-  // Fade in mobile pair after mobilePair state changes
   useEffect(() => {
     if (mobileFirstRender.current) { mobileFirstRender.current = false; return; }
     const raf = requestAnimationFrame(() => {
@@ -79,13 +78,11 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
     return () => cancelAnimationFrame(raf);
   }, [mobilePair]);
 
-  // Initial entrance animation
   useEffect(() => {
     const targets = getTargets();
     gsap.fromTo(targets, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', stagger: 0.06, delay: 0.2 });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // The two cards shown on mobile
   const pairA = stripMeta[mobilePair];
   const pairB = stripMeta[(mobilePair + 1) % stripMeta.length];
   const projA = projectData[pairA.key];
@@ -130,7 +127,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
             <div className="sc-mockup-dots"><span /><span /><span /></div>
           </div>
 
-          <div className="sc-mockup-body" ref={imgRef} onClick={() => onOpenModal(active.key)} style={{ cursor: 'pointer' }}>
+          <div className="sc-mockup-body" ref={imgRef} onClick={() => openProject(active.key)} style={{ cursor: 'pointer' }}>
             <Image src={`/${project.image}`} alt={project.title} fill className="sc-mockup-img"
               sizes="(max-width: 768px) 100vw, 60vw" priority style={{ opacity: 0.82 }} />
             <div className="sc-mockup-overlay" />
@@ -138,7 +135,7 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
               <h2 className="sc-mockup-title" ref={titleRef}>{project.title}</h2>
               <p className="sc-mockup-subtitle" ref={subtitleRef}>{project.label}</p>
             </div>
-            <button className="sc-cta" onClick={(e) => { e.stopPropagation(); onOpenModal(active.key); }}>
+            <button className="sc-cta" onClick={(e) => { e.stopPropagation(); openProject(active.key); }}>
               VIEW PROJECT
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={16} height={16}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -171,14 +168,14 @@ export default function ShowcaseSection({ onOpenModal }: ShowcaseSectionProps) {
         <span className="sc-big-num" aria-hidden="true" ref={bigNumRef}>{active.num}</span>
       </div>
 
-      {/* ── MOBILE PANEL — 2 cards per page ── */}
+      {/* ── MOBILE PANEL ── */}
       <div className="sc-mobile-panel">
         <div className="sc-mobile-pair" ref={mobilePairRef}>
           {[{ meta: pairA, proj: projA }, { meta: pairB, proj: projB }].map(({ meta, proj }, i) => (
             <button
               key={meta.key}
               className={`sc-mobile-card${activeIdx === mobilePair + i ? ' active' : ''}`}
-              onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}
+              onClick={() => openProject(meta.key)}
               aria-label={`View ${proj.title}`}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
