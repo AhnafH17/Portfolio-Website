@@ -4,8 +4,7 @@ import { useEffect, useRef } from 'react';
 import { projectData, ProjectKey } from '@/lib/projects';
 
 declare global {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  interface Window { __lenis?: any; __lenisEnabled?: boolean; }
+  interface Window { __lenisEnabled?: boolean; }
 }
 
 interface ModalProps {
@@ -37,7 +36,8 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
     // Remove Lenis's wheel listener so it cannot call preventDefault() and
     // block the modal's native overflow-y:auto scroll. Re-added on cleanup.
-    const vs = window.__lenis?.virtualScroll;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const vs = (window.__lenis as any)?.virtualScroll;
     if (vs) window.removeEventListener('wheel', vs.onWheel);
 
     return () => {
