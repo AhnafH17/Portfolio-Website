@@ -4,7 +4,8 @@ import { useEffect, useRef } from 'react';
 import { projectData, ProjectKey } from '@/lib/projects';
 
 declare global {
-  interface Window { __lenisEnabled?: boolean; }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  interface Window { __lenis?: any; __lenisEnabled?: boolean; }
 }
 
 interface ModalProps {
@@ -13,49 +14,39 @@ interface ModalProps {
 }
 
 export default function Modal({ projectKey, onClose }: ModalProps) {
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
     if (!projectKey) {
-      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       window.__lenisEnabled = true;
       return;
     }
 
-    const overlay = scrollAreaRef.current;
-    if (overlay) overlay.scrollTop = 0;
+    el.scrollTop = 0;
 
-    // Lock page scroll completely
+    // Prevent page scroll
     const sbWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.paddingRight = `${sbWidth}px`;
-    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
     window.__lenisEnabled = false;
 
-    // Window capture listener — fires before Lenis's bubble listener.
-    // For events from inside the modal: neutralise preventDefault so Lenis
-    // can't block the overlay's native scroll, and manually drive scrollTop
-    // as a fallback in case native scroll still doesn't apply.
-    const onWheel = (e: WheelEvent) => {
-      if (!overlay) return;
-      const t = e.target as Node;
-      if (t !== overlay && !overlay.contains(t)) return;
-      e.preventDefault = () => {};  // stop Lenis from blocking native scroll
-      const px = e.deltaMode === 1 ? e.deltaY * 16
-               : e.deltaMode === 2 ? e.deltaY * window.innerHeight
-               : e.deltaY;
-      overlay.scrollTop += px;
-    };
-    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    // Remove Lenis's wheel listener so it cannot call preventDefault() and
+    // block the modal's native overflow-y:auto scroll. Re-added on cleanup.
+    const vs = window.__lenis?.virtualScroll;
+    if (vs) window.removeEventListener('wheel', vs.onWheel);
 
     return () => {
-      window.removeEventListener('wheel', onWheel, { capture: true });
-      document.documentElement.style.overflow = '';
+      if (vs) window.addEventListener('wheel', vs.onWheel, { passive: false });
+      document.body.style.overflow = '';
       document.body.style.paddingRight = '';
       window.__lenisEnabled = true;
     };
   }, [projectKey]);
-
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -67,10 +58,8 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
 
   return (
     <div
+      ref={scrollRef}
       className={`modal-overlay${project ? ' open' : ''}`}
-      id="projectModal"
-      ref={scrollAreaRef}
-      data-lenis-prevent
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <button className="modal-close" onClick={onClose} aria-label="Close">
@@ -107,7 +96,7 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
             {project.image ? (
               <div className="modal-image-placeholder">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/${project.image}`} alt={`${project.title} project screenshot`} loading="lazy" />
+                <img src={`/${project.image}`} alt={`${project.title} screenshot`} loading="lazy" />
               </div>
             ) : (
               <div className="modal-image-placeholder empty">
