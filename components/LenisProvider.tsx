@@ -17,9 +17,6 @@ export default function LenisProvider() {
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       smoothWheel: true,
-      // Tell Lenis to ignore the modal entirely — exits its handler before preventDefault(),
-      // so the overlay's native overflow-y:auto scroll works with no custom wheel listeners.
-      prevent: (node: HTMLElement) => node.id === 'projectModal',
     });
 
     window.__lenis = lenis;

@@ -16,18 +16,44 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const overlay = scrollAreaRef.current;
-    if (!overlay) return;
-
     if (!projectKey) {
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
       window.__lenisEnabled = true;
       return;
     }
 
-    overlay.scrollTop = 0;
+    const overlay = scrollAreaRef.current;
+    if (overlay) overlay.scrollTop = 0;
+
+    // Lock page scroll completely
+    const sbWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = `${sbWidth}px`;
+    document.documentElement.style.overflow = 'hidden';
     window.__lenisEnabled = false;
 
-    return () => { window.__lenisEnabled = true; };
+    // Window capture listener — fires before Lenis's bubble listener.
+    // For events from inside the modal: neutralise preventDefault so Lenis
+    // can't block the overlay's native scroll, and manually drive scrollTop
+    // as a fallback in case native scroll still doesn't apply.
+    const onWheel = (e: WheelEvent) => {
+      if (!overlay) return;
+      const t = e.target as Node;
+      if (t !== overlay && !overlay.contains(t)) return;
+      e.preventDefault = () => {};  // stop Lenis from blocking native scroll
+      const px = e.deltaMode === 1 ? e.deltaY * 16
+               : e.deltaMode === 2 ? e.deltaY * window.innerHeight
+               : e.deltaY;
+      overlay.scrollTop += px;
+    };
+    window.addEventListener('wheel', onWheel, { capture: true, passive: false });
+
+    return () => {
+      window.removeEventListener('wheel', onWheel, { capture: true });
+      document.documentElement.style.overflow = '';
+      document.body.style.paddingRight = '';
+      window.__lenisEnabled = true;
+    };
   }, [projectKey]);
 
 
