@@ -2,10 +2,9 @@
 
 import { useEffect, useRef } from 'react';
 import { projectData, ProjectKey } from '@/lib/projects';
-import type Lenis from 'lenis';
 
 declare global {
-  interface Window { __lenis?: Lenis; __lenisEnabled?: boolean; }
+  interface Window { __lenisEnabled?: boolean; }
 }
 
 interface ModalProps {
@@ -17,27 +16,18 @@ export default function Modal({ projectKey, onClose }: ModalProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const overlay = scrollAreaRef.current;
+    if (!overlay) return;
+
     if (!projectKey) {
       window.__lenisEnabled = true;
       return;
     }
 
-    const overlay = scrollAreaRef.current;
-    if (!overlay) return;
-
     overlay.scrollTop = 0;
     window.__lenisEnabled = false;
 
-    // Capture-phase intercept: fires before Lenis's bubble-phase listener on window.
-    // stopPropagation keeps the event on the overlay so Lenis never sees it.
-    // NOT calling preventDefault() lets the browser natively scroll the overflow-y:auto overlay.
-    const onWheel = (e: WheelEvent) => { e.stopPropagation(); };
-    overlay.addEventListener('wheel', onWheel, { capture: true, passive: false });
-
-    return () => {
-      overlay.removeEventListener('wheel', onWheel, { capture: true });
-      window.__lenisEnabled = true;
-    };
+    return () => { window.__lenisEnabled = true; };
   }, [projectKey]);
 
 
