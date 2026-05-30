@@ -20,7 +20,8 @@ export default function LenisProvider() {
     });
 
     window.__lenis = lenis;
-    window.__lenisEnabled = false; // Preloader starts it
+    // Default enabled — Preloader disables it on home page, re-enables after exit
+    window.__lenisEnabled = true;
 
     let scrolling = false;
     let scrollTimer: ReturnType<typeof setTimeout>;

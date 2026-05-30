@@ -25,7 +25,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
-    // Stop Lenis while preloader is running
+    // Freeze Lenis during preloader
+    window.__lenisEnabled = false;
     if (window.__lenis) window.__lenis.stop();
 
     const id = requestAnimationFrame(() => setReady(true));

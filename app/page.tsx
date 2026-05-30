@@ -5,7 +5,6 @@ import Navbar from '@/components/Navbar';
 import ScrollShowcase from '@/components/ScrollShowcase';
 import HeroSection from '@/components/HeroSection';
 import CustomCursor from '@/components/CustomCursor';
-import LenisProvider from '@/components/LenisProvider';
 import Preloader from '@/components/Preloader';
 import gsap from 'gsap';
 
@@ -36,7 +35,6 @@ export default function Home() {
         style={{ transformOrigin: '50% 50vh' }}
         data-site-content
       >
-        <LenisProvider />
         <Navbar />
         <main>
           <HeroSection />

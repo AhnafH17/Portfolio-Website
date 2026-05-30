@@ -91,6 +91,7 @@ const schemaOrg = {
 };
 
 import NavTransition from '@/components/NavTransition';
+import LenisProvider from '@/components/LenisProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -106,6 +107,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
+        <LenisProvider />
         <NavTransition />
         {children}
       </body>
