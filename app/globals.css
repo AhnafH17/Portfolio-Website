@@ -56,7 +56,7 @@
 
 /* 04 — Neon Violet */
 [data-palette="purple"]{
-  --black:#0E0529; --black-deep:#07021a; --black-card:rgba(20,8,45,0.97);
+  --black:#1a0b36; --black-deep:#10061f; --black-card:rgba(30,14,58,0.97);
   --gold:#E3C2EE; --gold-dim:#9d6fc4; --gold-bright:#f1ddf8;
   --gold-hover:rgba(214,162,228,0.08);
   --accent:#8B56B5; --accent-glow:#FF01FF; --accent-rgb:255,1,255; --accent-light:#D08AE3;
@@ -667,8 +667,8 @@ section{padding:7rem 3rem;position:relative}
 @keyframes ctShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
 
 /* Submit button */
-.ct-submit{position:relative;overflow:hidden;align-self:flex-start;margin-top:.4rem;padding:1rem 2.8rem;background:linear-gradient(100deg,var(--accent) 0%,var(--accent-glow) 40%,#e94b5e 55%,var(--accent-glow) 100%);color:#0a0e14;border:none;border-radius:100px;font-family:var(--font-display);font-weight:700;font-size:.92rem;letter-spacing:.06em;cursor:pointer;touch-action:manipulation;transition:transform .25s,box-shadow .25s;box-shadow:0 6px 24px rgba(var(--accent-rgb),0.35),0 2px 8px rgba(255,230,100,0.2)}
-.ct-submit:hover{transform:scale(1.05);box-shadow:0 14px 48px rgba(var(--accent-rgb),0.55),0 4px 16px rgba(255,240,160,0.3)}
+.ct-submit{position:relative;overflow:hidden;align-self:flex-start;margin-top:.4rem;padding:1rem 2.8rem;background:linear-gradient(100deg,var(--accent) 0%,var(--accent-glow) 45%,var(--accent-light) 60%,var(--accent-glow) 100%);color:var(--black-deep);border:none;border-radius:100px;font-family:var(--font-display);font-weight:700;font-size:.92rem;letter-spacing:.06em;cursor:pointer;touch-action:manipulation;transition:transform .25s,box-shadow .25s;box-shadow:0 6px 24px rgba(var(--accent-rgb),0.4),0 2px 8px rgba(var(--accent-rgb),0.25)}
+.ct-submit:hover{transform:scale(1.05);box-shadow:0 14px 48px rgba(var(--accent-rgb),0.55),0 4px 16px rgba(var(--accent-rgb),0.35)}
 .ct-submit:disabled{opacity:.55;cursor:not-allowed;transform:none}
 .ct-submit-shimmer{position:absolute;top:0;left:0;width:50%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,0.38),transparent);animation:ctShimmer 2.6s ease-in-out infinite}
 .ct-status{font-size:.88rem;margin-top:.8rem;padding:.7rem 1rem;border-radius:8px;border:1px solid transparent}
