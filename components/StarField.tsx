@@ -70,9 +70,9 @@ export default function StarField({ className }: { className?: string }) {
 
         // Glow
         const grd = ctx.createRadialGradient(px, py, 0, px, py, r * 4);
-        grd.addColorStop(0, `rgba(201,168,76,${alpha * 0.9})`);
-        grd.addColorStop(0.4, `rgba(201,168,76,${alpha * 0.3})`);
-        grd.addColorStop(1, 'rgba(201,168,76,0)');
+        grd.addColorStop(0, `rgba(204,24,44,${alpha * 0.9})`);
+        grd.addColorStop(0.4, `rgba(204,24,44,${alpha * 0.3})`);
+        grd.addColorStop(1, 'rgba(204,24,44,0)');
         ctx.beginPath();
         ctx.arc(px, py, r * 4, 0, Math.PI * 2);
         ctx.fillStyle = grd;

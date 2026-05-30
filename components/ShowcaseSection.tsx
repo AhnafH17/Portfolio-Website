@@ -96,9 +96,9 @@ export default function ShowcaseSection() {
         <svg viewBox="0 200 696 316" fill="none" preserveAspectRatio="none" className="sc-bg-svg">
           <defs>
             <linearGradient id="scGold" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%"  stopColor="#c9a84c" stopOpacity="0.3" />
-              <stop offset="50%" stopColor="#e2c973" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#a07830" stopOpacity="0.3" />
+              <stop offset="0%"  stopColor="#cc182c" stopOpacity="0.3" />
+              <stop offset="50%" stopColor="#cc182c" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#7a0f1d" stopOpacity="0.3" />
             </linearGradient>
           </defs>
           {[...Array(14)].map((_, i) => (

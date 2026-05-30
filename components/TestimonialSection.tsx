@@ -50,11 +50,11 @@ const ARCS = [
 ];
 
 const POINTS = [
-  { lat: 23.68,  lng: 90.36,   color: '#c9a84c', label: 'Bangladesh' },
-  { lat: 43.65,  lng: -79.38,  color: '#e2c973', label: 'Canada' },
-  { lat: 37.77,  lng: -122.4,  color: '#e2c973', label: 'USA' },
-  { lat: 51.5,   lng: -0.12,   color: '#e2c973', label: 'Europe' },
-  { lat: -33.87, lng: 151.2,   color: '#e2c973', label: 'Australia' },
+  { lat: 23.68,  lng: 90.36,   color: '#cc182c', label: 'Bangladesh' },
+  { lat: 43.65,  lng: -79.38,  color: '#cc182c', label: 'Canada' },
+  { lat: 37.77,  lng: -122.4,  color: '#cc182c', label: 'USA' },
+  { lat: 51.5,   lng: -0.12,   color: '#cc182c', label: 'Europe' },
+  { lat: -33.87, lng: 151.2,   color: '#cc182c', label: 'Australia' },
 ];
 
 function GlobeViz() {
@@ -80,8 +80,8 @@ function GlobeViz() {
           .width(container.clientWidth).height(container.clientHeight)
           .backgroundColor('rgba(0,0,0,0)')
           .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-          .atmosphereColor('rgba(220,180,60,0.85)').atmosphereAltitude(0.22)
-          .arcsData(ARCS).arcColor(() => ['#c9a84c', '#e2c973'])
+          .atmosphereColor('rgba(204,24,44,0.85)').atmosphereAltitude(0.22)
+          .arcsData(ARCS).arcColor(() => ['#cc182c', '#cc182c'])
           .arcDashLength(0.35).arcDashGap(0.2).arcDashAnimateTime(2200)
           .arcStroke(1.2).arcAltitude(0.28)
           .pointsData(POINTS).pointColor((d: any) => d.color)

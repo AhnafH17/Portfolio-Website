@@ -108,8 +108,8 @@ export default function Navbar() {
             >AH</text>
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="40" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#e2c973" />
-                <stop offset="100%" stopColor="#a07830" />
+                <stop offset="0%" stopColor="#cc182c" />
+                <stop offset="100%" stopColor="#7a0f1d" />
               </linearGradient>
             </defs>
           </svg>

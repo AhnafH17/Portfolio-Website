@@ -48,13 +48,13 @@ function ContactSparkles() {
     const FL = 380;
     const MAX_Z = 900;
 
-    // Gold palette matching portfolio
+    // Red / silver palette matching portfolio
     const PALETTE = [
-      { r: 201, g: 168, b: 76  },
-      { r: 226, g: 201, b: 115 },
-      { r: 255, g: 232, b: 140 },
-      { r: 180, g: 130, b: 48  },
-      { r: 255, g: 248, b: 200 },
+      { r: 204, g: 24,  b: 44  },  // CC182C bright red
+      { r: 164, g: 19,  b: 38  },  // A41326 deep red
+      { r: 233, g: 75,  b: 94  },  // light red
+      { r: 89,  g: 106, b: 119 },  // 596A77 steel
+      { r: 194, g: 202, b: 208 },  // C2CAD0 silver
     ];
 
     interface Sparkle {

@@ -79,9 +79,9 @@ export default function ProjectPageContent({ project, meta }: Props) {
         ) : (
           <div className="proj-hero-empty">
             <svg viewBox="0 0 120 80" fill="none" width="120" opacity={0.08}>
-              <rect x="2" y="2" width="116" height="76" rx="8" stroke="#c9a84c" strokeWidth="1.5"/>
-              <circle cx="35" cy="30" r="12" stroke="#c9a84c" strokeWidth="1.5"/>
-              <path d="M2 55l28-18 24 16 20-14 44 19" stroke="#c9a84c" strokeWidth="1.5" strokeLinejoin="round"/>
+              <rect x="2" y="2" width="116" height="76" rx="8" stroke="#cc182c" strokeWidth="1.5"/>
+              <circle cx="35" cy="30" r="12" stroke="#cc182c" strokeWidth="1.5"/>
+              <path d="M2 55l28-18 24 16 20-14 44 19" stroke="#cc182c" strokeWidth="1.5" strokeLinejoin="round"/>
             </svg>
           </div>
         )}
@@ -182,7 +182,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
                     {slug && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={`https://cdn.simpleicons.org/${slug}/c9a84c`}
+                        src={`https://cdn.simpleicons.org/${slug}/cc182c`}
                         alt=""
                         width={18}
                         height={18}

@@ -93,7 +93,7 @@ function randomPosOnEdge(cx: number, cy: number, mag: number): Vector2D {
   return { x: cx + Math.cos(angle) * mag, y: cy + Math.sin(angle) * mag }
 }
 
-const GOLD = { r: 201, g: 168, b: 76 }
+const GOLD = { r: 204, g: 24, b: 44 }
 
 export interface ParticleTextHandle {
   nextWord: (word: string) => void

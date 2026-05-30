@@ -41,9 +41,9 @@ function FloatingPaths({ position, count = 36 }: { position: number; count?: num
         ))}
         <defs>
           <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"   stopColor="#c9a84c" stopOpacity="0.4" />
-            <stop offset="50%"  stopColor="#e2c973" stopOpacity="0.9" />
-            <stop offset="100%" stopColor="#a07830" stopOpacity="0.4" />
+            <stop offset="0%"   stopColor="#cc182c" stopOpacity="0.4" />
+            <stop offset="50%"  stopColor="#cc182c" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#7a0f1d" stopOpacity="0.4" />
           </linearGradient>
         </defs>
       </svg>

@@ -41,7 +41,7 @@ export default function TransitionOverlay() {
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: '#080603',
+        background: '#10151c',
         pointerEvents: visible ? 'all' : 'none',
         opacity: visible ? 1 : 0,
         // Only animate the hide — show is instant via React's synchronous setState

@@ -76,14 +76,14 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       ref={rootRef}
       style={{
         position: 'fixed', inset: 0, zIndex: 99999,
-        background: '#080603',
+        background: '#10151c',
         overflow: 'hidden',
       }}
     >
       {/* Ambient glow */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(201,168,76,0.08) 0%, transparent 70%)',
+        background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(204,24,44,0.08) 0%, transparent 70%)',
       }} />
 
       {/* Canvas fills full screen */}
