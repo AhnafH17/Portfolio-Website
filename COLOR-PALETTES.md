@@ -1,10 +1,30 @@
 # Color Palettes
 
-## How to Apply a New Palette
+## Random Palette System (ACTIVE)
 
-All colors are CSS custom properties in `app/globals.css` inside `:root { ... }`.
-To switch palettes, update those variables. Also check hardcoded `rgba(201,168,76,...)` values
-in the same file and replace with the new accent color.
+The site now ships **4 palettes** and picks one **at random on each page load**.
+
+- Each palette is a CSS variable set in `app/globals.css` under `[data-palette="…"]`
+  (crimson / teal / amber / purple). `:root` defaults to crimson.
+- An inline script in `app/layout.tsx` `<head>` sets `document.documentElement[data-palette]`
+  to a random one before first paint (no flash). It does NOT persist — random every visit.
+- The bright accent is exposed as `--accent-rgb` (an `r,g,b` triplet) so
+  `rgba(var(--accent-rgb), a)` works for every glow/border.
+- Canvas / WebGL bits can't read CSS vars, so they call `readAccent()` from
+  `lib/accent.ts` at runtime: ContactSection sparkles, StarField, the globe
+  (TestimonialSection), the preloader particles, and project-page tech icons.
+- Globe earth-texture tint is hue-rotated per palette via `[data-palette] .ts-globe-clip`.
+
+**To add a 5th palette:** add a `[data-palette="name"]{…}` block in globals.css with the
+same variables, and add `'name'` to the array in the layout.tsx inline script.
+
+---
+
+## How a single palette was originally applied (reference)
+
+All colors are CSS custom properties in `app/globals.css` `:root`. Hardcoded accent
+values were converted to `rgba(var(--accent-rgb), a)` / `var(--accent-glow)` so they
+follow the active palette.
 
 ---
 

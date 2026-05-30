@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { readAccent } from '@/lib/accent';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -76,18 +77,19 @@ function GlobeViz() {
         initialized.current = true;
         const Globe = (window as any).Globe;
         if (!Globe) return;
+        const a = readAccent();
         const globeInstance = Globe()(container)
           .width(container.clientWidth).height(container.clientHeight)
           .backgroundColor('rgba(0,0,0,0)')
           .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-night.jpg')
-          .atmosphereColor('rgba(204,24,44,0.85)').atmosphereAltitude(0.22)
-          .arcsData(ARCS).arcColor(() => ['#cc182c', '#cc182c'])
+          .atmosphereColor(`rgba(${a.r},${a.g},${a.b},0.85)`).atmosphereAltitude(0.22)
+          .arcsData(ARCS).arcColor(() => [a.glow, a.glow])
           .arcDashLength(0.35).arcDashGap(0.2).arcDashAnimateTime(2200)
           .arcStroke(1.2).arcAltitude(0.28)
-          .pointsData(POINTS).pointColor((d: any) => d.color)
+          .pointsData(POINTS).pointColor(() => a.glow)
           .pointAltitude(0.015).pointRadius(0.6)
           .labelsData(POINTS).labelText((d: any) => d.label)
-          .labelColor((d: any) => d.color).labelSize(1.8)
+          .labelColor(() => a.glow).labelSize(1.8)
           .labelAltitude(0.02).labelDotRadius(0);
         globeInstance.controls().autoRotate = true;
         globeInstance.controls().autoRotateSpeed = 0.9;

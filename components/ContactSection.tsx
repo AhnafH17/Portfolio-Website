@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
+import { readAccent } from '@/lib/accent';
 
 function ContactSparkles() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,13 +49,22 @@ function ContactSparkles() {
     const FL = 380;
     const MAX_Z = 900;
 
-    // Red / silver palette matching portfolio
+    // Build sparkle palette from the active theme's accent + silver
+    const a = readAccent();
+    const lighten = (c: number) => Math.round(c + (255 - c) * 0.45);
+    const darken  = (c: number) => Math.round(c * 0.7);
+    const sv = a.silver.replace('#', '');
+    const svRgb = {
+      r: parseInt(sv.slice(0, 2), 16) || 194,
+      g: parseInt(sv.slice(2, 4), 16) || 202,
+      b: parseInt(sv.slice(4, 6), 16) || 208,
+    };
     const PALETTE = [
-      { r: 204, g: 24,  b: 44  },  // CC182C bright red
-      { r: 164, g: 19,  b: 38  },  // A41326 deep red
-      { r: 233, g: 75,  b: 94  },  // light red
-      { r: 89,  g: 106, b: 119 },  // 596A77 steel
-      { r: 194, g: 202, b: 208 },  // C2CAD0 silver
+      { r: a.r, g: a.g, b: a.b },                                   // accent
+      { r: darken(a.r), g: darken(a.g), b: darken(a.b) },           // deep accent
+      { r: lighten(a.r), g: lighten(a.g), b: lighten(a.b) },        // light accent
+      svRgb,                                                        // silver/text
+      { r: lighten(svRgb.r), g: lighten(svRgb.g), b: lighten(svRgb.b) },
     ];
 
     interface Sparkle {

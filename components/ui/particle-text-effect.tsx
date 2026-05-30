@@ -93,7 +93,13 @@ function randomPosOnEdge(cx: number, cy: number, mag: number): Vector2D {
   return { x: cx + Math.cos(angle) * mag, y: cy + Math.sin(angle) * mag }
 }
 
-const GOLD = { r: 204, g: 24, b: 44 }
+// Reads the active palette's accent triplet at runtime
+function accentRGB(): { r: number; g: number; b: number } {
+  if (typeof window === 'undefined') return { r: 204, g: 24, b: 44 }
+  const t = getComputedStyle(document.documentElement)
+    .getPropertyValue('--accent-rgb').trim().split(',').map((n) => parseInt(n, 10))
+  return { r: t[0] || 204, g: t[1] || 24, b: t[2] || 44 }
+}
 
 export interface ParticleTextHandle {
   nextWord: (word: string) => void
@@ -147,7 +153,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
 
       const imageData = ctx2.getImageData(0, 0, canvas.width, canvas.height)
       const pixels = imageData.data
-      const newColor = GOLD
+      const newColor = accentRGB()
 
       const particles = particlesRef.current
       let particleIndex = 0

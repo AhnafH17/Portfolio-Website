@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Project, StripMeta } from '@/lib/projects';
+import { readAccent } from '@/lib/accent';
 
 // Simple Icons CDN slug mapping — https://simpleicons.org
 const ICONS: Record<string, string> = {
@@ -61,9 +62,13 @@ export default function ProjectPageContent({ project, meta }: Props) {
   const techSection = project.sections.find((s) => s.type === 'tech');
   const contentSections = project.sections.filter((s) => s.type !== 'results' && s.type !== 'tech');
 
+  // Tech-icon tint from the active palette (Simple Icons wants hex without #)
+  const [iconColor, setIconColor] = useState('cc182c');
+
   // Scroll to top instantly before the slide-in animation plays
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    setIconColor(readAccent().glow.replace('#', '') || 'cc182c');
   }, []);
 
   const goBack = () => router.push('/');
@@ -182,7 +187,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
                     {slug && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
-                        src={`https://cdn.simpleicons.org/${slug}/cc182c`}
+                        src={`https://cdn.simpleicons.org/${slug}/${iconColor}`}
                         alt=""
                         width={18}
                         height={18}

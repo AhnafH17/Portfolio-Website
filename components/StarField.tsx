@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { readAccent } from '@/lib/accent';
 
 interface Star {
   x: number;
@@ -22,6 +23,12 @@ export default function StarField({ className }: { className?: string }) {
     if (!ctx) return;
 
     let rafId: number;
+    const acc = readAccent();                         // active palette accent
+    const { r: AR, g: AG, b: AB } = acc;
+    const sv = acc.silver.replace('#', '');
+    const SR = parseInt(sv.slice(0, 2), 16) || 240;
+    const SG = parseInt(sv.slice(2, 4), 16) || 220;
+    const SB = parseInt(sv.slice(4, 6), 16) || 160;
     // Scale star count by canvas area so desktop gets proportionally more
     const STAR_COUNT = Math.max(160, Math.round((canvas.offsetWidth * canvas.offsetHeight) / 2800));
     const stars: Star[] = [];
@@ -70,9 +77,9 @@ export default function StarField({ className }: { className?: string }) {
 
         // Glow
         const grd = ctx.createRadialGradient(px, py, 0, px, py, r * 4);
-        grd.addColorStop(0, `rgba(204,24,44,${alpha * 0.9})`);
-        grd.addColorStop(0.4, `rgba(204,24,44,${alpha * 0.3})`);
-        grd.addColorStop(1, 'rgba(204,24,44,0)');
+        grd.addColorStop(0, `rgba(${AR},${AG},${AB},${alpha * 0.9})`);
+        grd.addColorStop(0.4, `rgba(${AR},${AG},${AB},${alpha * 0.3})`);
+        grd.addColorStop(1, `rgba(${AR},${AG},${AB},0)`);
         ctx.beginPath();
         ctx.arc(px, py, r * 4, 0, Math.PI * 2);
         ctx.fillStyle = grd;
@@ -81,7 +88,7 @@ export default function StarField({ className }: { className?: string }) {
         // Core dot
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(240,220,160,${alpha})`;
+        ctx.fillStyle = `rgba(${SR},${SG},${SB},${alpha})`;
         ctx.fill();
       }
 

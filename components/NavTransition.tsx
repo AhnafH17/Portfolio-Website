@@ -58,10 +58,10 @@ export default function NavTransition() {
         height: '2px',
         width: '100%',
         opacity: 0,
-        background: 'linear-gradient(90deg,#A41326,#CC182C,#e94b5e)',
+        background: 'linear-gradient(90deg,var(--accent),var(--accent-glow),var(--accent-light))',
         zIndex: 99999,
         transformOrigin: 'left center',
-        boxShadow: '0 0 10px rgba(204,24,44,0.7)',
+        boxShadow: '0 0 10px rgba(var(--accent-rgb),0.7)',
         pointerEvents: 'none',
       }}
     />

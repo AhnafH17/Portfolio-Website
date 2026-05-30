@@ -108,8 +108,8 @@ export default function Navbar() {
             >AH</text>
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="40" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#cc182c" />
-                <stop offset="100%" stopColor="#7a0f1d" />
+                <stop offset="0%" style={{ stopColor: 'var(--accent-glow)' }} />
+                <stop offset="100%" style={{ stopColor: 'var(--accent)' }} />
               </linearGradient>
             </defs>
           </svg>
