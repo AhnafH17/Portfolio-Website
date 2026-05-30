@@ -6,7 +6,6 @@ import Lenis from 'lenis';
 declare global {
   interface Window {
     __lenis?: Lenis;
-    __lenisEnabled?: boolean;
   }
 }
 
@@ -20,8 +19,6 @@ export default function LenisProvider() {
     });
 
     window.__lenis = lenis;
-    // Default enabled — Preloader disables it on home page, re-enables after exit
-    window.__lenisEnabled = true;
 
     let scrolling = false;
     let scrollTimer: ReturnType<typeof setTimeout>;
@@ -36,8 +33,7 @@ export default function LenisProvider() {
 
     let rafId: number;
     function raf(time: number) {
-      // Only tick Lenis when enabled — stops all event processing when modal is open
-      if (window.__lenisEnabled) lenis.raf(time);
+      lenis.raf(time);
       rafId = requestAnimationFrame(raf);
     }
     rafId = requestAnimationFrame(raf);
@@ -46,7 +42,6 @@ export default function LenisProvider() {
       cancelAnimationFrame(rafId);
       lenis.destroy();
       window.__lenis = undefined;
-      window.__lenisEnabled = undefined;
     };
   }, []);
 

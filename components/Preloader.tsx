@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { ParticleTextEffect, ParticleTextHandle } from '@/components/ui/particle-text-effect';
 
 declare global {
-  interface Window { __lenis?: import('lenis').default; __lenisEnabled?: boolean; }
+  interface Window { __lenis?: import('lenis').default; }
 }
 
 interface PreloaderProps {
@@ -26,7 +26,6 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
     // Freeze Lenis during preloader
-    window.__lenisEnabled = false;
     if (window.__lenis) window.__lenis.stop();
 
     const id = requestAnimationFrame(() => setReady(true));
@@ -60,8 +59,8 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         window.scrollTo(0, 0);
         if (window.__lenis) {
           window.__lenis.scrollTo(0, { immediate: true });
+          window.__lenis.start();   // clear isStopped so wheel scrolling works again
         }
-        window.__lenisEnabled = true;
         onComplete();
         // Unmount after site is already visible
         setTimeout(() => setMounted(false), 100);
