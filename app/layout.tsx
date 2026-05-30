@@ -90,6 +90,8 @@ const schemaOrg = {
   ],
 };
 
+import TransitionOverlay from '@/components/TransitionOverlay';
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
@@ -103,7 +105,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <TransitionOverlay />
+        {children}
+      </body>
     </html>
   );
 }

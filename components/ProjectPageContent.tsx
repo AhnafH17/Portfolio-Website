@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Project, StripMeta } from '@/lib/projects';
 
@@ -55,9 +55,15 @@ interface Props {
 }
 
 export default function ProjectPageContent({ project, meta }: Props) {
+  const router = useRouter();
   const resultsSection = project.sections.find((s) => s.type === 'results');
   const techSection = project.sections.find((s) => s.type === 'tech');
   const contentSections = project.sections.filter((s) => s.type !== 'results' && s.type !== 'tech');
+
+  const goBack = () => {
+    (window as any).__overlayShow?.();
+    setTimeout(() => router.push('/#showcase'), 380);
+  };
 
   return (
     <div className="proj-page">
@@ -78,12 +84,12 @@ export default function ProjectPageContent({ project, meta }: Props) {
         )}
         <div className="proj-hero-overlay" />
 
-        <Link href="/#showcase" className="proj-back">
+        <button onClick={goBack} className="proj-back">
           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} width={14} height={14}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5M12 5l-7 7 7 7" />
           </svg>
           Back
-        </Link>
+        </button>
 
         <motion.div
           className="proj-hero-content"

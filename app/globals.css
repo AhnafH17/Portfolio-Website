@@ -490,6 +490,42 @@ section{padding:7rem 3rem;position:relative}
 .modal-result-card .big{font-family:var(--font-display);font-size:1.4rem;font-weight:700;color:var(--accent-glow);display:block}
 .modal-result-card .label{font-size:.75rem;color:var(--gold-dim);letter-spacing:.05em;text-transform:uppercase;margin-top:.3rem;display:block}
 
+/* ===== SCROLL SHOWCASE ===== */
+.sv-wrap{background:var(--black);padding:6rem 0 4rem;position:relative;overflow:hidden}
+.sv-header{display:flex;align-items:center;gap:1.5rem;padding:0 5vw;margin-bottom:5rem}
+.sv-header-label{font-size:.65rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-glow);opacity:.7}
+.sv-header-line{flex:1;height:1px;background:rgba(201,168,76,0.1)}
+.sv-header-count{font-family:'Sddystopian',var(--font-display);font-size:.78rem;color:var(--gold-dim);opacity:.45;letter-spacing:.1em}
+.sv-list{display:flex;flex-direction:column}
+.sv-case{display:grid;grid-template-columns:56% 1fr;align-items:center;border-top:1px solid rgba(201,168,76,0.07);padding:5vw;gap:0;position:relative;overflow:hidden;min-height:62vh}
+.sv-case-flip{grid-template-columns:1fr 56%}
+.sv-case-flip .sv-img-wrap{order:2}
+.sv-case-flip .sv-info{order:1;padding-right:4rem;padding-left:0}
+.sv-img-wrap{position:relative;overflow:hidden;aspect-ratio:16/10;cursor:pointer;background:rgba(12,9,2,1)}
+.sv-img-wrap:focus-visible{outline:1px solid var(--accent-glow)}
+.sv-img{width:100%;height:115%;object-fit:cover;object-position:center top;filter:brightness(.65) saturate(.85);display:block;transform-origin:center;transition:filter .5s}
+.sv-case:hover .sv-img{filter:brightness(.8) saturate(1)}
+.sv-img-shade{position:absolute;inset:0;background:linear-gradient(135deg,rgba(8,6,3,.25),transparent 60%);pointer-events:none}
+/* corner crosses */
+.sv-cross{position:absolute;width:10px;height:10px;pointer-events:none;z-index:2}
+.sv-cross::before,.sv-cross::after{content:'';position:absolute;background:rgba(201,168,76,.45)}
+.sv-cross::before{width:10px;height:1px;top:4.5px;left:0}
+.sv-cross::after{width:1px;height:10px;top:0;left:4.5px}
+.sv-tl{top:10px;left:10px}.sv-tr{top:10px;right:10px}.sv-bl{bottom:10px;left:10px}.sv-br{bottom:10px;right:10px}
+/* info panel */
+.sv-info{padding:3rem 2rem 3rem 4rem;display:flex;flex-direction:column;gap:.8rem;position:relative}
+.sv-bg-num{position:absolute;top:50%;right:-0.1em;transform:translateY(-50%);font-family:'Sddystopian',var(--font-display);font-size:clamp(4rem,10vw,9rem);font-weight:400;color:transparent;-webkit-text-stroke:1px rgba(201,168,76,.05);line-height:1;pointer-events:none;user-select:none;z-index:0}
+.sv-divider{width:36px;height:1px;background:var(--accent-glow);opacity:.45;flex-shrink:0}
+.sv-tags{display:flex;gap:.55rem;flex-wrap:wrap;position:relative;z-index:1}
+.sv-tag{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-glow);opacity:.65;padding:.18rem .65rem;border:1px solid rgba(201,168,76,.15)}
+.sv-title{font-family:'Sddystopian',var(--font-display);font-size:clamp(1.7rem,2.8vw,2.6rem);font-weight:400;color:var(--gold);line-height:1.05;letter-spacing:-.02em;position:relative;z-index:1}
+.sv-desc{color:var(--gold-dim);font-size:.88rem;line-height:1.78;max-width:400px;position:relative;z-index:1}
+.sv-btn{display:inline-flex;align-items:center;gap:.55rem;margin-top:.4rem;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-glow);background:none;border:1px solid rgba(201,168,76,.22);padding:.62rem 1.4rem;cursor:pointer;width:fit-content;transition:background .25s,gap .25s,border-color .25s;position:relative;z-index:1}
+.sv-btn:hover{background:rgba(201,168,76,.08);gap:.85rem;border-color:rgba(201,168,76,.42)}
+/* gsap targets: start invisible */
+.sv-anim{opacity:0}
+@media(max-width:860px){.sv-case{grid-template-columns:1fr;min-height:unset;padding:4vw 4vw 6vw}.sv-case-flip .sv-img-wrap{order:1}.sv-case-flip .sv-info{order:2;padding-right:0}.sv-img-wrap{aspect-ratio:16/9}.sv-info{padding:1.8rem 0 1rem}.sv-case-flip .sv-info{padding-left:0}.sv-bg-num{font-size:5rem;right:0}}
+
 /* ===== PROJECT PAGES ===== */
 /* ===== PROJECT PAGES ===== */
 .proj-page{min-height:100vh;background:var(--black)}

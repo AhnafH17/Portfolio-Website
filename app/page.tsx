@@ -2,7 +2,7 @@
 
 import { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
-import ShowcaseSection from '@/components/ShowcaseSection';
+import ScrollShowcase from '@/components/ScrollShowcase';
 import HeroSection from '@/components/HeroSection';
 import CustomCursor from '@/components/CustomCursor';
 import LenisProvider from '@/components/LenisProvider';
@@ -40,7 +40,7 @@ export default function Home() {
         <Navbar />
         <main>
           <HeroSection />
-          <ShowcaseSection />
+          <ScrollShowcase />
           <Suspense fallback={null}>
             <MarqueeStrip />
             <AboutSection />
