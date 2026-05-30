@@ -3,47 +3,46 @@
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
-export default function TransitionOverlay() {
-  const pathname = usePathname();
-  const ref = useRef<HTMLDivElement>(null);
-  const timer1 = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const timer2 = useRef<ReturnType<typeof setTimeout>>(undefined);
+const FADE = 'opacity 0.45s ease';
 
+export default function TransitionOverlay() {
+  const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const t1 = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const t2 = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // Called on each route change — show briefly then fade out
   const fadeOut = () => {
     const el = ref.current;
     if (!el) return;
-    clearTimeout(timer1.current);
-    clearTimeout(timer2.current);
+    clearTimeout(t1.current);
+    clearTimeout(t2.current);
+    // Ensure transition is live before we change opacity
+    el.style.transition = FADE;
     el.style.opacity = '1';
     el.style.pointerEvents = 'all';
-    timer1.current = setTimeout(() => {
-      el.style.opacity = '0';
-    }, 80);
-    timer2.current = setTimeout(() => {
-      el.style.pointerEvents = 'none';
-    }, 600);
+    t1.current = setTimeout(() => { el.style.opacity = '0'; }, 80);
+    t2.current = setTimeout(() => { el.style.pointerEvents = 'none'; }, 600);
   };
 
-  // Page entrance: start visible, fade out
   useEffect(() => {
-    fadeOut();
-    // Expose show function for navigation triggers
+    // Expose show function so ScrollShowcase & ProjectPageContent can trigger it
     (window as any).__overlayShow = () => {
       const el = ref.current;
       if (!el) return;
-      clearTimeout(timer1.current);
-      clearTimeout(timer2.current);
-      el.style.transition = 'none';
+      clearTimeout(t1.current);
+      clearTimeout(t2.current);
+      el.style.transition = 'none';     // snap to visible instantly
       el.style.opacity = '1';
       el.style.pointerEvents = 'all';
-      requestAnimationFrame(() => { el.style.transition = ''; });
+      // Restore transition on next frame so future fades animate
+      requestAnimationFrame(() => { if (ref.current) ref.current.style.transition = FADE; });
     };
     return () => { delete (window as any).__overlayShow; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Route change: fade out on new page
-  useEffect(() => { fadeOut(); }, [pathname]);
+  // Fade out whenever the route changes (new page has mounted)
+  useEffect(() => { fadeOut(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div
@@ -54,7 +53,7 @@ export default function TransitionOverlay() {
         background: '#080603',
         opacity: 1,
         pointerEvents: 'all',
-        transition: 'opacity 0.45s ease',
+        transition: FADE,
       }}
     />
   );
