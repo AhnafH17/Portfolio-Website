@@ -9,6 +9,7 @@ import Preloader from '@/components/Preloader';
 import gsap from 'gsap';
 
 const MarqueeStrip = lazy(() => import('@/components/MarqueeStrip'));
+const DeviceShowcase = lazy(() => import('@/components/DeviceShowcase'));
 const AboutSection = lazy(() => import('@/components/AboutSection'));
 const TestimonialSection = lazy(() => import('@/components/TestimonialSection'));
 const ContactSection = lazy(() => import('@/components/ContactSection'));
@@ -41,6 +42,7 @@ export default function Home() {
           <ScrollShowcase />
           <Suspense fallback={null}>
             <MarqueeStrip />
+            <DeviceShowcase />
             <AboutSection />
             <TestimonialSection />
             <ContactSection />

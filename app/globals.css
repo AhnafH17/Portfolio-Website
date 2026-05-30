@@ -1414,3 +1414,87 @@ footer span{color:var(--accent-glow)}
     height:300px;
   }
 }
+
+/* ───────────────────────── 3D Device Showcase (About hero) ───────────────────────── */
+.dv-section{
+  position:relative;
+  /* Tall scroll track — drives the pinned animation. ~4 viewport heights. */
+  height:400vh;
+  background:radial-gradient(120% 80% at 50% 0%, var(--black) 0%, var(--black-deep) 70%);
+}
+.dv-sticky{
+  position:sticky;
+  top:0;
+  height:100vh;
+  width:100%;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.dv-canvas{
+  position:absolute;
+  inset:0;
+  z-index:1;
+}
+.dv-canvas canvas{ display:block; }
+
+.dv-overlay{
+  position:relative;
+  z-index:2;
+  text-align:center;
+  pointer-events:none;
+  will-change:opacity, transform;
+}
+.dv-eyebrow{
+  display:block;
+  font-family:var(--font-body);
+  font-size:0.78rem;
+  letter-spacing:0.42em;
+  text-transform:uppercase;
+  color:rgba(var(--accent-rgb),0.85);
+  margin-bottom:0.9rem;
+}
+.dv-title{
+  font-family:var(--font-display);
+  font-weight:800;
+  font-size:clamp(3rem, 9vw, 7.5rem);
+  line-height:0.95;
+  color:var(--gold);
+  margin:0;
+  text-shadow:0 0 60px rgba(var(--accent-rgb),0.35);
+}
+.dv-hint{
+  display:block;
+  margin-top:2rem;
+  font-family:var(--font-body);
+  font-size:0.85rem;
+  letter-spacing:0.3em;
+  text-transform:uppercase;
+  color:var(--gold-dim);
+  animation:dv-bob 1.8s ease-in-out infinite;
+}
+@keyframes dv-bob{
+  0%,100%{ transform:translateY(0); opacity:0.7; }
+  50%{ transform:translateY(8px); opacity:1; }
+}
+
+/* Static fallback (reduced-motion / no WebGL) */
+.dv-fallback{
+  position:relative;
+  z-index:2;
+  max-width:640px;
+  padding:0 24px;
+  text-align:center;
+}
+.dv-fallback-text{
+  margin-top:1.4rem;
+  font-family:var(--font-body);
+  font-size:1.05rem;
+  line-height:1.7;
+  color:var(--gold-dim);
+}
+
+@media (max-width:768px){
+  .dv-section{ height:320vh; }
+}
