@@ -13,6 +13,26 @@ function excerpt(html: string, max = 155) {
   return plain.length > max ? plain.slice(0, max).replace(/\s+\S*$/, '') + '…' : plain;
 }
 
+// Split an element's text into word spans (preserving spaces) for staggered reveal
+function splitWords(el: HTMLElement): HTMLElement[] {
+  if (el.querySelector('.sv-word')) {
+    return Array.from(el.querySelectorAll<HTMLElement>('.sv-word'));
+  }
+  const parts = (el.textContent ?? '').split(/(\s+)/);
+  el.textContent = '';
+  const words: HTMLElement[] = [];
+  parts.forEach((p) => {
+    if (p === '') return;
+    if (/^\s+$/.test(p)) { el.appendChild(document.createTextNode(p)); return; }
+    const span = document.createElement('span');
+    span.className = 'sv-word';
+    span.textContent = p;
+    el.appendChild(span);
+    words.push(span);
+  });
+  return words;
+}
+
 export default function ScrollShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
   const router = useRouter();
@@ -24,9 +44,14 @@ export default function ScrollShowcase() {
       cases.forEach((caseEl) => {
         const imgWrap = caseEl.querySelector<HTMLElement>('.sv-img-wrap');
         const img     = caseEl.querySelector<HTMLElement>('.sv-img');
-        const info    = caseEl.querySelectorAll<HTMLElement>('.sv-anim');
+        // Block elements that fade in as a whole (divider, tags, button)
+        const block   = caseEl.querySelectorAll<HTMLElement>('.sv-divider, .sv-tags, .sv-btn');
+        const titleEl = caseEl.querySelector<HTMLElement>('.sv-title');
+        const descEl  = caseEl.querySelector<HTMLElement>('.sv-desc');
 
         if (!imgWrap || !img) return;
+
+        const trig = { trigger: caseEl, start: 'top 78%', toggleActions: 'play none none none' as const };
 
         // ── Clip-path reveal from bottom ──
         gsap.fromTo(imgWrap,
@@ -55,15 +80,38 @@ export default function ScrollShowcase() {
           scrollTrigger: { trigger: caseEl, start: 'top bottom', end: 'bottom top', scrub: 1.4 },
         });
 
-        // ── Text stagger ──
-        if (info.length) {
-          gsap.fromTo(info,
-            { opacity: 0, y: 32 },
+        // ── Block elements fade-up (divider, tags, button) ──
+        if (block.length) {
+          gsap.fromTo(block,
+            { opacity: 0, y: 28 },
+            { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', stagger: 0.1, delay: 0.1, scrollTrigger: trig }
+          );
+        }
+
+        // ── Title: word-by-word rise + blur clear (preserves glow) ──
+        if (titleEl) {
+          const words = splitWords(titleEl);
+          gsap.set(titleEl, { opacity: 1 });   // parent was hidden via .sv-anim
+          gsap.fromTo(words,
+            { opacity: 0, yPercent: 60, filter: 'blur(6px)' },
+            {
+              opacity: 1, yPercent: 0, filter: 'blur(0px)',
+              duration: 0.7, ease: 'power3.out', stagger: 0.06, delay: 0.15,
+              scrollTrigger: trig,
+            }
+          );
+        }
+
+        // ── Description: faster word stagger ──
+        if (descEl) {
+          const words = splitWords(descEl);
+          gsap.set(descEl, { opacity: 1 });
+          gsap.fromTo(words,
+            { opacity: 0, y: '0.5em' },
             {
               opacity: 1, y: 0,
-              duration: 0.65, ease: 'power2.out',
-              stagger: 0.1, delay: 0.15,
-              scrollTrigger: { trigger: caseEl, start: 'top 78%', toggleActions: 'play none none none' },
+              duration: 0.5, ease: 'power2.out', stagger: 0.012, delay: 0.3,
+              scrollTrigger: trig,
             }
           );
         }
