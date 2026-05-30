@@ -23,11 +23,12 @@ export default function NavTransition() {
       if (content) {
         gsap.killTweensOf(content);
         gsap.to(content, {
-          x: '7vw',
+          x: '-38vw',
           opacity: 0,
-          duration: 0.38,
-          delay: 0.08,
-          ease: 'power2.in',
+          scale: 0.94,
+          duration: 0.45,
+          delay: 0.05,
+          ease: 'power3.in',
           onComplete: () => {
             // 3. Bar completes to 100 % then fades
             if (bar) {
