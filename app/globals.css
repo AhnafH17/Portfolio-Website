@@ -435,17 +435,17 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
   .hero-image-frame{width:260px;height:340px}
   .hero-ring-1{width:290px;height:370px}
   .hero-floating-tag{right:0;bottom:20px;font-size:.72rem;padding:.6rem 1rem}
-  /* show floating cards on mobile, scaled down to peek around the arch */
-  .hero-fc-left-top{width:120px;top:-6px;left:-28px}
-  .hero-fc-left-bot{width:112px;top:300px;left:-18px}
-  .hero-fc-right-top{width:115px;top:18px;right:-28px}
-  .hero-fc-right-bot{width:104px;top:312px;right:-22px}
+  /* show floating cards on mobile, scaled to peek around the arch */
+  .hero-fc-left-top{width:160px;top:-14px;left:-40px}
+  .hero-fc-left-bot{width:150px;top:300px;left:-28px}
+  .hero-fc-right-top{width:152px;top:10px;right:-40px}
+  .hero-fc-right-bot{width:138px;top:316px;right:-32px}
 }
 @media(max-width:480px){
-  .hero-fc-left-top{width:92px;top:0;left:-18px}
-  .hero-fc-left-bot{width:86px;top:250px;left:-12px}
-  .hero-fc-right-top{width:88px;top:14px;right:-18px}
-  .hero-fc-right-bot{width:80px;top:258px;right:-14px}
+  .hero-fc-left-top{width:122px;top:-8px;left:-28px}
+  .hero-fc-left-bot{width:114px;top:248px;left:-18px}
+  .hero-fc-right-top{width:116px;top:8px;right:-28px}
+  .hero-fc-right-bot{width:106px;top:258px;right:-22px}
 }
 
 /* ===== SHARED ===== */
