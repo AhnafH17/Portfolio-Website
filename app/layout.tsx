@@ -90,7 +90,7 @@ const schemaOrg = {
   ],
 };
 
-import TransitionOverlay from '@/components/TransitionOverlay';
+import NavTransition from '@/components/NavTransition';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -106,7 +106,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body>
-        <TransitionOverlay />
+        <NavTransition />
         {children}
       </body>
     </html>

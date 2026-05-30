@@ -60,10 +60,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
   const techSection = project.sections.find((s) => s.type === 'tech');
   const contentSections = project.sections.filter((s) => s.type !== 'results' && s.type !== 'tech');
 
-  const goBack = () => {
-    (window as any).__overlayShow?.();
-    setTimeout(() => router.push('/#showcase'), 380);
-  };
+  const goBack = () => router.push('/');
 
   return (
     <div className="proj-page">

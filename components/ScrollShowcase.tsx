@@ -74,8 +74,7 @@ export default function ScrollShowcase() {
   }, []);
 
   const navigate = (key: ProjectKey) => {
-    (window as any).__overlayShow?.();
-    setTimeout(() => router.push(`/projects/${key}`), 380);
+    (window as any).__navigate?.(`/projects/${key}`);
   };
 
   return (
