@@ -2,26 +2,22 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RoundedBox, Html } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import ScreenContent from './ScreenContent';
+import { createScreenSurface } from './screenTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 const SILVER = '#c7ccd2';
 const P = POSE.phone;
 
-// Portrait screen 1.36×2.9 world units.
-const HTML_PX = { w: 544, h: 1160 };
-const HTML_SCALE = 1.36 / HTML_PX.w;
-
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
-  const frameEl = useRef<HTMLDivElement>(null);
-  const scrollEl = useRef<HTMLDivElement>(null);
+  const screenMat = useRef<THREE.MeshStandardMaterial>(null);
   const { pointer } = useThree();
 
   const accent = useMemo(() => readAccent(), []);
+  const surface = useMemo(() => createScreenSurface('phone'), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
   useFrame((_, dtRaw) => {
@@ -48,11 +44,11 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
     root.current.scale.setScalar(s);
 
-    if (frameEl.current) frameEl.current.style.opacity = String(wake);
-    if (scrollEl.current) {
-      const max = Math.max(0, scrollEl.current.scrollHeight - HTML_PX.h);
-      scrollEl.current.style.transform = `translateY(${-read * max}px)`;
+    if (screenMat.current) {
+      const target = 0.12 + wake * 1.15;
+      screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
+    surface.render(read);
   });
 
   return (
@@ -62,10 +58,19 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.32} />
       </RoundedBox>
 
-      {/* Dark display panel on the FRONT (+z) — thin silver bezel around it */}
+      {/* Display panel on the FRONT (+z) — scrollable content texture */}
       <mesh position={[0, 0, 0.082]}>
         <planeGeometry args={[1.42, 2.96]} />
-        <meshStandardMaterial color="#06090e" metalness={0.2} roughness={0.35} />
+        <meshStandardMaterial
+          ref={screenMat}
+          map={surface.texture}
+          emissiveMap={surface.texture}
+          emissive={'#ffffff'}
+          emissiveIntensity={0.12}
+          toneMapped={false}
+          metalness={0}
+          roughness={0.3}
+        />
       </mesh>
 
       {/* Rear camera bump (the silver "back" you see at the start) */}
@@ -80,18 +85,6 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <circleGeometry args={[0.12, 32]} />
         <meshStandardMaterial color="#05070a" metalness={0.9} roughness={0.2} />
       </mesh>
-
-      {/* Real, scrollable content on the front display */}
-      <Html
-        transform
-        center
-        position={[0, 0, 0.086]}
-        scale={HTML_SCALE}
-        zIndexRange={[10, 0]}
-        pointerEvents="none"
-      >
-        <ScreenContent frameRef={frameEl} scrollerRef={scrollEl} width={HTML_PX.w} height={HTML_PX.h} />
-      </Html>
 
       <pointLight position={[0, 0, 0.6]} intensity={0.5} distance={3} color={emissive} />
     </group>

@@ -2,10 +2,9 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RoundedBox, Html } from '@react-three/drei';
+import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import { makeScreenTexture } from './screenTexture';
-import ScreenContent from './ScreenContent';
+import { createScreenSurface } from './screenTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -14,20 +13,14 @@ const SILVER_DK = '#9aa1a9'; // shaded aluminium
 const DECK = '#1a1d22';     // keyboard deck
 const P = POSE.laptop;
 
-// HTML screen is 1112×688 px mapped onto the 2.78×1.72 screen plane.
-const HTML_PX = { w: 1112, h: 688 };
-const HTML_SCALE = 2.78 / HTML_PX.w;
-
 export default function Laptop({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const lid = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
-  const frameEl = useRef<HTMLDivElement>(null);
-  const scrollEl = useRef<HTMLDivElement>(null);
   const { pointer } = useThree();
 
   const accent = useMemo(() => readAccent(), []);
-  const tex = useMemo(() => makeScreenTexture('laptop'), []);
+  const surface = useMemo(() => createScreenSurface('laptop'), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
   useFrame((_, dtRaw) => {
@@ -68,12 +61,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
 
-    // Fade the real HTML screen in as it wakes; slide content during "read"
-    if (frameEl.current) frameEl.current.style.opacity = String(wake);
-    if (scrollEl.current) {
-      const max = Math.max(0, scrollEl.current.scrollHeight - HTML_PX.h);
-      scrollEl.current.style.transform = `translateY(${-read * max}px)`;
-    }
+    // Scroll the About-Me content inside the screen during the "read" beat
+    surface.render(read);
   });
 
   return (
@@ -101,13 +90,13 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
           <circleGeometry args={[0.26, 48]} />
           <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
         </mesh>
-        {/* Boot/glow texture behind the HTML */}
+        {/* Screen — scrollable About-Me content rendered as a canvas texture */}
         <mesh position={[0, 0.95, 0.045]}>
           <planeGeometry args={[2.78, 1.72]} />
           <meshStandardMaterial
             ref={screenMat}
-            map={tex}
-            emissiveMap={tex}
+            map={surface.texture}
+            emissiveMap={surface.texture}
             emissive={'#ffffff'}
             emissiveIntensity={0.12}
             toneMapped={false}
@@ -115,17 +104,6 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
             metalness={0}
           />
         </mesh>
-        {/* Real, scrollable About-Me content sitting on the display */}
-        <Html
-          transform
-          center
-          position={[0, 0.95, 0.05]}
-          scale={HTML_SCALE}
-          zIndexRange={[10, 0]}
-          pointerEvents="none"
-        >
-          <ScreenContent frameRef={frameEl} scrollerRef={scrollEl} width={HTML_PX.w} height={HTML_PX.h} />
-        </Html>
       </group>
 
       <pointLight position={[0, 0.6, -0.2]} intensity={0.5} distance={4} color={accent.glow} />

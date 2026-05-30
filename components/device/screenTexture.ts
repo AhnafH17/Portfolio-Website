@@ -2,72 +2,175 @@ import * as THREE from 'three';
 import { readAccent } from '@/lib/accent';
 
 /**
- * Draws a stylised "screen content" image on an offscreen canvas and returns it
- * as a texture for the device display. Tinted to the currently-active palette
- * (via readAccent) so the 3D screen matches the rest of the site.
+ * The device screen as a scrollable canvas texture.
  *
- * This is the *cinematic* screen used during the hero animation. Once the device
- * is docked, real HTML content takes over (hybrid approach) — see DeviceShowcase.
+ * We draw the full "About Me" page once onto a tall offscreen canvas, then each
+ * frame blit a viewport-sized slice (offset by scroll) onto the visible canvas
+ * that backs the screen texture. Because it IS the screen, it's automatically
+ * perspective-correct and scales with the 3D model — no Html-transform math.
  */
-export function makeScreenTexture(kind: 'laptop' | 'phone'): THREE.CanvasTexture {
+export interface ScreenSurface {
+  texture: THREE.CanvasTexture;
+  render: (scroll01: number) => void; // scroll01 in [0,1]
+  maxScroll: number;
+}
+
+function wrapText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxW: number,
+  lh: number,
+): number {
+  const words = text.split(' ');
+  let line = '';
+  for (const w of words) {
+    const test = line ? `${line} ${w}` : w;
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line, x, y);
+      line = w;
+      y += lh;
+    } else {
+      line = test;
+    }
+  }
+  if (line) ctx.fillText(line, x, y);
+  return y + lh;
+}
+
+export function createScreenSurface(kind: 'laptop' | 'phone'): ScreenSurface {
   const a = readAccent();
-  const w = kind === 'laptop' ? 1024 : 560;
-  const h = kind === 'laptop' ? 640 : 1024;
+  const phone = kind === 'phone';
+  const vw = phone ? 620 : 1112;            // visible screen width  (px)
+  const vh = phone ? 1300 : 688;            // visible screen height (px)
+  const padX = phone ? 56 : 80;
+  const contentH = phone ? 4200 : 2600;     // tall content buffer
 
-  const c = document.createElement('canvas');
-  c.width = w;
-  c.height = h;
-  const ctx = c.getContext('2d')!;
+  // ── Offscreen content (drawn once) ──
+  const content = document.createElement('canvas');
+  content.width = vw;
+  content.height = contentH;
+  const c = content.getContext('2d')!;
 
-  // ── Base ──
-  ctx.fillStyle = '#0a0e14';
-  ctx.fillRect(0, 0, w, h);
+  // Background wash
+  c.fillStyle = '#0a0e14';
+  c.fillRect(0, 0, vw, contentH);
+  const wash = c.createRadialGradient(vw * 0.18, 60, 0, vw * 0.18, 60, vw * 1.1);
+  wash.addColorStop(0, `rgba(${a.r},${a.g},${a.b},0.30)`);
+  wash.addColorStop(0.55, 'rgba(0,0,0,0)');
+  c.fillStyle = wash;
+  c.fillRect(0, 0, vw, contentH);
 
-  // ── Accent wash (top-left glow) ──
-  const wash = ctx.createRadialGradient(w * 0.2, h * 0.1, 0, w * 0.2, h * 0.1, w * 0.9);
-  wash.addColorStop(0, `rgba(${a.r},${a.g},${a.b},0.40)`);
-  wash.addColorStop(0.6, 'rgba(0,0,0,0)');
-  ctx.fillStyle = wash;
-  ctx.fillRect(0, 0, w, h);
+  const sz = (n: number) => Math.round(vw * n);
+  let y = phone ? 150 : 120;
 
-  const pad = w * 0.08;
+  // Eyebrow
+  c.fillStyle = `rgba(${a.r},${a.g},${a.b},0.9)`;
+  c.font = `600 ${sz(0.022)}px system-ui, sans-serif`;
+  c.fillText('W H O   I   A M', padX, y);
+  y += sz(0.06);
 
-  // ── Window chrome dots ──
-  const dotY = h * 0.08;
-  ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => {
-    ctx.beginPath();
-    ctx.arc(pad + i * w * 0.035, dotY, w * 0.012, 0, Math.PI * 2);
-    ctx.fillStyle = col;
-    ctx.fill();
-  });
+  // Name
+  c.fillStyle = a.silver || '#e6eaed';
+  c.font = `800 ${sz(0.085)}px "Syne", system-ui, sans-serif`;
+  c.fillText('Ahnaf', padX, y);
+  y += sz(0.092);
+  c.fillText('Hussain', padX, y);
+  y += sz(0.03);
 
-  // ── Big name ──
-  ctx.fillStyle = a.silver;
-  ctx.font = `700 ${Math.round(w * (kind === 'laptop' ? 0.075 : 0.11))}px "Syne", system-ui, sans-serif`;
-  ctx.textBaseline = 'alphabetic';
-  ctx.fillText('Ahnaf', pad, h * 0.30);
-  ctx.fillText('Hussain', pad, h * (kind === 'laptop' ? 0.42 : 0.40));
+  // Underline
+  c.fillStyle = a.glow;
+  c.fillRect(padX, y, sz(0.18), Math.max(3, sz(0.006)));
+  y += sz(0.05);
 
-  // ── Accent underline ──
-  ctx.fillStyle = a.glow;
-  ctx.fillRect(pad, h * (kind === 'laptop' ? 0.46 : 0.44), w * 0.18, h * 0.012);
+  // Role
+  c.fillStyle = `rgba(${a.r},${a.g},${a.b},0.92)`;
+  c.font = `600 ${sz(0.032)}px system-ui, sans-serif`;
+  c.fillText('Head of Web Development · AurixLab', padX, y);
+  y += sz(0.09);
 
-  // ── Subtitle ──
-  ctx.fillStyle = `rgba(${a.r},${a.g},${a.b},0.85)`;
-  ctx.font = `500 ${Math.round(w * (kind === 'laptop' ? 0.03 : 0.05))}px system-ui, sans-serif`;
-  ctx.fillText('Head of Web Development', pad, h * (kind === 'laptop' ? 0.53 : 0.52));
+  const heading = (t: string) => {
+    c.fillStyle = a.glow;
+    c.fillRect(padX, y - sz(0.034), Math.max(4, sz(0.007)), sz(0.045));
+    c.fillStyle = a.silver || '#e6eaed';
+    c.font = `700 ${sz(0.046)}px "Syne", system-ui, sans-serif`;
+    c.fillText(t, padX + sz(0.03), y);
+    y += sz(0.06);
+  };
+  const para = (t: string) => {
+    c.fillStyle = 'rgba(196,185,154,0.92)';
+    c.font = `400 ${sz(0.03)}px system-ui, sans-serif`;
+    y = wrapText(c, t, padX, y, vw - padX * 2, sz(0.044));
+    y += sz(0.02);
+  };
+  const bullet = (t: string) => {
+    c.fillStyle = a.glow;
+    c.beginPath();
+    c.arc(padX + sz(0.01), y - sz(0.01), sz(0.008), 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = 'rgba(196,185,154,0.92)';
+    c.font = `400 ${sz(0.028)}px system-ui, sans-serif`;
+    y = wrapText(c, t, padX + sz(0.04), y, vw - padX * 2 - sz(0.04), sz(0.042));
+    y += sz(0.012);
+  };
 
-  // ── Faux content bars ──
-  const barY0 = h * (kind === 'laptop' ? 0.64 : 0.62);
-  const barH = h * 0.022;
-  const widths = [0.72, 0.6, 0.66, 0.45];
-  widths.forEach((wd, i) => {
-    ctx.fillStyle = `rgba(${a.r},${a.g},${a.b},${0.22 - i * 0.03})`;
-    ctx.fillRect(pad, barY0 + i * barH * 2.4, w * (1 - pad / w * 2) * wd, barH);
-  });
+  heading('My Journey');
+  para('I started out obsessed with how interfaces feel — the weight of a transition, the rhythm of a layout. That obsession became a career building high-performance frontends and interactive experiences.');
+  para('Today I lead the web team at AurixLab, shipping SaaS products and marketing sites that are fast, accessible, and a little bit unexpected.');
+  y += sz(0.04);
 
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  return tex;
+  heading('How I Work');
+  bullet('Performance first — every animation earns its frame budget.');
+  bullet('Design and engineering are one loop, not two steps.');
+  bullet('Ship, measure, refine. Real devices over assumptions.');
+  bullet('The details are the product.');
+  y += sz(0.04);
+
+  heading('Toolkit');
+  c.fillStyle = `rgba(${a.r},${a.g},${a.b},0.9)`;
+  c.font = `500 ${sz(0.028)}px system-ui, sans-serif`;
+  y = wrapText(c, 'Next.js · React · TypeScript · GSAP · Three.js · WordPress · Shopify · Python · SEO', padX, y, vw - padX * 2, sz(0.044));
+
+  const contentBottom = y + (phone ? 120 : 80);
+  const maxScroll = Math.max(0, contentBottom - vh);
+
+  // ── Visible screen canvas (backs the texture) ──
+  const screen = document.createElement('canvas');
+  screen.width = vw;
+  screen.height = vh;
+  const s = screen.getContext('2d')!;
+
+  const texture = new THREE.CanvasTexture(screen);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+
+  let last = -1;
+  const render = (scroll01: number) => {
+    const yOff = Math.round(THREE.MathUtils.clamp(scroll01, 0, 1) * maxScroll);
+    if (yOff === last) return;
+    last = yOff;
+    s.fillStyle = '#0a0e14';
+    s.fillRect(0, 0, vw, vh);
+    s.drawImage(content, 0, -yOff);
+
+    // top browser bar
+    s.fillStyle = 'rgba(8,12,18,0.92)';
+    s.fillRect(0, 0, vw, sz(0.05));
+    const dotY = sz(0.025);
+    ['#ff5f57', '#febc2e', '#28c840'].forEach((col, i) => {
+      s.beginPath();
+      s.arc(padX * 0.5 + i * sz(0.03), dotY, sz(0.01), 0, Math.PI * 2);
+      s.fillStyle = col;
+      s.fill();
+    });
+    s.fillStyle = 'rgba(196,185,154,0.6)';
+    s.font = `500 ${sz(0.018)}px system-ui, sans-serif`;
+    s.fillText('ahnafhussain.dev / about', padX * 0.5 + sz(0.12), dotY + sz(0.007));
+
+    texture.needsUpdate = true;
+  };
+
+  render(0);
+  return { texture, render, maxScroll };
 }
