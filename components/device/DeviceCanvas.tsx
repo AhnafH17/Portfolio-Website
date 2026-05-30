@@ -23,8 +23,8 @@ export default function DeviceCanvas({
   // Portrait phone needs a closer, centred camera so the tall device fits.
   const camera =
     kind === 'phone'
-      ? { position: [0, 0, 7.8] as [number, number, number], fov: 30 }
-      : { position: [0, 0.35, 6.6] as [number, number, number], fov: 32 };
+      ? { position: [0, 0, 7.0] as [number, number, number], fov: 30 }
+      : { position: [0, 0.25, 6.4] as [number, number, number], fov: 34 };
 
   return (
     <Canvas

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useMemo } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { createScreenSurface } from './screenTexture';
@@ -14,13 +14,12 @@ const P = POSE.phone;
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
-  const { pointer } = useThree();
 
   const accent = useMemo(() => readAccent(), []);
   const surface = useMemo(() => createScreenSurface('phone'), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
-  useFrame((_, dtRaw) => {
+  useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 30);
     const p = progress.current;
     if (!root.current) return;
@@ -35,12 +34,10 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     const wake = easeOut(phase(p, BEATS.wake));
     const read = phase(p, BEATS.read);
 
-    const parX = pointer.x * 0.14 * open;
-    const parY = pointer.y * 0.08 * open;
-
     const k = 1 - Math.exp(-DAMP * dt);
-    root.current.rotation.y += (rotY + parX - root.current.rotation.y) * k;
-    root.current.rotation.x += (tiltX - parY - root.current.rotation.x) * k;
+    // No cursor parallax — phone stays constant, facing forward.
+    root.current.rotation.y += (rotY - root.current.rotation.y) * k;
+    root.current.rotation.x += (tiltX - root.current.rotation.x) * k;
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
     root.current.scale.setScalar(s);
 
@@ -48,7 +45,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       const target = 0.12 + wake * 1.15;
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
-    surface.render(read);
+    surface.render(read, state.clock.elapsedTime);
   });
 
   return (
