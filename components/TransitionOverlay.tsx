@@ -1,59 +1,51 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 
-const FADE = 'opacity 0.45s ease';
-
 export default function TransitionOverlay() {
-  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(true);
   const pathname = usePathname();
-  const t1 = useRef<ReturnType<typeof setTimeout>>(undefined);
-  const t2 = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const mounted = useRef(false);
+  const t = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Called on each route change — show briefly then fade out
-  const fadeOut = () => {
-    const el = ref.current;
-    if (!el) return;
-    clearTimeout(t1.current);
-    clearTimeout(t2.current);
-    // Ensure transition is live before we change opacity
-    el.style.transition = FADE;
-    el.style.opacity = '1';
-    el.style.pointerEvents = 'all';
-    t1.current = setTimeout(() => { el.style.opacity = '0'; }, 80);
-    t2.current = setTimeout(() => { el.style.pointerEvents = 'none'; }, 600);
-  };
-
+  // Initial page load: fade out after brief show
   useEffect(() => {
-    // Expose show function so ScrollShowcase & ProjectPageContent can trigger it
+    clearTimeout(t.current);
+    t.current = setTimeout(() => setVisible(false), 60);
+    return () => clearTimeout(t.current);
+  }, []);
+
+  // Route changes (after first mount): show briefly then fade out
+  useEffect(() => {
+    if (!mounted.current) { mounted.current = true; return; }
+    clearTimeout(t.current);
+    setVisible(true);
+    t.current = setTimeout(() => setVisible(false), 80);
+    return () => clearTimeout(t.current);
+  }, [pathname]);
+
+  // Expose imperative show for button clicks
+  useEffect(() => {
     (window as any).__overlayShow = () => {
-      const el = ref.current;
-      if (!el) return;
-      clearTimeout(t1.current);
-      clearTimeout(t2.current);
-      el.style.transition = 'none';     // snap to visible instantly
-      el.style.opacity = '1';
-      el.style.pointerEvents = 'all';
-      // Restore transition on next frame so future fades animate
-      requestAnimationFrame(() => { if (ref.current) ref.current.style.transition = FADE; });
+      clearTimeout(t.current);
+      setVisible(true);
     };
     return () => { delete (window as any).__overlayShow; };
   }, []);
 
-  // Fade out whenever the route changes (new page has mounted)
-  useEffect(() => { fadeOut(); }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <div
-      ref={ref}
       aria-hidden="true"
       style={{
-        position: 'fixed', inset: 0, zIndex: 9998,
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
         background: '#080603',
-        opacity: 1,
-        pointerEvents: 'all',
-        transition: FADE,
+        pointerEvents: visible ? 'all' : 'none',
+        opacity: visible ? 1 : 0,
+        // Only animate the hide — show is instant via React's synchronous setState
+        transition: visible ? 'none' : 'opacity 0.5s ease',
       }}
     />
   );
