@@ -525,7 +525,7 @@ section{padding:7rem 3rem;position:relative}
 .sv-bg-num{position:absolute;top:50%;right:-0.1em;transform:translateY(-50%);font-family:'Sddystopian',var(--font-display);font-size:clamp(4rem,10vw,9rem);font-weight:400;color:transparent;-webkit-text-stroke:1px rgba(204,24,44,.05);line-height:1;pointer-events:none;user-select:none;z-index:0}
 .sv-divider{width:36px;height:1px;background:var(--accent-glow);opacity:.45;flex-shrink:0}
 .sv-tags{display:flex;gap:.55rem;flex-wrap:wrap;position:relative;z-index:1}
-.sv-tag{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-glow);opacity:.65;padding:.18rem .65rem;border:1px solid rgba(204,24,44,.15)}
+.sv-tag{font-size:.64rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#ff6b7d;padding:.24rem .72rem;border:1px solid rgba(204,24,44,.5);background:rgba(204,24,44,.12);border-radius:3px}
 .sv-title{font-family:'Sddystopian',var(--font-display);font-size:clamp(1.7rem,2.8vw,2.6rem);font-weight:400;color:var(--gold);line-height:1.05;letter-spacing:-.02em;position:relative;z-index:1}
 .sv-desc{color:var(--gold-dim);font-size:.88rem;line-height:1.78;max-width:400px;position:relative;z-index:1}
 .sv-btn{display:inline-flex;align-items:center;gap:.55rem;margin-top:.4rem;font-size:.72rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-glow);background:none;border:1px solid rgba(204,24,44,.22);padding:.62rem 1.4rem;cursor:pointer;width:fit-content;transition:background .25s,gap .25s,border-color .25s;position:relative;z-index:1}
