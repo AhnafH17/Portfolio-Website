@@ -23,7 +23,7 @@ export default function DeviceCanvas({
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: [0, 0.4, 5.4], fov: 36 }}
+      camera={{ position: [0, 0.35, 6.6], fov: 32 }}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       style={{ width: '100%', height: '100%' }}
     >

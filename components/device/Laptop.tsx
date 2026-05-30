@@ -2,19 +2,28 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { makeScreenTexture } from './screenTexture';
+import ScreenContent from './ScreenContent';
 import { readAccent } from '@/lib/accent';
-import { BEATS, phase, easeInOut, easeOut, DAMP } from './beats';
+import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
-const BODY = '#1c2129';   // brushed dark metal
-const DECK = '#11151b';   // keyboard deck
+const SILVER = '#c7ccd2';   // aluminium body
+const SILVER_DK = '#9aa1a9'; // shaded aluminium
+const DECK = '#1a1d22';     // keyboard deck
+const P = POSE.laptop;
+
+// HTML screen is 1112×688 px mapped onto the 2.78×1.72 screen plane.
+const HTML_PX = { w: 1112, h: 688 };
+const HTML_SCALE = 2.78 / HTML_PX.w;
 
 export default function Laptop({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const lid = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
+  const frameEl = useRef<HTMLDivElement>(null);
+  const scrollEl = useRef<HTMLDivElement>(null);
   const { pointer } = useThree();
 
   const accent = useMemo(() => readAccent(), []);
@@ -22,77 +31,77 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
   useFrame((_, dtRaw) => {
-    const dt = Math.min(dtRaw, 1 / 30); // clamp on slow frames
+    const dt = Math.min(dtRaw, 1 / 30);
     const p = progress.current;
     if (!root.current || !lid.current) return;
 
-    // Beat A — spin 180°: start showing the back (π), end facing front (0)
+    // Beat A — spin 180°: π (back) → 0 (front)
     const spin = easeInOut(phase(p, BEATS.spin));
     const rotY = Math.PI * (1 - spin);
 
-    // Beat B — lid opens (0 closed → ~115° open) + whole unit tilts back a touch
+    // Beat B — lid opens + rig settles into docked pose (then HOLDS)
     const open = easeInOut(phase(p, BEATS.open));
-    const lidAngle = THREE.MathUtils.lerp(0.02, -Math.PI * 0.64, open);
-    const tiltX = THREE.MathUtils.lerp(0, -0.16, open);
+    const lidAngle = THREE.MathUtils.lerp(P.lidClosed, P.lidOpen, open);
+    const tiltX = THREE.MathUtils.lerp(0, P.dockTilt, open);
+    const scale = THREE.MathUtils.lerp(P.introScale, P.dockScale, open);
 
-    // Beat C — wake: screen powers on + camera dollies in (push group toward cam)
+    // Beat C — screen wakes (texture brightens, then HTML content fades in)
     const wake = easeOut(phase(p, BEATS.wake));
-    const dollyZ = THREE.MathUtils.lerp(0, 1.35, wake);
-    const liftY = THREE.MathUtils.lerp(0, 0.15, wake);
 
-    // Subtle cursor parallax once it's facing us (scaled by how open it is)
-    const parX = pointer.x * 0.12 * open;
-    const parY = pointer.y * 0.06 * open;
+    // Beat D — read: content scrolls INSIDE the screen. Device does not move.
+    const read = phase(p, BEATS.read);
 
-    const k = 1 - Math.exp(-DAMP * dt); // frame-rate-independent damping factor
+    // Cursor parallax, only once it's facing us
+    const parX = pointer.x * 0.1 * open;
+    const parY = pointer.y * 0.05 * open;
+
+    const k = 1 - Math.exp(-DAMP * dt);
     root.current.rotation.y += (rotY + parX - root.current.rotation.y) * k;
     root.current.rotation.x += (tiltX - parY - root.current.rotation.x) * k;
-    root.current.position.z += (dollyZ - root.current.position.z) * k;
-    root.current.position.y += (liftY - root.current.position.y) * k;
+    root.current.position.y += (P.posY - root.current.position.y) * k;
+    const s = root.current.scale.x + (scale - root.current.scale.x) * k;
+    root.current.scale.setScalar(s);
     lid.current.rotation.x += (lidAngle - lid.current.rotation.x) * k;
 
     if (screenMat.current) {
-      const target = 0.15 + wake * 1.25;
-      screenMat.current.emissiveIntensity +=
-        (target - screenMat.current.emissiveIntensity) * k;
+      const target = 0.12 + wake * 1.15;
+      screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
+    }
+
+    // Fade the real HTML screen in as it wakes; slide content during "read"
+    if (frameEl.current) frameEl.current.style.opacity = String(wake);
+    if (scrollEl.current) {
+      const max = Math.max(0, scrollEl.current.scrollHeight - HTML_PX.h);
+      scrollEl.current.style.transform = `translateY(${-read * max}px)`;
     }
   });
 
   return (
-    <group ref={root} rotation={[0, Math.PI, 0]} position={[0, -0.3, 0]} scale={1}>
+    <group ref={root} rotation={[0, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
       {/* ── Base / keyboard deck ── */}
-      <RoundedBox args={[3, 0.13, 2.05]} radius={0.05} smoothness={4} castShadow receiveShadow>
-        <meshStandardMaterial color={BODY} metalness={0.85} roughness={0.32} />
+      <RoundedBox args={[3, 0.13, 2.05]} radius={0.05} smoothness={4}>
+        <meshStandardMaterial color={SILVER} metalness={0.92} roughness={0.34} />
       </RoundedBox>
-      {/* Deck inset (keyboard area) */}
       <mesh position={[0, 0.071, 0.18]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2.7, 1.5]} />
-        <meshStandardMaterial color={DECK} metalness={0.4} roughness={0.6} />
+        <meshStandardMaterial color={DECK} metalness={0.5} roughness={0.55} />
       </mesh>
-      {/* Trackpad */}
       <mesh position={[0, 0.072, 0.72]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[0.95, 0.6]} />
-        <meshStandardMaterial color="#0c0f14" metalness={0.3} roughness={0.5} />
+        <meshStandardMaterial color={SILVER_DK} metalness={0.6} roughness={0.4} />
       </mesh>
 
       {/* ── Lid (hinged at back edge, z = -1.0) ── */}
-      <group ref={lid} position={[0, 0.065, -1.0]} rotation={[0.02, 0, 0]}>
-        {/* lid shell, pivots up from the hinge → centre offset +1.0 in z */}
-        <RoundedBox args={[3, 1.9, 0.08]} radius={0.05} smoothness={4} position={[0, 0.95, 0]} castShadow>
-          <meshStandardMaterial color={BODY} metalness={0.88} roughness={0.3} />
+      <group ref={lid} position={[0, 0.065, -1.0]} rotation={[P.lidClosed, 0, 0]}>
+        <RoundedBox args={[3, 1.9, 0.08]} radius={0.05} smoothness={4} position={[0, 0.95, 0]}>
+          <meshStandardMaterial color={SILVER} metalness={0.92} roughness={0.32} />
         </RoundedBox>
-        {/* Outer-lid logo (visible as the "back" at the start) */}
+        {/* Outer-lid logo (the "back" you see at the start) */}
         <mesh position={[0, 0.95, -0.045]}>
           <circleGeometry args={[0.26, 48]} />
-          <meshStandardMaterial
-            color={accent.glow}
-            emissive={emissive}
-            emissiveIntensity={0.4}
-            metalness={0.2}
-            roughness={0.4}
-          />
+          <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
         </mesh>
-        {/* Screen (inner face) */}
+        {/* Boot/glow texture behind the HTML */}
         <mesh position={[0, 0.95, 0.045]}>
           <planeGeometry args={[2.78, 1.72]} />
           <meshStandardMaterial
@@ -100,16 +109,26 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
             map={tex}
             emissiveMap={tex}
             emissive={'#ffffff'}
-            emissiveIntensity={0.15}
+            emissiveIntensity={0.12}
             toneMapped={false}
             roughness={0.25}
             metalness={0}
           />
         </mesh>
+        {/* Real, scrollable About-Me content sitting on the display */}
+        <Html
+          transform
+          center
+          position={[0, 0.95, 0.05]}
+          scale={HTML_SCALE}
+          zIndexRange={[10, 0]}
+          pointerEvents="none"
+        >
+          <ScreenContent frameRef={frameEl} scrollerRef={scrollEl} width={HTML_PX.w} height={HTML_PX.h} />
+        </Html>
       </group>
 
-      {/* Accent fill light that brightens the deck as the screen wakes */}
-      <pointLight position={[0, 0.6, -0.2]} intensity={0.6} distance={4} color={accent.glow} />
+      <pointLight position={[0, 0.6, -0.2]} intensity={0.5} distance={4} color={accent.glow} />
     </group>
   );
 }

@@ -1498,3 +1498,79 @@ footer span{color:var(--accent-glow)}
 @media (max-width:768px){
   .dv-section{ height:320vh; }
 }
+
+/* ── In-screen "About Me" page (rendered on the 3D display via Html transform) ── */
+.dv-screen{
+  position:relative;
+  overflow:hidden;
+  border-radius:10px;
+  background:radial-gradient(120% 80% at 18% 0%, rgba(var(--accent-rgb),0.18), #0a0e14 60%);
+  box-shadow:inset 0 0 0 1px rgba(var(--accent-rgb),0.12);
+  font-family:var(--font-body);
+  color:var(--gold);
+  pointer-events:none;
+  user-select:none;
+}
+.dv-screen-bar{
+  position:absolute;
+  top:0; left:0; right:0;
+  height:46px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:0 22px;
+  background:rgba(8,12,18,0.85);
+  border-bottom:1px solid rgba(var(--accent-rgb),0.12);
+  z-index:2;
+}
+.dv-dot{ width:13px; height:13px; border-radius:50%; }
+.dv-screen-url{
+  margin-left:14px;
+  font-size:16px;
+  letter-spacing:0.04em;
+  color:var(--gold-dim);
+}
+.dv-screen-scroll{
+  position:absolute;
+  top:46px; left:0; right:0;
+  padding:54px 64px 80px;
+  will-change:transform;
+}
+.dv-os-eyebrow{
+  font-size:18px; letter-spacing:0.4em; text-transform:uppercase;
+  color:rgba(var(--accent-rgb),0.9);
+}
+.dv-os-name{
+  font-family:var(--font-display); font-weight:800;
+  font-size:78px; line-height:1; margin:14px 0 6px;
+  color:var(--gold-bright);
+}
+.dv-os-role{ font-size:26px; color:var(--gold-dim); margin:0 0 8px; }
+.dv-os-block{ margin-top:64px; }
+.dv-os-h{
+  font-family:var(--font-display); font-weight:700;
+  font-size:40px; margin:0 0 22px;
+  color:var(--gold);
+  border-left:4px solid var(--accent-glow); padding-left:18px;
+}
+.dv-os-block p{ font-size:25px; line-height:1.6; margin:0 0 18px; color:var(--gold-dim); }
+.dv-os-block em{ color:var(--gold-bright); font-style:italic; }
+.dv-os-list{ list-style:none; padding:0; margin:0; }
+.dv-os-list li{
+  font-size:24px; line-height:1.55; color:var(--gold-dim);
+  padding:0 0 16px 30px; position:relative;
+}
+.dv-os-list li::before{
+  content:''; position:absolute; left:0; top:13px;
+  width:10px; height:10px; border-radius:50%; background:var(--accent-glow);
+}
+.dv-os-tags{ display:flex; flex-wrap:wrap; gap:14px; }
+.dv-os-tag{
+  font-size:22px; padding:8px 20px; border-radius:999px;
+  border:1px solid rgba(var(--accent-rgb),0.3);
+  color:var(--gold); background:rgba(var(--accent-rgb),0.06);
+}
+.dv-os-foot{
+  margin-top:72px; font-size:22px; letter-spacing:0.2em;
+  text-transform:uppercase; color:rgba(var(--accent-rgb),0.8);
+}
