@@ -15,17 +15,19 @@ export const BEATS = {
 // ── Pose constants (tweak to taste) ──────────────────────────────────────
 export const POSE = {
   laptop: {
-    introScale: 1.35,
-    dockScale: 1.62,
-    posY: -1.15,        // vertical offset of the whole rig (lower = further down)
-    dockTilt: -0.12,    // slight backward tilt of the base once docked (radians)
-    lidClosed: 0.015,   // lid angle when shut (radians)
-    lidOpen: -1.74,     // lid angle when open (~100°). Stays here — never re-closes.
+    introScale: 1.3,
+    dockScale: 1.55,
+    posY: -1.0,         // vertical offset of the whole rig (lower = further down)
+    dockTilt: -0.1,     // slight backward tilt of the base once docked (radians)
+    // The lid pivots up from the hinge. CLOSED = folded flat onto the keyboard
+    // (+90°). OPEN = standing up, reclined ~18° past vertical. A real clamshell.
+    lidClosed: Math.PI / 2,
+    lidOpen: -0.32,
   },
   phone: {
-    introScale: 1.25,
-    dockScale: 1.45,
-    posY: -0.1,
+    introScale: 1.1,
+    dockScale: 1.25,
+    posY: 0,
   },
 };
 

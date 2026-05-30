@@ -57,19 +57,26 @@ export default function Phone({ progress }: { progress: { current: number } }) {
 
   return (
     <group ref={root} rotation={[0.45, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
+      {/* Silver body slab — this is the BACK + sides */}
       <RoundedBox args={[1.5, 3.05, 0.16]} radius={0.16} smoothness={5}>
         <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.32} />
       </RoundedBox>
 
-      {/* Rear camera bump (the "back" at the start) */}
-      <RoundedBox args={[0.62, 0.62, 0.07]} radius={0.1} smoothness={4} position={[-0.38, 1.05, -0.1]}>
+      {/* Dark display panel on the FRONT (+z) — thin silver bezel around it */}
+      <mesh position={[0, 0, 0.082]}>
+        <planeGeometry args={[1.42, 2.96]} />
+        <meshStandardMaterial color="#06090e" metalness={0.2} roughness={0.35} />
+      </mesh>
+
+      {/* Rear camera bump (the silver "back" you see at the start) */}
+      <RoundedBox args={[0.62, 0.62, 0.07]} radius={0.1} smoothness={4} position={[-0.38, 1.05, -0.11]}>
         <meshStandardMaterial color="#15181d" metalness={0.7} roughness={0.4} />
       </RoundedBox>
-      <mesh position={[-0.52, 1.18, -0.14]}>
+      <mesh position={[-0.52, 1.18, -0.15]} rotation={[Math.PI, 0, 0]}>
         <circleGeometry args={[0.12, 32]} />
         <meshStandardMaterial color="#05070a" metalness={0.9} roughness={0.2} />
       </mesh>
-      <mesh position={[-0.24, 0.92, -0.14]}>
+      <mesh position={[-0.24, 0.92, -0.15]} rotation={[Math.PI, 0, 0]}>
         <circleGeometry args={[0.12, 32]} />
         <meshStandardMaterial color="#05070a" metalness={0.9} roughness={0.2} />
       </mesh>
@@ -78,7 +85,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       <Html
         transform
         center
-        position={[0, 0, 0.082]}
+        position={[0, 0, 0.086]}
         scale={HTML_SCALE}
         zIndexRange={[10, 0]}
         pointerEvents="none"

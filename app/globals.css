@@ -1434,10 +1434,14 @@ footer span{color:var(--accent-glow)}
 }
 .dv-canvas{
   position:absolute;
-  inset:0;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:100vw;          /* full viewport width regardless of any parent inset */
+  height:100%;
   z-index:1;
 }
-.dv-canvas canvas{ display:block; }
+.dv-canvas canvas{ display:block; width:100% !important; height:100% !important; }
 
 .dv-overlay{
   position:relative;

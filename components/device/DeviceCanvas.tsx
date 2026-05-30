@@ -20,10 +20,16 @@ export default function DeviceCanvas({
 }) {
   const accent = useMemo(() => readAccent(), []);
 
+  // Portrait phone needs a closer, centred camera so the tall device fits.
+  const camera =
+    kind === 'phone'
+      ? { position: [0, 0, 7.8] as [number, number, number], fov: 30 }
+      : { position: [0, 0.35, 6.6] as [number, number, number], fov: 32 };
+
   return (
     <Canvas
       dpr={[1, 2]}
-      camera={{ position: [0, 0.35, 6.6], fov: 32 }}
+      camera={camera}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       style={{ width: '100%', height: '100%' }}
     >
