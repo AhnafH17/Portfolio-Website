@@ -436,16 +436,16 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
   .hero-ring-1{width:290px;height:370px}
   .hero-floating-tag{right:0;bottom:20px;font-size:.72rem;padding:.6rem 1rem}
   /* show floating cards on mobile, scaled to peek around the arch */
-  .hero-fc-left-top{width:160px;top:-14px;left:-40px}
-  .hero-fc-left-bot{width:150px;top:300px;left:-28px}
-  .hero-fc-right-top{width:152px;top:10px;right:-40px}
-  .hero-fc-right-bot{width:138px;top:316px;right:-32px}
+  .hero-fc-left-top{width:200px;top:-20px;left:-55px}
+  .hero-fc-left-bot{width:188px;top:290px;left:-42px}
+  .hero-fc-right-top{width:190px;top:4px;right:-55px}
+  .hero-fc-right-bot{width:172px;top:318px;right:-46px}
 }
 @media(max-width:480px){
-  .hero-fc-left-top{width:122px;top:-8px;left:-28px}
-  .hero-fc-left-bot{width:114px;top:248px;left:-18px}
-  .hero-fc-right-top{width:116px;top:8px;right:-28px}
-  .hero-fc-right-bot{width:106px;top:258px;right:-22px}
+  .hero-fc-left-top{width:155px;top:-14px;left:-40px}
+  .hero-fc-left-bot{width:145px;top:240px;left:-30px}
+  .hero-fc-right-top{width:148px;top:2px;right:-40px}
+  .hero-fc-right-bot{width:134px;top:256px;right:-34px}
 }
 
 /* ===== SHARED ===== */
