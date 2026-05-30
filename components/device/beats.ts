@@ -17,7 +17,7 @@ export const POSE = {
   laptop: {
     introScale: 1.5,
     dockScale: 1.85,
-    posY: -0.85,        // vertical offset of the whole rig (lower = further down)
+    posY: -1.15,        // vertical offset of the whole rig (lower = further down)
     dockTilt: 0,        // base stays flat — laptop faces straight forward
     // The lid pivots up from the hinge. CLOSED = folded flat onto the keyboard
     // (+90°). OPEN = standing up, reclined ~16° past vertical. A real clamshell.
