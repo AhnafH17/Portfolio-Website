@@ -528,7 +528,7 @@ section{padding:7rem 3rem;position:relative}
 
 /* ===== PROJECT PAGES ===== */
 /* ===== PROJECT PAGES ===== */
-@keyframes ppSlideIn{from{opacity:0;transform:translateX(-42px)}to{opacity:1;transform:translateX(0)}}
+@keyframes ppSlideIn{from{opacity:0;transform:translateX(52px)}to{opacity:1;transform:translateX(0)}}
 .proj-page{min-height:100vh;background:var(--black);animation:ppSlideIn 0.55s cubic-bezier(0.16,1,0.3,1) both}
 
 /* Hero */

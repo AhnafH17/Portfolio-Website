@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Project, StripMeta } from '@/lib/projects';
@@ -59,6 +60,11 @@ export default function ProjectPageContent({ project, meta }: Props) {
   const resultsSection = project.sections.find((s) => s.type === 'results');
   const techSection = project.sections.find((s) => s.type === 'tech');
   const contentSections = project.sections.filter((s) => s.type !== 'results' && s.type !== 'tech');
+
+  // Scroll to top instantly before the slide-in animation plays
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+  }, []);
 
   const goBack = () => router.push('/');
 
