@@ -1577,3 +1577,63 @@ footer span{color:var(--accent-glow)}
   margin-top:72px; font-size:22px; letter-spacing:0.2em;
   text-transform:uppercase; color:rgba(var(--accent-rgb),0.8);
 }
+
+/* ── Real HTML rendered onto the 3D screen (drei <Html transform>) ── */
+.dv-scr{
+  position:relative;
+  overflow:hidden;
+  border-radius:14px;
+  background:radial-gradient(120% 80% at 18% 0%, rgba(var(--accent-rgb),0.22), #0a0e14 60%);
+  font-family:var(--font-body);
+  color:#f3efe7;
+  pointer-events:none;
+  user-select:none;
+  will-change:opacity;
+}
+.dv-scr-bar{
+  position:absolute; top:0; left:0; right:0; height:60px; z-index:3;
+  display:flex; align-items:center; gap:14px; padding:0 30px;
+  background:rgba(8,12,18,0.92);
+  border-bottom:1px solid rgba(var(--accent-rgb),0.14);
+}
+.dv-scr-dot{ width:17px; height:17px; border-radius:50%; }
+.dv-scr-url{ margin-left:16px; font-size:22px; color:var(--gold-dim); letter-spacing:.03em; }
+.dv-scr-scroll{
+  position:absolute; top:60px; left:0; right:0;
+  padding:64px 76px 120px;
+  will-change:transform;
+}
+.dv-scr-eyebrow{ font-size:26px; letter-spacing:.42em; color:rgba(var(--accent-rgb),0.9); }
+.dv-scr-name{
+  font-family:var(--font-display); font-weight:800; font-size:108px; line-height:1;
+  margin:16px 0 0; color:#f6f2ea;
+}
+.dv-scr-rule{ width:200px; height:7px; background:var(--accent-glow); margin:26px 0 22px; border-radius:4px; }
+.dv-scr-role{ font-size:34px; color:rgba(var(--accent-rgb),0.95); font-weight:600; margin:0 0 70px; }
+.dv-scr-h{
+  font-family:var(--font-display); font-weight:700; font-size:56px; margin:64px 0 26px;
+  color:#f6f2ea; padding-left:24px; border-left:7px solid var(--accent-glow);
+}
+.dv-scr-p{ font-size:33px; line-height:1.6; color:rgba(214,208,196,0.94); margin:0 0 24px; }
+.dv-scr-p em{ color:#fff; font-style:italic; }
+.dv-scr-list{ list-style:none; padding:0; margin:0; }
+.dv-scr-list li{
+  font-size:31px; line-height:1.5; color:rgba(214,208,196,0.94);
+  padding:0 0 22px 42px; position:relative;
+}
+.dv-scr-list li::before{
+  content:''; position:absolute; left:0; top:14px; width:16px; height:16px;
+  border-radius:50%; background:var(--accent-glow);
+}
+.dv-scr-collage{
+  display:flex; flex-wrap:wrap; gap:48px; padding:30px 0 0; justify-content:flex-start;
+}
+.dv-scr-tool{
+  width:120px; height:120px; color:#f3efe7;
+  filter:drop-shadow(0 0 22px rgba(var(--accent-rgb),0.65));
+  animation:dv-scr-bob 3.2s ease-in-out infinite;
+}
+@keyframes dv-scr-bob{
+  0%,100%{ transform:translateY(0) rotate(-3deg); }
+  50%{ transform:translateY(-16px) rotate(3deg); }
+}

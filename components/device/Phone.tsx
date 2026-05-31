@@ -2,9 +2,9 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { createScreenSurface } from './screenTexture';
+import ScreenContent from './ScreenContent';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -16,12 +16,17 @@ const DEVICE_W = 1.62;
 const DEVICE_H = 3.25;
 const FIT = 0.92;
 
+// Real-HTML screen (portrait). scale = worldWidth / (px * 0.025).
+const SCR_PX = { w: 600, h: 1270 };
+const SCR_SCALE = 1.36 / (SCR_PX.w * 0.025);
+
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
+  const frameEl = useRef<HTMLDivElement>(null);
+  const scrollEl = useRef<HTMLDivElement>(null);
 
   const accent = useMemo(() => readAccent(), []);
-  const surface = useMemo(() => createScreenSurface('phone'), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
   useFrame((state, dtRaw) => {
@@ -51,10 +56,15 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     root.current.scale.setScalar(s);
 
     if (screenMat.current) {
-      const target = 0.12 + wake * 1.15;
+      const target = 0.05 + wake * 0.35;
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
-    surface.render(read, state.clock.elapsedTime);
+
+    if (frameEl.current) frameEl.current.style.opacity = String(wake);
+    if (scrollEl.current) {
+      const max = Math.max(0, scrollEl.current.scrollHeight - SCR_PX.h);
+      scrollEl.current.style.transform = `translateY(${-read * max}px)`;
+    }
   });
 
   return (
@@ -69,18 +79,17 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <planeGeometry args={[1.46, 3.0]} />
         <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
       </mesh>
-      {/* Display content */}
+      {/* Dark glass screen (real content is HTML on top) */}
       <mesh position={[0, 0, 0.083]}>
         <planeGeometry args={[1.36, 2.88]} />
         <meshStandardMaterial
           ref={screenMat}
-          map={surface.texture}
-          emissiveMap={surface.texture}
-          emissive={'#ffffff'}
-          emissiveIntensity={0.12}
-          toneMapped={false}
+          color="#05070b"
+          emissive={emissive}
+          emissiveIntensity={0.05}
           metalness={0}
-          roughness={0.3}
+          roughness={0.2}
+          envMapIntensity={1.4}
         />
       </mesh>
       {/* Punch-hole front camera */}
@@ -88,19 +97,17 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <circleGeometry args={[0.05, 24]} />
         <meshStandardMaterial color="#02040a" metalness={0.8} roughness={0.2} />
       </mesh>
-      {/* Glass sheen overlay (reflects the studio environment) */}
-      <mesh position={[0, 0, 0.087]}>
-        <planeGeometry args={[1.46, 3.0]} />
-        <meshStandardMaterial
-          color="#ffffff"
-          transparent
-          opacity={0.06}
-          roughness={0.08}
-          metalness={0}
-          envMapIntensity={2.2}
-          depthWrite={false}
-        />
-      </mesh>
+      {/* Real HTML content on the display */}
+      <Html
+        transform
+        center
+        position={[0, 0, 0.088]}
+        scale={SCR_SCALE}
+        pointerEvents="none"
+        zIndexRange={[20, 0]}
+      >
+        <ScreenContent frameRef={frameEl} scrollerRef={scrollEl} width={SCR_PX.w} height={SCR_PX.h} />
+      </Html>
 
       {/* Rear camera bump (the silver "back" you see at the start) */}
       <RoundedBox args={[0.62, 0.62, 0.07]} radius={0.1} smoothness={4} position={[-0.38, 1.05, -0.11]}>

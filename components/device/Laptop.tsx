@@ -2,9 +2,9 @@
 
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { RoundedBox, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { createScreenSurface } from './screenTexture';
+import ScreenContent from './ScreenContent';
 import { makeDeckTexture } from './deckTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
@@ -14,6 +14,11 @@ const P = POSE.laptop;
 
 const HINGE_Z = -1.0;
 const BASE_TOP = 0.04; // half of base thickness (0.08)
+
+// Real-HTML screen: design size in px, scaled to the ~2.92×1.87 screen plane.
+// drei transform maps px→world by 0.025, so scale = worldWidth / (px * 0.025).
+const SCR_PX = { w: 1160, h: 744 };
+const SCR_SCALE = 2.92 / (SCR_PX.w * 0.025);
 
 // Open-laptop bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 3.35;
@@ -26,8 +31,10 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   const lid = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
 
+  const frameEl = useRef<HTMLDivElement>(null);
+  const scrollEl = useRef<HTMLDivElement>(null);
+
   const accent = useMemo(() => readAccent(), []);
-  const surface = useMemo(() => createScreenSurface('laptop'), []);
   const deckTex = useMemo(() => makeDeckTexture(), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
@@ -67,12 +74,16 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     lid.current.rotation.x += (lidAngle - lid.current.rotation.x) * k;
 
     if (screenMat.current) {
-      const target = 0.12 + wake * 1.15;
+      const target = 0.05 + wake * 0.35;
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
 
-    // Scroll the About-Me content inside the screen during the "read" beat
-    surface.render(read, state.clock.elapsedTime);
+    // Real HTML screen: fade in as it wakes, scroll content during "read".
+    if (frameEl.current) frameEl.current.style.opacity = String(wake);
+    if (scrollEl.current) {
+      const max = Math.max(0, scrollEl.current.scrollHeight - SCR_PX.h);
+      scrollEl.current.style.transform = `translateY(${-read * max}px)`;
+    }
   });
 
   return (
@@ -97,38 +108,34 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
           <circleGeometry args={[0.26, 48]} />
           <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
         </mesh>
-        {/* Thin black bezel */}
+        {/* Thin black bezel + dark glass screen (the real content is HTML on top) */}
         <mesh position={[0, 1.0, 0.043]}>
           <planeGeometry args={[3.0, 1.95]} />
           <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
         </mesh>
-        {/* Screen — display content (near edge-to-edge) */}
         <mesh position={[0, 1.0, 0.046]}>
           <planeGeometry args={[2.92, 1.87]} />
           <meshStandardMaterial
             ref={screenMat}
-            map={surface.texture}
-            emissiveMap={surface.texture}
-            emissive={'#ffffff'}
-            emissiveIntensity={0.12}
-            toneMapped={false}
-            roughness={0.3}
+            color="#05070b"
+            emissive={emissive}
+            emissiveIntensity={0.05}
+            roughness={0.2}
             metalness={0}
+            envMapIntensity={1.4}
           />
         </mesh>
-        {/* Glass sheen overlay (reflects the studio environment) */}
-        <mesh position={[0, 1.0, 0.05]}>
-          <planeGeometry args={[3.0, 1.95]} />
-          <meshStandardMaterial
-            color="#ffffff"
-            transparent
-            opacity={0.06}
-            roughness={0.08}
-            metalness={0}
-            envMapIntensity={2.2}
-            depthWrite={false}
-          />
-        </mesh>
+        {/* Real HTML content rendered onto the screen */}
+        <Html
+          transform
+          center
+          position={[0, 1.0, 0.05]}
+          scale={SCR_SCALE}
+          pointerEvents="none"
+          zIndexRange={[20, 0]}
+        >
+          <ScreenContent frameRef={frameEl} scrollerRef={scrollEl} width={SCR_PX.w} height={SCR_PX.h} />
+        </Html>
       </group>
 
       <pointLight position={[0, 0.6, -0.2]} intensity={0.5} distance={4} color={accent.glow} />
