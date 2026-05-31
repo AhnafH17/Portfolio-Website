@@ -23,22 +23,23 @@ export default function DeviceCanvas({
   active?: boolean;
 }) {
   const accent = useMemo(() => readAccent(), []);
+  const isPhone = kind === 'phone'; // phone === the mobile path → optimise hard
 
-  const camera =
-    kind === 'phone'
-      ? { position: [0, 0, 7.0] as [number, number, number], fov: 30 }
-      : { position: [0, 0.25, 6.4] as [number, number, number], fov: 34 };
+  const camera = isPhone
+    ? { position: [0, 0, 7.0] as [number, number, number], fov: 30 }
+    : { position: [0, 0.25, 6.4] as [number, number, number], fov: 34 };
 
-  const groundY = kind === 'phone' ? -2.25 : -1.35;
+  const groundY = isPhone ? -2.25 : -1.35;
 
   return (
     <Canvas
       // Pause the entire render loop when the hero is off-screen (no GPU work).
       frameloop={active ? 'always' : 'never'}
-      // Cap pixel ratio — full retina (2–3x) is the main mobile lag source.
-      dpr={[1, 1.5]}
+      // Pixel ratio: 1x on mobile (retina 2–3x is the #1 mobile lag source),
+      // up to 1.5x on desktop.
+      dpr={isPhone ? 1 : [1, 1.5]}
       camera={camera}
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: !isPhone, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
         gl.toneMapping = THREE.ACESFilmicToneMapping;
         gl.toneMappingExposure = 1.05;
@@ -54,7 +55,7 @@ export default function DeviceCanvas({
 
       {/* Neutral studio environment — silver reflections, no colour cast.
           Baked once (frames={1}) at low resolution — cheap. */}
-      <Environment resolution={128} frames={1}>
+      <Environment resolution={isPhone ? 64 : 128} frames={1}>
         <Lightformer form="rect" intensity={2} position={[0, 4, 2]} scale={[8, 4, 1]} color="#ffffff" />
         <Lightformer form="rect" intensity={1.4} position={[-4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
         <Lightformer form="rect" intensity={1.4} position={[4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
@@ -63,16 +64,20 @@ export default function DeviceCanvas({
         <Lightformer form="rect" intensity={0.4} position={[0, -4, 1]} scale={[8, 4, 1]} color="#1a1f27" />
       </Environment>
 
-      {/* Grounding shadow (lower-res for perf) */}
-      <ContactShadows
-        position={[0, groundY, 0]}
-        opacity={0.55}
-        scale={kind === 'phone' ? 9 : 11}
-        blur={2.6}
-        far={5}
-        resolution={256}
-        color="#000000"
-      />
+      {/* Grounding shadow — DESKTOP ONLY. On mobile it's the biggest cost: a
+          dynamic ContactShadows re-renders the scene a second time every frame.
+          Dropping it on the phone path is the main mobile-smoothness win. */}
+      {!isPhone && (
+        <ContactShadows
+          position={[0, groundY, 0]}
+          opacity={0.55}
+          scale={11}
+          blur={2.6}
+          far={5}
+          resolution={256}
+          color="#000000"
+        />
+      )}
 
       {kind === 'laptop' ? <Laptop progress={progress} /> : <Phone progress={progress} />}
     </Canvas>
