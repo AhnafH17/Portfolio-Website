@@ -16,9 +16,10 @@ const DEVICE_W = 1.62;
 const DEVICE_H = 3.25;
 const FIT = 0.92;
 
-// Real-HTML screen (portrait), slightly inside the 1.36-wide screen plane.
+// Real-HTML screen (portrait), nearly filling the 1.36-wide screen plane.
 const SCR_PX = { w: 600, h: 1270 };
-const SCR_SCALE = 1.3 / (SCR_PX.w * 0.025);
+const SCR_SCALE = 1.34 / (SCR_PX.w * 0.025);
+const SCR_POS: [number, number, number] = [-0.06, 0, 0.088]; // x nudged left to centre
 
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
@@ -101,7 +102,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       <Html
         transform
         center
-        position={[0, 0, 0.088]}
+        position={SCR_POS}
         scale={SCR_SCALE}
         pointerEvents="none"
         zIndexRange={[20, 0]}
