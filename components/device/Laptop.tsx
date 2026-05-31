@@ -15,6 +15,12 @@ const P = POSE.laptop;
 const HINGE_Z = -0.95;
 const BASE_TOP = 0.04; // half of base thickness (0.08)
 
+// Open-laptop bounding size (local units, scale 1) used to fit the viewport.
+const DEVICE_W = 3.35;
+const DEVICE_H = 2.3;
+const FIT = 0.94;       // leave a small margin around the device
+const Y_FACTOR = -0.82; // vertical centring as a fraction of scale
+
 export default function Laptop({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const lid = useRef<THREE.Group>(null);
@@ -38,7 +44,12 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     const open = easeInOut(phase(p, BEATS.open));
     const lidAngle = THREE.MathUtils.lerp(P.lidClosed, P.lidOpen, open);
     const tiltX = THREE.MathUtils.lerp(0, P.dockTilt, open);
-    const scale = THREE.MathUtils.lerp(P.introScale, P.dockScale, open);
+
+    // Responsive: fit the device to the actual visible area (adapts to resize).
+    const vp = state.viewport;
+    const dockScale = Math.min(vp.width / DEVICE_W, vp.height / DEVICE_H) * FIT;
+    const scale = THREE.MathUtils.lerp(dockScale * 0.82, dockScale, open);
+    const targetPosY = scale * Y_FACTOR;
 
     // Beat C — screen wakes
     const wake = easeOut(phase(p, BEATS.wake));
@@ -50,7 +61,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     // No cursor parallax — the laptop stays constant, facing forward.
     root.current.rotation.y += (rotY - root.current.rotation.y) * k;
     root.current.rotation.x += (tiltX - root.current.rotation.x) * k;
-    root.current.position.y += (P.posY - root.current.position.y) * k;
+    root.current.position.y += (targetPosY - root.current.position.y) * k;
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
     root.current.scale.setScalar(s);
     lid.current.rotation.x += (lidAngle - lid.current.rotation.x) * k;

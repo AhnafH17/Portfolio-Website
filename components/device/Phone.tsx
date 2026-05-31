@@ -11,6 +11,11 @@ import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 const SILVER = '#c7ccd2';
 const P = POSE.phone;
 
+// Phone bounding size (local units, scale 1) used to fit the viewport.
+const DEVICE_W = 1.62;
+const DEVICE_H = 3.25;
+const FIT = 0.92;
+
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
@@ -29,7 +34,11 @@ export default function Phone({ progress }: { progress: { current: number } }) {
 
     const open = easeInOut(phase(p, BEATS.open));
     const tiltX = THREE.MathUtils.lerp(0.45, 0, open);
-    const scale = THREE.MathUtils.lerp(P.introScale, P.dockScale, open);
+
+    // Responsive: fit the phone to the visible area (adapts to resize).
+    const vp = state.viewport;
+    const dockScale = Math.min(vp.width / DEVICE_W, vp.height / DEVICE_H) * FIT;
+    const scale = THREE.MathUtils.lerp(dockScale * 0.85, dockScale, open);
 
     const wake = easeOut(phase(p, BEATS.wake));
     const read = phase(p, BEATS.read);
