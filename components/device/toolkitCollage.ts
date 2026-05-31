@@ -28,6 +28,12 @@ export interface Collage {
   ) => void;
 }
 
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map((c) => c + c).join('') : h, 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
 export function createCollage(): Collage {
   const imgs = ICONS.map((ic) => {
     const img = new Image();
@@ -39,7 +45,28 @@ export function createCollage(): Collage {
     return img;
   });
 
+  // Cached radial-glow sprite (built once per glow colour). Drawing this is
+  // far cheaper than canvas `shadowBlur` every frame for every icon.
+  let glowSprite: HTMLCanvasElement | null = null;
+  let glowKey = '';
+  const buildGlow = (glow: string) => {
+    const s = 128;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = s;
+    const g = cv.getContext('2d')!;
+    const [r, gg, b] = hexToRgb(glow);
+    const grad = g.createRadialGradient(s / 2, s / 2, 0, s / 2, s / 2, s / 2);
+    grad.addColorStop(0, `rgba(${r},${gg},${b},0.5)`);
+    grad.addColorStop(0.5, `rgba(${r},${gg},${b},0.16)`);
+    grad.addColorStop(1, `rgba(${r},${gg},${b},0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, s, s);
+    glowSprite = cv;
+    glowKey = glow;
+  };
+
   const draw: Collage['draw'] = (ctx, x, y, w, h, time, glow) => {
+    if (glowKey !== glow) buildGlow(glow);
     const base = Math.min(w, h * 0.5);
     imgs.forEach((im, i) => {
       if (!im.complete || im.naturalWidth === 0) return;
@@ -48,12 +75,16 @@ export function createCollage(): Collage {
       const cx = x + L.x * w;
       const cy = y + L.y * h + Math.sin(time * 1.1 + L.ph) * size * 0.18;
       const rot = Math.sin(time * 0.6 + L.ph) * 0.14;
+      const pulse = 0.85 + 0.3 * (0.5 + 0.5 * Math.sin(time * 1.4 + L.ph));
       ctx.save();
       ctx.translate(cx, cy);
+      // Cheap cached glow behind the icon
+      if (glowSprite) {
+        const gs = size * 2.2 * pulse;
+        ctx.drawImage(glowSprite, -gs / 2, -gs / 2, gs, gs);
+      }
       ctx.rotate(rot);
-      ctx.shadowColor = glow;
-      ctx.shadowBlur = size * (0.45 + 0.2 * (0.5 + 0.5 * Math.sin(time * 1.4 + L.ph)));
-      ctx.globalAlpha = 0.95;
+      ctx.globalAlpha = 0.96;
       ctx.drawImage(im, -size / 2, -size / 2, size, size);
       ctx.restore();
     });

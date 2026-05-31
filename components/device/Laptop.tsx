@@ -12,7 +12,7 @@ import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 const SILVER = '#c7ccd2';   // aluminium body
 const P = POSE.laptop;
 
-const HINGE_Z = -0.95;
+const HINGE_Z = -1.0;
 const BASE_TOP = 0.04; // half of base thickness (0.08)
 
 // Open-laptop bounding size (local units, scale 1) used to fit the viewport.
@@ -78,18 +78,18 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   return (
     <group ref={root} rotation={[0, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
       {/* ── Base: thin + deep (modern laptop), with keyboard deck ── */}
-      <RoundedBox args={[3, 0.08, 1.9]} radius={0.035} smoothness={6}>
+      <RoundedBox args={[3.06, 0.08, 2.0]} radius={0.035} smoothness={4}>
         <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
       </RoundedBox>
       {/* Keyboard + trackpad deck — matte so the keys read clearly */}
       <mesh position={[0, BASE_TOP + 0.002, 0.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.86, 1.74]} />
+        <planeGeometry args={[2.92, 1.86]} />
         <meshStandardMaterial map={deckTex} metalness={0.15} roughness={0.7} envMapIntensity={0.12} />
       </mesh>
 
       {/* ── Lid (hinged at back edge) ── */}
       <group ref={lid} position={[0, BASE_TOP, HINGE_Z]} rotation={[P.lidClosed, 0, 0]}>
-        <RoundedBox args={[3.05, 2.0, 0.06]} radius={0.04} smoothness={6} position={[0, 1.0, 0]}>
+        <RoundedBox args={[3.06, 2.0, 0.06]} radius={0.04} smoothness={4} position={[0, 1.0, 0]}>
           <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
         </RoundedBox>
         {/* Outer-lid logo (the "back" you see at the start) */}

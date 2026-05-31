@@ -39,6 +39,19 @@ export default function DeviceShowcase() {
     setMode(detectMode());
   }, []);
 
+  // Only run the WebGL render loop while the hero is on screen.
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setActive(entry.isIntersecting),
+      { rootMargin: '200px 0px' },
+    );
+    io.observe(section);
+    return () => io.disconnect();
+  }, []);
+
   useEffect(() => {
     if (mode !== 'laptop' && mode !== 'phone') return;
     const section = sectionRef.current;
@@ -72,7 +85,7 @@ export default function DeviceShowcase() {
         {/* 3D layer */}
         <div className="dv-canvas">
           {(mode === 'laptop' || mode === 'phone') && (
-            <DeviceCanvas kind={mode} progress={progress} />
+            <DeviceCanvas kind={mode} progress={progress} active={active} />
           )}
         </div>
 

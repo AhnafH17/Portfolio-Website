@@ -16,9 +16,11 @@ import { readAccent } from '@/lib/accent';
 export default function DeviceCanvas({
   kind,
   progress,
+  active = true,
 }: {
   kind: 'laptop' | 'phone';
   progress: { current: number };
+  active?: boolean;
 }) {
   const accent = useMemo(() => readAccent(), []);
 
@@ -31,7 +33,10 @@ export default function DeviceCanvas({
 
   return (
     <Canvas
-      dpr={[1, 2]}
+      // Pause the entire render loop when the hero is off-screen (no GPU work).
+      frameloop={active ? 'always' : 'never'}
+      // Cap pixel ratio — full retina (2–3x) is the main mobile lag source.
+      dpr={[1, 1.5]}
       camera={camera}
       gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
       onCreated={({ gl }) => {
@@ -47,8 +52,9 @@ export default function DeviceCanvas({
       {/* Subtle palette-accent rim from behind (kept low so the metal stays silver) */}
       <pointLight position={[0, 1.6, -3]} intensity={0.5} distance={10} color={accent.glow} />
 
-      {/* Neutral studio environment — silver reflections, no colour cast */}
-      <Environment resolution={256} frames={1}>
+      {/* Neutral studio environment — silver reflections, no colour cast.
+          Baked once (frames={1}) at low resolution — cheap. */}
+      <Environment resolution={128} frames={1}>
         <Lightformer form="rect" intensity={2} position={[0, 4, 2]} scale={[8, 4, 1]} color="#ffffff" />
         <Lightformer form="rect" intensity={1.4} position={[-4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
         <Lightformer form="rect" intensity={1.4} position={[4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
@@ -57,14 +63,14 @@ export default function DeviceCanvas({
         <Lightformer form="rect" intensity={0.4} position={[0, -4, 1]} scale={[8, 4, 1]} color="#1a1f27" />
       </Environment>
 
-      {/* Grounding shadow */}
+      {/* Grounding shadow (lower-res for perf) */}
       <ContactShadows
         position={[0, groundY, 0]}
         opacity={0.55}
         scale={kind === 'phone' ? 9 : 11}
         blur={2.6}
         far={5}
-        resolution={512}
+        resolution={256}
         color="#000000"
       />
 
