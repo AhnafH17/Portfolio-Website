@@ -40,23 +40,20 @@ export default function DeviceCanvas({
       }}
       style={{ width: '100%', height: '100%' }}
     >
-      <ambientLight intensity={0.5} />
+      <ambientLight intensity={0.55} />
       {/* Soft key (front-top so the open keyboard deck is lit) + cool fill */}
-      <directionalLight position={[0, 5, 6]} intensity={1.3} />
+      <directionalLight position={[0, 5, 6]} intensity={1.4} />
       <directionalLight position={[-5, 2, -2]} intensity={0.4} color="#9fb4d0" />
-      {/* Palette-accent rim from behind */}
-      <pointLight position={[0, 1.6, -3]} intensity={1.3} distance={10} color={accent.glow} />
+      {/* Subtle palette-accent rim from behind (kept low so the metal stays silver) */}
+      <pointLight position={[0, 1.6, -3]} intensity={0.5} distance={10} color={accent.glow} />
 
-      {/* Studio environment — drives the reflections on the aluminium + glass */}
+      {/* Neutral studio environment — silver reflections, no colour cast */}
       <Environment resolution={256} frames={1}>
-        {/* Big soft overhead key */}
-        <Lightformer form="rect" intensity={3} position={[0, 4, 2]} scale={[8, 4, 1]} color="#ffffff" />
-        {/* Side strips for edge highlights */}
-        <Lightformer form="rect" intensity={2} position={[-4, 1, 2]} scale={[1, 5, 1]} color="#dfe6ef" />
-        <Lightformer form="rect" intensity={2} position={[4, 1, 2]} scale={[1, 5, 1]} color="#dfe6ef" />
-        {/* Accent-tinted back strip for a coloured reflection */}
-        <Lightformer form="rect" intensity={1.4} position={[0, 0, -4]} scale={[6, 6, 1]} color={accent.glow} />
-        {/* Dark floor so the lower half of the metal reads grounded */}
+        <Lightformer form="rect" intensity={2} position={[0, 4, 2]} scale={[8, 4, 1]} color="#ffffff" />
+        <Lightformer form="rect" intensity={1.4} position={[-4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
+        <Lightformer form="rect" intensity={1.4} position={[4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
+        {/* faint accent glint only */}
+        <Lightformer form="rect" intensity={0.35} position={[0, 0, -4]} scale={[6, 6, 1]} color={accent.glow} />
         <Lightformer form="rect" intensity={0.4} position={[0, -4, 1]} scale={[8, 4, 1]} color="#1a1f27" />
       </Environment>
 

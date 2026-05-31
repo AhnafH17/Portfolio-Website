@@ -52,7 +52,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     <group ref={root} rotation={[0.45, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
       {/* Silver body slab — this is the BACK + sides */}
       <RoundedBox args={[1.5, 3.05, 0.16]} radius={0.18} smoothness={6}>
-        <meshStandardMaterial color={SILVER} metalness={0.95} roughness={0.36} envMapIntensity={1.1} />
+        <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
       </RoundedBox>
 
       {/* Black bezel on the FRONT */}
