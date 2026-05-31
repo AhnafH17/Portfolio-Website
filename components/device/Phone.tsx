@@ -51,13 +51,18 @@ export default function Phone({ progress }: { progress: { current: number } }) {
   return (
     <group ref={root} rotation={[0.45, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
       {/* Silver body slab — this is the BACK + sides */}
-      <RoundedBox args={[1.5, 3.05, 0.16]} radius={0.16} smoothness={5}>
-        <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.32} />
+      <RoundedBox args={[1.5, 3.05, 0.16]} radius={0.18} smoothness={6}>
+        <meshStandardMaterial color={SILVER} metalness={0.95} roughness={0.36} envMapIntensity={1.1} />
       </RoundedBox>
 
-      {/* Display panel on the FRONT (+z) — scrollable content texture */}
-      <mesh position={[0, 0, 0.082]}>
-        <planeGeometry args={[1.42, 2.96]} />
+      {/* Black bezel on the FRONT */}
+      <mesh position={[0, 0, 0.081]}>
+        <planeGeometry args={[1.46, 3.0]} />
+        <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
+      </mesh>
+      {/* Display content */}
+      <mesh position={[0, 0, 0.083]}>
+        <planeGeometry args={[1.36, 2.88]} />
         <meshStandardMaterial
           ref={screenMat}
           map={surface.texture}
@@ -67,6 +72,24 @@ export default function Phone({ progress }: { progress: { current: number } }) {
           toneMapped={false}
           metalness={0}
           roughness={0.3}
+        />
+      </mesh>
+      {/* Punch-hole front camera */}
+      <mesh position={[0, 1.32, 0.085]}>
+        <circleGeometry args={[0.05, 24]} />
+        <meshStandardMaterial color="#02040a" metalness={0.8} roughness={0.2} />
+      </mesh>
+      {/* Glass sheen overlay (reflects the studio environment) */}
+      <mesh position={[0, 0, 0.087]}>
+        <planeGeometry args={[1.46, 3.0]} />
+        <meshStandardMaterial
+          color="#ffffff"
+          transparent
+          opacity={0.06}
+          roughness={0.08}
+          metalness={0}
+          envMapIntensity={2.2}
+          depthWrite={false}
         />
       </mesh>
 

@@ -66,8 +66,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   return (
     <group ref={root} rotation={[0, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
       {/* ── Base / keyboard deck (slimmer depth = less keyboard) ── */}
-      <RoundedBox args={[3, 0.13, 1.5]} radius={0.05} smoothness={4}>
-        <meshStandardMaterial color={SILVER} metalness={0.92} roughness={0.34} />
+      <RoundedBox args={[3, 0.13, 1.5]} radius={0.07} smoothness={6}>
+        <meshStandardMaterial color={SILVER} metalness={0.95} roughness={0.38} envMapIntensity={1.1} />
       </RoundedBox>
       <mesh position={[0, 0.071, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[2.74, 1.18]} />
@@ -80,17 +80,22 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
       {/* ── Lid (hinged at back edge) ── */}
       <group ref={lid} position={[0, 0.065, HINGE_Z]} rotation={[P.lidClosed, 0, 0]}>
-        <RoundedBox args={[3.05, 2.0, 0.08]} radius={0.05} smoothness={4} position={[0, 1.0, 0]}>
-          <meshStandardMaterial color={SILVER} metalness={0.92} roughness={0.32} />
+        <RoundedBox args={[3.05, 2.0, 0.08]} radius={0.07} smoothness={6} position={[0, 1.0, 0]}>
+          <meshStandardMaterial color={SILVER} metalness={0.95} roughness={0.38} envMapIntensity={1.1} />
         </RoundedBox>
         {/* Outer-lid logo (the "back" you see at the start) */}
         <mesh position={[0, 1.0, -0.045]}>
           <circleGeometry args={[0.26, 48]} />
           <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
         </mesh>
-        {/* Screen — bigger display filling the lid */}
-        <mesh position={[0, 1.0, 0.045]}>
-          <planeGeometry args={[2.96, 1.88]} />
+        {/* Black bezel */}
+        <mesh position={[0, 1.0, 0.043]}>
+          <planeGeometry args={[2.98, 1.92]} />
+          <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
+        </mesh>
+        {/* Screen — display content */}
+        <mesh position={[0, 1.0, 0.046]}>
+          <planeGeometry args={[2.82, 1.76]} />
           <meshStandardMaterial
             ref={screenMat}
             map={surface.texture}
@@ -98,8 +103,21 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
             emissive={'#ffffff'}
             emissiveIntensity={0.12}
             toneMapped={false}
-            roughness={0.25}
+            roughness={0.3}
             metalness={0}
+          />
+        </mesh>
+        {/* Glass sheen overlay (reflects the studio environment) */}
+        <mesh position={[0, 1.0, 0.05]}>
+          <planeGeometry args={[2.98, 1.92]} />
+          <meshStandardMaterial
+            color="#ffffff"
+            transparent
+            opacity={0.06}
+            roughness={0.08}
+            metalness={0}
+            envMapIntensity={2.2}
+            depthWrite={false}
           />
         </mesh>
       </group>
