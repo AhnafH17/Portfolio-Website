@@ -32,9 +32,12 @@ const CFG: Record<'laptop' | 'phone', Cfg> = {
     cw: 1200, padX: 84, planeAspect: 2.92 / 1.87,
     name: 112, head: 54, role: 34, body: 32, bodyLH: 47, bullet: 30, bulletLH: 45, eyebrow: 23, logo: 96,
   },
+  // Phone texture kept light for mobile GPUs (~2.8 MB VRAM: 384 × ~1.8k × 4 bytes).
+  // Sizes are the desktop proportions scaled ~0.565, so the layout is identical,
+  // just rendered at lower pixel density.
   phone: {
-    cw: 680, padX: 56, planeAspect: 1.36 / 2.88,
-    name: 96, head: 58, role: 35, body: 35, bodyLH: 53, bullet: 35, bulletLH: 53, eyebrow: 27, logo: 92,
+    cw: 384, padX: 32, planeAspect: 1.36 / 2.88,
+    name: 54, head: 33, role: 20, body: 20, bodyLH: 30, bullet: 20, bulletLH: 30, eyebrow: 15, logo: 52,
   },
 };
 
