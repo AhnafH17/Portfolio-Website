@@ -3,8 +3,8 @@ import { siNextdotjs, siShopify, siWordpress, siPython } from 'simple-icons';
 const NODES = [
   { id: 'frontend', label: 'Frontend Standards', sub: 'Next.js · GSAP', x: 50, y: 13 },
   { id: 'client', label: 'Client Websites', sub: 'Shopify · WordPress', x: 15, y: 47 },
-  { id: 'saas', label: 'SaaS Dashboards', sub: 'Python', x: 85, y: 47 },
-  { id: 'automation', label: 'Automation', sub: '', x: 24, y: 84 },
+  { id: 'saas', label: 'Mission Control', sub: 'Internal SaaS PM', x: 85, y: 47 },
+  { id: 'automation', label: 'Email Scraping', sub: 'Python', x: 24, y: 84 },
   { id: 'seo', label: 'SEO Systems', sub: '', x: 50, y: 92 },
   { id: 'team', label: 'Team Workflows', sub: '', x: 76, y: 84 },
 ];
@@ -103,8 +103,8 @@ export default function AboutSection() {
               <span>Architecture</span>
             </div>
 
-            {NODES.map((n) => (
-              <div key={n.id} className="ab2-node" style={{ left: `${n.x}%`, top: `${n.y}%` }}>
+            {NODES.map((n, i) => (
+              <div key={n.id} className="ab2-node" style={{ left: `${n.x}%`, top: `${n.y}%`, animationDelay: `${i * 0.55}s` }}>
                 <span className="ab2-node-label">{n.label}</span>
                 {n.sub && <span className="ab2-node-sub">{n.sub}</span>}
               </div>
@@ -121,8 +121,8 @@ export default function AboutSection() {
             </div>
           </div>
 
-          {CARDS.map((c) => (
-            <div key={c.id} className={`ab2-card ab2-card--${c.id}`}>
+          {CARDS.map((c, i) => (
+            <div key={c.id} className={`ab2-card ab2-card--${c.id}`} style={{ animationDelay: `${0.4 + i * 0.3}s` }}>
               <h3>{c.title}</h3>
               <ul>
                 {c.items.map((it, i) => (

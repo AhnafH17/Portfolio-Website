@@ -1677,3 +1677,34 @@ footer span{color:var(--accent-glow)}
   .ab2-node-sub{ display:none; }
   .ab2-core{ font-size:.5rem; }
 }
+
+/* ── About diagram animations ── */
+@keyframes ab2-float{
+  0%,100%{ transform:translate(-50%,-50%) translateY(0); }
+  50%{ transform:translate(-50%,-50%) translateY(-6px); }
+}
+@keyframes ab2-pulse{
+  0%,100%{ box-shadow:0 0 36px rgba(var(--accent-rgb),0.28), inset 0 0 22px rgba(var(--accent-rgb),0.1); }
+  50%{ box-shadow:0 0 56px rgba(var(--accent-rgb),0.48), inset 0 0 32px rgba(var(--accent-rgb),0.22); }
+}
+@keyframes ab2-link-glow{
+  0%,100%{ stroke:rgba(var(--accent-rgb),0.3); }
+  50%{ stroke:rgba(var(--accent-rgb),0.65); }
+}
+@keyframes ab2-card-in{
+  from{ opacity:0; transform:translateY(14px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+
+.ab2-node{ animation:ab2-float 4.5s ease-in-out infinite; }
+.ab2-core{ animation:ab2-pulse 3.5s ease-in-out infinite; }
+.ab2-link{ animation:ab2-link-glow 3.5s ease-in-out infinite; }
+.ab2-card{ animation:ab2-card-in 0.7s ease both; }
+.ab2-card:hover{ transform:translateY(-4px); transition:transform .35s ease; }
+
+/* Stagger link glow per line */
+.ab2-links line:nth-child(2){ animation-delay:.4s; }
+.ab2-links line:nth-child(3){ animation-delay:.8s; }
+.ab2-links line:nth-child(4){ animation-delay:1.2s; }
+.ab2-links line:nth-child(5){ animation-delay:1.6s; }
+.ab2-links line:nth-child(6){ animation-delay:2.0s; }
