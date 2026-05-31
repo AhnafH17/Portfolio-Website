@@ -16,9 +16,9 @@ const DEVICE_W = 1.62;
 const DEVICE_H = 3.25;
 const FIT = 0.92;
 
-// Real-HTML screen (portrait). scale = worldWidth / (px * 0.025).
+// Real-HTML screen (portrait), slightly inside the 1.36-wide screen plane.
 const SCR_PX = { w: 600, h: 1270 };
-const SCR_SCALE = 1.36 / (SCR_PX.w * 0.025);
+const SCR_SCALE = 1.3 / (SCR_PX.w * 0.025);
 
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
@@ -56,7 +56,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     root.current.scale.setScalar(s);
 
     if (screenMat.current) {
-      const target = 0.05 + wake * 0.35;
+      const target = 0.02 + wake * 0.12;
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
 
@@ -84,12 +84,12 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <planeGeometry args={[1.36, 2.88]} />
         <meshStandardMaterial
           ref={screenMat}
-          color="#05070b"
+          color="#04060a"
           emissive={emissive}
-          emissiveIntensity={0.05}
+          emissiveIntensity={0.02}
           metalness={0}
           roughness={0.2}
-          envMapIntensity={1.4}
+          envMapIntensity={1.2}
         />
       </mesh>
       {/* Punch-hole front camera */}

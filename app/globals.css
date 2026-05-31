@@ -1583,7 +1583,7 @@ footer span{color:var(--accent-glow)}
   position:relative;
   overflow:hidden;
   border-radius:14px;
-  background:radial-gradient(120% 80% at 18% 0%, rgba(var(--accent-rgb),0.22), #0a0e14 60%);
+  background:radial-gradient(130% 90% at 50% -8%, rgba(var(--accent-rgb),0.16), #0a0e14 62%);
   font-family:var(--font-body);
   color:#f3efe7;
   pointer-events:none;

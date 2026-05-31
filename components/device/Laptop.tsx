@@ -15,10 +15,11 @@ const P = POSE.laptop;
 const HINGE_Z = -1.0;
 const BASE_TOP = 0.04; // half of base thickness (0.08)
 
-// Real-HTML screen: design size in px, scaled to the ~2.92×1.87 screen plane.
+// Real-HTML screen: design size in px, scaled to sit INSIDE the screen plane
+// (slightly smaller than 2.92×1.87 so it never overflows the bezel).
 // drei transform maps px→world by 0.025, so scale = worldWidth / (px * 0.025).
 const SCR_PX = { w: 1160, h: 744 };
-const SCR_SCALE = 2.92 / (SCR_PX.w * 0.025);
+const SCR_SCALE = 2.8 / (SCR_PX.w * 0.025);
 
 // Open-laptop bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 3.35;
@@ -74,7 +75,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     lid.current.rotation.x += (lidAngle - lid.current.rotation.x) * k;
 
     if (screenMat.current) {
-      const target = 0.05 + wake * 0.35;
+      const target = 0.02 + wake * 0.12;
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
 
@@ -117,12 +118,12 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
           <planeGeometry args={[2.92, 1.87]} />
           <meshStandardMaterial
             ref={screenMat}
-            color="#05070b"
+            color="#04060a"
             emissive={emissive}
-            emissiveIntensity={0.05}
+            emissiveIntensity={0.02}
             roughness={0.2}
             metalness={0}
-            envMapIntensity={1.4}
+            envMapIntensity={1.2}
           />
         </mesh>
         {/* Real HTML content rendered onto the screen */}
