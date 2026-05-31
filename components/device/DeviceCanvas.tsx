@@ -40,10 +40,10 @@ export default function DeviceCanvas({
       }}
       style={{ width: '100%', height: '100%' }}
     >
-      <ambientLight intensity={0.25} />
-      {/* Soft key + cool fill */}
-      <directionalLight position={[4, 6, 5]} intensity={0.9} />
-      <directionalLight position={[-5, 2, -2]} intensity={0.35} color="#9fb4d0" />
+      <ambientLight intensity={0.5} />
+      {/* Soft key (front-top so the open keyboard deck is lit) + cool fill */}
+      <directionalLight position={[0, 5, 6]} intensity={1.3} />
+      <directionalLight position={[-5, 2, -2]} intensity={0.4} color="#9fb4d0" />
       {/* Palette-accent rim from behind */}
       <pointLight position={[0, 1.6, -3]} intensity={1.3} distance={10} color={accent.glow} />
 

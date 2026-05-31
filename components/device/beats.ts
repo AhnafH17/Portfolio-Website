@@ -22,7 +22,7 @@ export const POSE = {
     // The lid pivots up from the hinge. CLOSED = folded flat onto the keyboard
     // (+90°). OPEN = standing up, reclined ~16° past vertical. A real clamshell.
     lidClosed: Math.PI / 2,
-    lidOpen: -0.3,
+    lidOpen: 0,         // stands straight up — screen perpendicular to keyboard
   },
   phone: {
     introScale: 1.18,

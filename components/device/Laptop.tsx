@@ -5,12 +5,11 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 import { createScreenSurface } from './screenTexture';
+import { makeDeckTexture } from './deckTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 const SILVER = '#c7ccd2';   // aluminium body
-const SILVER_DK = '#9aa1a9'; // shaded aluminium
-const DECK = '#1a1d22';     // keyboard deck
 const P = POSE.laptop;
 
 const HINGE_Z = -0.75;
@@ -22,6 +21,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
   const accent = useMemo(() => readAccent(), []);
   const surface = useMemo(() => createScreenSurface('laptop'), []);
+  const deckTex = useMemo(() => makeDeckTexture(), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
 
   useFrame((state, dtRaw) => {
@@ -69,13 +69,10 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
       <RoundedBox args={[3, 0.13, 1.5]} radius={0.07} smoothness={6}>
         <meshStandardMaterial color={SILVER} metalness={0.95} roughness={0.38} envMapIntensity={1.1} />
       </RoundedBox>
-      <mesh position={[0, 0.071, 0.02]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.74, 1.18]} />
-        <meshStandardMaterial color={DECK} metalness={0.5} roughness={0.55} />
-      </mesh>
-      <mesh position={[0, 0.072, 0.5]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[0.9, 0.4]} />
-        <meshStandardMaterial color={SILVER_DK} metalness={0.6} roughness={0.4} />
+      {/* Keyboard + trackpad deck */}
+      <mesh position={[0, 0.0655, 0.0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.86, 1.34]} />
+        <meshStandardMaterial map={deckTex} metalness={0.55} roughness={0.5} envMapIntensity={0.7} />
       </mesh>
 
       {/* ── Lid (hinged at back edge) ── */}
@@ -88,14 +85,14 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
           <circleGeometry args={[0.26, 48]} />
           <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
         </mesh>
-        {/* Black bezel */}
+        {/* Thin black bezel */}
         <mesh position={[0, 1.0, 0.043]}>
-          <planeGeometry args={[2.98, 1.92]} />
+          <planeGeometry args={[3.0, 1.95]} />
           <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
         </mesh>
-        {/* Screen — display content */}
+        {/* Screen — display content (near edge-to-edge) */}
         <mesh position={[0, 1.0, 0.046]}>
-          <planeGeometry args={[2.82, 1.76]} />
+          <planeGeometry args={[2.92, 1.87]} />
           <meshStandardMaterial
             ref={screenMat}
             map={surface.texture}
@@ -109,7 +106,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
         </mesh>
         {/* Glass sheen overlay (reflects the studio environment) */}
         <mesh position={[0, 1.0, 0.05]}>
-          <planeGeometry args={[2.98, 1.92]} />
+          <planeGeometry args={[3.0, 1.95]} />
           <meshStandardMaterial
             color="#ffffff"
             transparent
