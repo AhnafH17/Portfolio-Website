@@ -18,8 +18,8 @@ const BASE_TOP = 0.04; // half of base thickness (0.08)
 // Real-HTML screen: design size in px, scaled to (nearly) fill the screen plane.
 // drei transform maps px→world by 0.025, so scale = worldWidth / (px * 0.025).
 const SCR_PX = { w: 1160, h: 744 };
-const SCR_SCALE = 2.9 / (SCR_PX.w * 0.025);
-const SCR_POS: [number, number, number] = [-0.16, 1.0, 0.05]; // x nudged left to centre
+const SCR_SCALE = 3 / (SCR_PX.w * 0.025);
+const SCR_POS: [number, number, number] = [-0.31, 1.0, 0.05]; // x nudged left to centre
 
 // Open-laptop bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 3.35;

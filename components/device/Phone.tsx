@@ -18,8 +18,8 @@ const FIT = 0.92;
 
 // Real-HTML screen (portrait), nearly filling the 1.36-wide screen plane.
 const SCR_PX = { w: 600, h: 1270 };
-const SCR_SCALE = 1.34 / (SCR_PX.w * 0.025);
-const SCR_POS: [number, number, number] = [-0.06, 0, 0.088]; // x nudged left to centre
+const SCR_SCALE = 1.36 / (SCR_PX.w * 0.025);
+const SCR_POS: [number, number, number] = [0.0, 0, 0.088]; // x nudged left to centre
 
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);

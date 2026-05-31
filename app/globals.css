@@ -1425,7 +1425,11 @@ footer span{color:var(--accent-glow)}
 .dv-sticky{
   position:sticky;
   top:0;
+  /* Use the SMALL viewport height so the canvas matches the always-visible
+     area on mobile (plain 100vh = the *large* viewport, which makes the device
+     oversize / overflow when the address bar is showing). vh is the fallback. */
   height:100vh;
+  height:100svh;
   /* Full-bleed via margin trick (no transform — keeps `sticky` working),
      so the canvas truly spans the viewport width on mobile. */
   width:100vw;
