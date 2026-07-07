@@ -22,6 +22,7 @@ export interface Project {
 
 export type ProjectKey =
   | 'notion'
+  | 'scripting'
   | 'revive'
   | 'leadcraft'
   | 'data'
@@ -94,8 +95,72 @@ export const projectData: Record<ProjectKey, Project> = {
     ],
   },
 
-  revive: {
+  scripting: {
     label: 'Project 02',
+    title: 'Scripting Engine',
+    link: 'https://scripting-engine.vercel.app',
+    image: 'images/Scripting_Engine_Content_OS.png',
+    imagePlaceholder: '',
+    sections: [
+      {
+        heading: 'Overview',
+        content:
+          '<p>Scripting Engine is a closed-loop creative operations product I am building for short-form marketing teams. The current system generates brand-aware scripts, stores every output, accepts review feedback and campaign performance later, then uses those results to improve future retrieval and prompts. The next phase expands it into a full content operating system for discovering ideas, writing scripts, scheduling posts, publishing, measuring performance, and learning from the results.</p>',
+      },
+      {
+        heading: 'Product Direction',
+        content:
+          '<p>The product is designed around one connected loop: <strong>Brand -> Idea -> Script -> Post -> Published Reel -> Metrics -> Learning</strong>. Instead of splitting research, writing, posting, and reporting across separate tools, the scripting app becomes the home for the full content workflow while Agency Hub remains focused on internal operations and project management.</p>',
+      },
+      {
+        heading: 'What I Built',
+        content:
+          '<ul><li><strong>Generation workflow:</strong> A LangGraph pipeline that classifies the brief, loads brand context, retrieves weighted examples, generates hooks, writes the script body, creates CTA options, runs a critic pass, formats the final script, and stores the generation context</li><li><strong>Performance learning workflow:</strong> A separate graph that accepts campaign metrics days or weeks later, stores snapshots, scores performance, updates hook and CTA rankings, promotes strong scripts into templates, and records audit events</li><li><strong>Creative operations:</strong> Script import, editable versions, review states, reviewer feedback, restore support, and brand knowledge entries that are supplied to Gemini as approved context</li><li><strong>API and dashboard foundation:</strong> Fastify endpoints for brands, assets, generation, imports, performance, feedback, insights, and a React/Vite operator dashboard for daily use</li></ul>',
+      },
+      {
+        heading: 'Content OS Roadmap',
+        content:
+          '<ul><li><strong>Discover:</strong> Save viral reels, competitor examples, hooks, captions, formats, and trend references before generating ideas</li><li><strong>Ideas:</strong> Turn saved references and brand knowledge into content angles grouped by brand, campaign, objective, and platform</li><li><strong>Calendar and publishing:</strong> Convert approved scripts into scheduled posts with account connections, post statuses, publish logs, retry states, and Meta/Instagram publishing where available</li><li><strong>Insights:</strong> Sync views, reach, engagement, saves, watch data, CTR, conversions, and platform IDs back to the exact post, script, idea, and reference chain</li><li><strong>Learning:</strong> Promote winning hooks, CTAs, formats, topics, and structures while demoting weak patterns and writing clearer future prompt rules</li></ul>',
+      },
+      {
+        heading: 'AI Architecture',
+        content:
+          '<p>The system does not fine-tune Gemini. It learns at the application layer through approved brand knowledge, ranked creative assets, human feedback, campaign metrics, and reusable templates. LangChain handles structured Gemini calls and Zod-validated outputs, while LangGraph controls the explicit workflow state for generation and delayed performance learning. This keeps the learning loop immediate, auditable, reversible, and much cheaper than maintaining a custom-trained model.</p>',
+      },
+      {
+        heading: 'Results',
+        type: 'results',
+        items: [
+          { big: '2', label: 'LangGraph Workflows' },
+          { big: 'Loop', label: 'Creative Learning System' },
+          { big: '9', label: 'Core API Areas' },
+          { big: 'Soon', label: 'Content OS Expansion' },
+        ],
+      },
+      {
+        heading: 'Technologies',
+        type: 'tech',
+        tags: [
+          'Node.js',
+          'TypeScript',
+          'LangGraph',
+          'LangChain',
+          'Gemini API',
+          'Fastify',
+          'React',
+          'Vite',
+          'Supabase',
+          'PostgreSQL',
+          'Zod',
+          'Vitest',
+          'Meta API',
+        ],
+      },
+    ],
+  },
+
+  revive: {
+    label: 'Project 03',
     title: 'CPC Revive',
     link: 'https://cpcclinics.ca/revive/',
     image: 'rtms.png',
@@ -148,7 +213,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   leadcraft: {
-    label: 'Project 03',
+    label: 'Project 04',
     title: 'LeadCraft IT Solutions',
     link: 'https://www.leadcraftit.com/',
     image: 'leadcraft.png',
@@ -207,7 +272,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   data: {
-    label: 'Project 04',
+    label: 'Project 05',
     title: 'Customer Segmentation Engine',
     link: null,
     image: 'images/Data_science_project.jpeg',
@@ -256,7 +321,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   cpc: {
-    label: 'Project 05',
+    label: 'Project 06',
     title: 'CPC Clinics',
     link: 'https://cpcclinics.ca/',
     image: 'images/Cpc_Clinics_image.png',
@@ -309,7 +374,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   bp: {
-    label: 'Project 06',
+    label: 'Project 07',
     title: 'Budget Promotion',
     link: 'https://budgetpromotion.ca/',
     image: 'images/Budget_Promotion_image.png',
@@ -358,7 +423,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   aurix: {
-    label: 'Project 07',
+    label: 'Project 08',
     title: 'AurixLab SEO Optimization',
     link: 'https://www.aurixlab.com/',
     image: 'images/Aurix_lab_2.png',
@@ -405,7 +470,7 @@ export const projectData: Record<ProjectKey, Project> = {
   },
 
   resizer: {
-    label: 'Project 08',
+    label: 'Project 09',
     title: 'Image Resizer Studio',
     link: 'https://ahnaf-image-resizer.netlify.app/',
     image: 'images/Image_resizer_app_image.png',
@@ -437,6 +502,7 @@ export const projectData: Record<ProjectKey, Project> = {
 
 export const stripOrder: ProjectKey[] = [
   'notion',
+  'scripting',
   'revive',
   'leadcraft',
   'data',
@@ -454,11 +520,12 @@ export interface StripMeta {
 
 export const stripMeta: StripMeta[] = [
   { key: 'notion',   num: '01', tags: ['Next.js', 'Supabase', 'SaaS'] },
-  { key: 'revive',   num: '02', tags: ['WordPress', 'SEO', 'UX'] },
-  { key: 'leadcraft',num: '03', tags: ['WordPress', 'GSAP', 'WebGL'] },
-  { key: 'data',     num: '04', tags: ['Python', 'ML', 'Anthropic'] },
-  { key: 'cpc',      num: '05', tags: ['WordPress', 'SEO', 'Security'] },
-  { key: 'bp',       num: '06', tags: ['Shopify', 'API', 'Liquid'] },
-  { key: 'aurix',    num: '07', tags: ['SEO', 'Schema', 'Core Web Vitals'] },
-  { key: 'resizer',  num: '08', tags: ['HTML5', 'Canvas', 'Netlify'] },
+  { key: 'scripting',num: '02', tags: ['LangGraph', 'Gemini', 'Content OS'] },
+  { key: 'revive',   num: '03', tags: ['WordPress', 'SEO', 'UX'] },
+  { key: 'leadcraft',num: '04', tags: ['WordPress', 'GSAP', 'WebGL'] },
+  { key: 'data',     num: '05', tags: ['Python', 'ML', 'Anthropic'] },
+  { key: 'cpc',      num: '06', tags: ['WordPress', 'SEO', 'Security'] },
+  { key: 'bp',       num: '07', tags: ['Shopify', 'API', 'Liquid'] },
+  { key: 'aurix',    num: '08', tags: ['SEO', 'Schema', 'Core Web Vitals'] },
+  { key: 'resizer',  num: '09', tags: ['HTML5', 'Canvas', 'Netlify'] },
 ];
