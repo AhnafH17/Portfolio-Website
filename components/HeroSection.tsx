@@ -18,7 +18,7 @@ const PARTICLES = [
   { top: '88%', left: '80%', size: 5 },
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ paused = false }: { paused?: boolean }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   // Mouse tilt targets the inner img elements directly
   const tiltRefs = useRef<(HTMLImageElement | null)[]>([]);
@@ -28,7 +28,7 @@ export default function HeroSection() {
 
   useEffect(() => {
     const wrapper = wrapperRef.current;
-    if (!wrapper) return;
+    if (!wrapper || paused) return;
 
     const onMouseMove = (e: MouseEvent) => {
       const rect = wrapper.getBoundingClientRect();
@@ -70,7 +70,7 @@ export default function HeroSection() {
       wrapper.removeEventListener('mouseleave', onMouseLeave);
       cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [paused]);
 
   return (
     <section id="hero">
@@ -106,7 +106,7 @@ export default function HeroSection() {
 
         <div className="hero-image-wrapper" ref={wrapperRef}>
           {/* Star field — behind everything */}
-          <StarField className="hero-starfield" />
+          <StarField className="hero-starfield" paused={paused} />
 
           {/* Concentric rings */}
           <div className="hero-ring hero-ring-1" />

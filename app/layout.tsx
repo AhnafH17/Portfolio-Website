@@ -104,6 +104,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var p=['crimson','teal','amber','purple'];document.documentElement.setAttribute('data-palette',p[Math.floor(Math.random()*p.length)]);}catch(e){}})();`,
           }}
         />
+        {/* The preloader traces this font's glyphs into particles on first
+            frame — preload so it's ready before sampling. */}
+        <link
+          rel="preload"
+          as="font"
+          type="font/otf"
+          href="/fonts/Sddystopiandemo-GO7xa.otf"
+          crossOrigin="anonymous"
+        />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

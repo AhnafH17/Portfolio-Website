@@ -14,10 +14,17 @@ interface PreloaderProps {
 
 const WORDS = ['AHNAF', 'HUSSAIN', 'DEVELOPER'];
 
+// Per-word pacing. The effect holds each word until it has actually formed,
+// so this is a target rather than a hard clock.
+const WORD_MS = 1500;
+// Absolute ceiling — if anything goes wrong the site still gets revealed.
+const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 2500;
+
 export default function Preloader({ onComplete }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const particleRef   = useRef<ParticleTextHandle>(null);
+  const exitRef       = useRef<() => void>(() => {});
   const [ready, setReady] = useState(false);
   const [mounted, setMounted] = useState(true);
   const exitStarted   = useRef(false);
@@ -29,7 +36,11 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     if (window.__lenis) window.__lenis.stop();
 
     const id = requestAnimationFrame(() => setReady(true));
-    return () => cancelAnimationFrame(id);
+    const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
+    return () => {
+      cancelAnimationFrame(id);
+      clearTimeout(safety);
+    };
   }, []);
 
   const triggerExit = () => {
@@ -68,6 +79,9 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     }, 0.45);
   };
 
+  // Kept current so the safety timeout above always calls the live closure
+  useEffect(() => { exitRef.current = triggerExit; });
+
   if (!mounted) return null;
 
   return (
@@ -79,12 +93,6 @@ export default function Preloader({ onComplete }: PreloaderProps) {
         overflow: 'hidden',
       }}
     >
-      {/* Ambient glow */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(var(--accent-rgb),0.08) 0%, transparent 70%)',
-      }} />
-
       {/* Canvas fills full screen */}
       <div
         ref={canvasWrapRef}
@@ -95,13 +103,20 @@ export default function Preloader({ onComplete }: PreloaderProps) {
             ref={particleRef}
             words={WORDS}
             autoAdvance
-            intervalMs={1600}
+            intervalMs={WORD_MS}
             onCycleComplete={triggerExit}
             fontSize={Math.min(130, Math.floor(window.innerWidth / 6.5))}
             fontFamily="'Sddystopian', sans-serif"
           />
         )}
       </div>
+
+      {/* Ambient glow — sits above the canvas, which is now opaque (alpha:false
+          gives the compositor a much cheaper path on mobile) */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', mixBlendMode: 'screen',
+        background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(var(--accent-rgb),0.08) 0%, transparent 70%)',
+      }} />
     </div>
   );
 }
