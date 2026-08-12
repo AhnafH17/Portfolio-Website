@@ -1486,6 +1486,17 @@ footer span{color:var(--accent-glow)}
   50%{ transform:translateY(8px); opacity:1; }
 }
 
+/* Static fallback (reduced-motion / no WebGL): there is no scroll-driven
+   device to animate, so collapse the 400vh scroll track that exists purely to
+   drive it — otherwise the section is ~4 screens of empty space. */
+.dv-section--static{ height:auto; }
+.dv-section--static .dv-sticky{
+  position:relative;
+  height:auto;
+  min-height:100svh;
+  padding:6rem 0;
+}
+
 /* Static fallback (reduced-motion / no WebGL) */
 .dv-fallback{
   position:relative;

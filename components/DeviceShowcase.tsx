@@ -79,8 +79,15 @@ export default function DeviceShowcase() {
     return () => st.kill();
   }, [mode]);
 
+  const isStatic = mode === 'fallback';
+
   return (
-    <section id="about-intro" ref={sectionRef} className="dv-section" aria-label="About me">
+    <section
+      id="about-intro"
+      ref={sectionRef}
+      className={`dv-section${isStatic ? ' dv-section--static' : ''}`}
+      aria-label="About me"
+    >
       <div className="dv-sticky">
         {/* 3D layer */}
         <div className="dv-canvas">
@@ -89,17 +96,22 @@ export default function DeviceShowcase() {
           )}
         </div>
 
-        {/* "About Me" overlay — fades as the device turns */}
-        <div ref={overlayRef} className="dv-overlay">
-          <span className="dv-eyebrow">WHO I AM</span>
-          <h2 className="dv-title">About&nbsp;Me</h2>
-          <span ref={hintRef} className="dv-hint" aria-hidden="true">
-            scroll&nbsp;↓
-          </span>
-        </div>
+        {/* "About Me" overlay — fades as the device turns. Suppressed in the
+            static fallback, which carries its own eyebrow and title: .dv-sticky
+            is a centering flex row, so rendering both put two "About Me"
+            blocks side by side, each overflowing the viewport. */}
+        {!isStatic && (
+          <div ref={overlayRef} className="dv-overlay">
+            <span className="dv-eyebrow">WHO I AM</span>
+            <h2 className="dv-title">About&nbsp;Me</h2>
+            <span ref={hintRef} className="dv-hint" aria-hidden="true">
+              scroll&nbsp;↓
+            </span>
+          </div>
+        )}
 
         {/* Static fallback (reduced-motion / no WebGL) */}
-        {mode === 'fallback' && (
+        {isStatic && (
           <div className="dv-fallback">
             <span className="dv-eyebrow">WHO I AM</span>
             <h2 className="dv-title">About Me</h2>
