@@ -17,26 +17,31 @@ const ContactSection = lazy(() => import('@/components/ContactSection'));
 const Footer = lazy(() => import('@/components/Footer'));
 
 export default function Home() {
-  const [preloaderDone, setPreloaderDone] = useState(false);
+  // `reveal` starts the site fading in; `preloaderGone` removes the preloader
+  // once its dissolve has finished. Collapsing these into one flag unmounts
+  // the preloader mid-animation and the dissolve never renders.
+  const [reveal, setReveal] = useState(false);
+  const [preloaderGone, setPreloaderGone] = useState(false);
   const [belowFold, setBelowFold] = useState(false);
   const siteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!preloaderDone || !siteRef.current) return;
+    if (!reveal || !siteRef.current) return;
     /* Opacity only — no scale. The preloader hands off by cross-dissolving a
        particle portrait onto the real hero photo, so the target must not be
-       moving. Fades in faster than the preloader fades out (1.15s) so the two
-       never sit at partial opacity together and dip to background. */
+       moving. Reaches full opacity well before the preloader finishes fading
+       (0.95s), so the photo is solid underneath while the particles resolve
+       onto it and the two never dip to background together. */
     gsap.set(siteRef.current, { opacity: 0 });
     requestAnimationFrame(() => {
-      gsap.to(siteRef.current!, { opacity: 1, duration: 0.6, ease: 'power2.out' });
+      gsap.to(siteRef.current!, { opacity: 1, duration: 0.5, ease: 'power2.out' });
     });
 
     // Held until the cross-dissolve is over — mounting six sections mid-fade
     // is the one thing that would visibly stutter it.
-    const mount = setTimeout(() => setBelowFold(true), 1250);
+    const mount = setTimeout(() => setBelowFold(true), 1200);
     return () => clearTimeout(mount);
-  }, [preloaderDone]);
+  }, [reveal]);
 
   useEffect(() => {
     if (!belowFold) return;
@@ -48,7 +53,12 @@ export default function Home() {
 
   return (
     <>
-      {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
+      {!preloaderGone && (
+        <Preloader
+          onReveal={() => setReveal(true)}
+          onDone={() => setPreloaderGone(true)}
+        />
+      )}
       <CustomCursor />
       <div ref={siteRef} data-site-content>
         <Navbar />
@@ -56,7 +66,7 @@ export default function Home() {
           {/* Paused while the preloader owns the screen — the hero's starfield
               and tilt loops are invisible behind it but were still burning
               frames the particle animation needed. */}
-          <HeroSection paused={!preloaderDone} />
+          <HeroSection paused={!reveal} />
           <ScrollShowcase />
           {/* Below-fold sections are held back so their chunk eval and mount
               cost doesn't land during the preloader. */}

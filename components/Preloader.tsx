@@ -14,7 +14,11 @@ declare global {
 }
 
 interface PreloaderProps {
-  onComplete: () => void;
+  /** Start revealing the site — fires as the dissolve begins, not after it. */
+  onReveal: () => void;
+  /** Dissolve is over and the preloader can be removed from the tree.
+   *  Kept separate from onReveal: unmounting on reveal kills the dissolve. */
+  onDone: () => void;
 }
 
 const WORDS = ['AHNAF', 'HUSSAIN', 'DEVELOPER'];
@@ -35,14 +39,14 @@ const PHOTO_ZOOM = 1.35;      // transform: scale(1.35)
 // times the particles the words do.
 const portraitBudget = (w: number) => (w < 700 ? 7000 : 17000);
 
-export default function Preloader({ onComplete }: PreloaderProps) {
+export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const particleRef   = useRef<ParticleTextHandle>(null);
   const exitRef       = useRef<() => void>(() => {});
   const portraitRef   = useRef<Cloud | null>(null);
+  const focusRef      = useRef<{ x: number; y: number } | null>(null);
   const [ready, setReady] = useState(false);
-  const [mounted, setMounted] = useState(true);
   const exitStarted   = useRef(false);
 
   useEffect(() => {
@@ -85,6 +89,9 @@ export default function Preloader({ onComplete }: PreloaderProps) {
       try { await img.decode(); } catch { return; }
       if (cancelled) return;
 
+      // The dissolve blooms outward from the portrait, not from screen centre
+      focusRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+
       const cs = getComputedStyle(frame);
       const accent = getComputedStyle(document.documentElement)
         .getPropertyValue('--accent-rgb').trim().split(',').map((n) => parseInt(n, 10));
@@ -118,8 +125,9 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     if (!cloud || !api) { triggerExit(); return; }
 
     api.showPoints(cloud, () => {
-      // Let the portrait sit fully resolved before handing over
-      setTimeout(() => triggerExit(), 900);
+      // Just long enough to register the portrait. Any longer and the frozen
+      // frame reads as a stall before the transition.
+      setTimeout(() => triggerExit(), 340);
     });
   };
 
@@ -137,18 +145,25 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     }
 
     if (morphed) {
-      /* Cross-dissolve. The particle portrait is sitting exactly on top of the
-         real <img>, so revealing the site underneath and fading the preloader
-         out reads as the particles resolving into the photograph. The site
-         fades in faster than the preloader fades out, so the two never overlap
-         at partial opacity and dip to background. */
-      onComplete();
-      gsap.to(rootRef.current, {
-        opacity: 0,
-        duration: 1.15,
-        ease: 'power2.inOut',
-        onComplete: () => setMounted(false),
-      });
+      /* Cross-dissolve. The particle portrait sits exactly on top of the real
+         <img>, so as the preloader's opacity falls the photo shows through
+         underneath in register — the particles visibly resolve into it. The
+         canvas also blooms very slightly outward from the portrait so the
+         handoff is carried by motion rather than by opacity alone. */
+      const focus = focusRef.current;
+      if (focus && canvasWrapRef.current) {
+        canvasWrapRef.current.style.transformOrigin = `${focus.x}px ${focus.y}px`;
+      }
+
+      onReveal();
+
+      const tl = gsap.timeline({ onComplete: onDone });
+      tl.to(canvasWrapRef.current, {
+        scale: 1.035, duration: 1.0, ease: 'power1.out',
+      }, 0);
+      tl.to(rootRef.current, {
+        opacity: 0, duration: 0.95, ease: 'power2.inOut',
+      }, 0);
       return;
     }
 
@@ -160,17 +175,13 @@ export default function Preloader({ onComplete }: PreloaderProps) {
     }, 0);
     tl.to(rootRef.current, {
       opacity: 0, duration: 0.4, ease: 'power2.out',
-      onComplete: () => {
-        onComplete();
-        setTimeout(() => setMounted(false), 100);
-      },
+      onStart: onReveal,
+      onComplete: onDone,
     }, 0.45);
   };
 
   // Kept current so the safety timeout above always calls the live closure
   useEffect(() => { exitRef.current = triggerExit; });
-
-  if (!mounted) return null;
 
   return (
     <div
