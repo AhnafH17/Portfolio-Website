@@ -18,29 +18,39 @@ const Footer = lazy(() => import('@/components/Footer'));
 
 export default function Home() {
   const [preloaderDone, setPreloaderDone] = useState(false);
+  const [belowFold, setBelowFold] = useState(false);
   const siteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!preloaderDone || !siteRef.current) return;
-    gsap.set(siteRef.current, { opacity: 0, scale: 1.08 });
+    /* Opacity only — no scale. The preloader hands off by cross-dissolving a
+       particle portrait onto the real hero photo, so the target must not be
+       moving. Fades in faster than the preloader fades out (1.15s) so the two
+       never sit at partial opacity together and dip to background. */
+    gsap.set(siteRef.current, { opacity: 0 });
     requestAnimationFrame(() => {
-      gsap.to(siteRef.current!, { opacity: 1, scale: 1, duration: 0.85, ease: 'power3.out' });
+      gsap.to(siteRef.current!, { opacity: 1, duration: 0.6, ease: 'power2.out' });
     });
-    // The below-fold sections mount in this same pass and change page height,
-    // so ScrollTrigger's cached start/end positions need recomputing.
-    const id = setTimeout(() => ScrollTrigger.refresh(), 900);
-    return () => clearTimeout(id);
+
+    // Held until the cross-dissolve is over — mounting six sections mid-fade
+    // is the one thing that would visibly stutter it.
+    const mount = setTimeout(() => setBelowFold(true), 1250);
+    return () => clearTimeout(mount);
   }, [preloaderDone]);
+
+  useEffect(() => {
+    if (!belowFold) return;
+    // These sections change page height, so ScrollTrigger's cached start/end
+    // positions need recomputing once they're in.
+    const id = setTimeout(() => ScrollTrigger.refresh(), 300);
+    return () => clearTimeout(id);
+  }, [belowFold]);
 
   return (
     <>
       {!preloaderDone && <Preloader onComplete={() => setPreloaderDone(true)} />}
       <CustomCursor />
-      <div
-        ref={siteRef}
-        style={{ transformOrigin: '50% 50vh' }}
-        data-site-content
-      >
+      <div ref={siteRef} data-site-content>
         <Navbar />
         <main>
           {/* Paused while the preloader owns the screen — the hero's starfield
@@ -50,7 +60,7 @@ export default function Home() {
           <ScrollShowcase />
           {/* Below-fold sections are held back so their chunk eval and mount
               cost doesn't land during the preloader. */}
-          {preloaderDone && (
+          {belowFold && (
             <Suspense fallback={null}>
               <MarqueeStrip />
               <DeviceShowcase />
@@ -60,7 +70,7 @@ export default function Home() {
             </Suspense>
           )}
         </main>
-        {preloaderDone && (
+        {belowFold && (
           <Suspense fallback={null}>
             <Footer />
           </Suspense>

@@ -20,7 +20,13 @@ const NBUCKET = 1 << (CBITS * 3)
 
 const LIVE = 0, DYING = 1, DORMANT = 2
 
-interface Cloud { xs: Float32Array; ys: Float32Array; n: number }
+export interface Cloud {
+  xs: Float32Array
+  ys: Float32Array
+  n: number
+  /** Optional per-point RGB (3 bytes/point). Text clouds omit it and take the accent. */
+  cs?: Uint8Array
+}
 
 /* ────────────────────────────────────────────────────────────
    Text sampling
@@ -98,6 +104,138 @@ function sampleCloud(
   return { xs, ys, n }
 }
 
+export interface ImageCloudOptions {
+  img: CanvasImageSource & { width: number; height: number }
+  /** Destination box, in main-canvas coordinates. */
+  left: number; top: number; width: number; height: number
+  /** Corner radii, matching the frame's border-radius. */
+  radii: [number, number, number, number]
+  /** CSS object-position Y as 0..1 (0.3 == "center 30%"). */
+  focusY: number
+  /** Extra transform scale applied about the box centre. */
+  zoom: number
+  accent: { r: number; g: number; b: number }
+  budget: number
+}
+
+/**
+ * Sample a photo into a duotone point cloud that lands exactly on top of the
+ * real <img>.
+ *
+ * Duotone rather than true colour is deliberate on two counts: it stays
+ * coherent with the randomised accent palette, and — because the whole ramp is
+ * one-dimensional — every point collapses into a few dozen draw buckets. True
+ * colour would spray points across thousands of buckets and defeat the batched
+ * renderer entirely.
+ */
+export function sampleImageCloud(o: ImageCloudOptions): Cloud {
+  const W = Math.max(1, Math.round(o.width))
+  const H = Math.max(1, Math.round(o.height))
+  const c = document.createElement("canvas")
+  c.width = W; c.height = H
+  const cx = c.getContext("2d", { willReadFrequently: true })!
+
+  // Arch mask (the frame is overflow:hidden with a big top radius)
+  cx.beginPath()
+  if (typeof cx.roundRect === "function") cx.roundRect(0, 0, W, H, o.radii)
+  else cx.rect(0, 0, W, H)
+  cx.clip()
+
+  // Replicate object-fit:cover + object-position + the element's transform,
+  // so the particles resolve onto the photo instead of near it.
+  const iw = o.img.width, ih = o.img.height
+  const s = Math.max(W / iw, H / ih)
+  const dw = iw * s, dh = ih * s
+  cx.save()
+  cx.translate(W / 2, H / 2); cx.scale(o.zoom, o.zoom); cx.translate(-W / 2, -H / 2)
+  cx.drawImage(o.img, (W - dw) * 0.5, (H - dh) * o.focusY, dw, dh)
+  cx.restore()
+
+  /* The frame's ::after bottom-fade and ::before vignette, at ~80% of their
+     CSS weight. These are not decoration here: the source photo has a warm,
+     mid-bright backdrop that a luminance duotone would otherwise render as
+     brightly as the subject. The vignette is what isolates the face. Backing
+     off slightly keeps some particles on the arch edge for the silhouette. */
+  const fade = cx.createLinearGradient(0, H, 0, H * 0.7)
+  fade.addColorStop(0, "rgba(8,6,3,0.82)")
+  fade.addColorStop(1, "rgba(8,6,3,0)")
+  cx.fillStyle = fade
+  cx.fillRect(0, 0, W, H)
+
+  const vig = cx.createRadialGradient(W / 2, H * 0.45, 0, W / 2, H * 0.45, Math.max(W, H) * 0.62)
+  vig.addColorStop(0.55, "rgba(10,8,4,0)")
+  vig.addColorStop(0.78, "rgba(10,8,4,0.44)")
+  vig.addColorStop(1, "rgba(10,8,4,0.72)")
+  cx.fillStyle = vig
+  cx.fillRect(0, 0, W, H)
+
+  const data = cx.getImageData(0, 0, W, H).data
+  const lumAt = (x: number, y: number) => {
+    const i = (y * W + x) * 4
+    return (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114) / 255
+  }
+
+  // Oversample ~1.4x, then weight and truncate down to budget
+  const step = Math.max(1, Math.round(Math.sqrt((W * H) / (o.budget * 1.4))))
+  const pts: number[] = []   // x, y, luminance
+  for (let y = 0; y < H; y += step) {
+    for (let x = 0; x < W; x += step) {
+      const l = lumAt(x, y)
+      if (l < 0.04) continue               // black on black — never worth a particle
+      /* Mild edge bias: enough to sharpen glasses, lapels and the jaw, but
+         not so much that flat mid-tones (most of the face) get starved and
+         the portrait reads as noise instead of a person. */
+      const lx = lumAt(Math.min(x + step, W - 1), y)
+      const ly = lumAt(x, Math.min(y + step, H - 1))
+      const edge = Math.min(1, (Math.abs(l - lx) + Math.abs(l - ly)) * 4)
+      if (Math.random() > 0.55 + 0.45 * edge) continue
+      pts.push(x, y, l)
+    }
+  }
+
+  const total = pts.length / 3
+  for (let i = total - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0
+    const a = i * 3, b = j * 3
+    for (let k = 0; k < 3; k++) { const t = pts[a + k]; pts[a + k] = pts[b + k]; pts[b + k] = t }
+  }
+
+  const n = Math.min(total, o.budget)
+  const xs = new Float32Array(n)
+  const ys = new Float32Array(n)
+  const cs = new Uint8Array(n * 3)
+
+  const { r: ar, g: ag, b: ab } = o.accent
+  const sr = ar * 0.14, sg = ag * 0.14, sb = ab * 0.14              // tinted shadow
+  const hr = ar + (255 - ar) * 0.78                                  // near-white highlight
+  const hg = ag + (255 - ag) * 0.78
+  const hb = ab + (255 - ab) * 0.78
+
+  for (let i = 0; i < n; i++) {
+    xs[i] = o.left + pts[i * 3]
+    ys[i] = o.top + pts[i * 3 + 1]
+    /* Levels stretch then an S-curve. A plain gamma just lifts everything
+       uniformly and the portrait goes flat; spreading the mid-tones is what
+       separates the face from the suit and the backdrop. */
+    let t = (pts[i * 3 + 2] - 0.08) / 0.74
+    t = t < 0 ? 0 : t > 1 ? 1 : t
+    t = t * t * (3 - 2 * t)
+    const j = i * 3
+    if (t < 0.5) {
+      const k = t / 0.5
+      cs[j]     = sr + (ar - sr) * k
+      cs[j + 1] = sg + (ag - sg) * k
+      cs[j + 2] = sb + (ab - sb) * k
+    } else {
+      const k = (t - 0.5) / 0.5
+      cs[j]     = ar + (hr - ar) * k
+      cs[j + 1] = ag + (hg - ag) * k
+      cs[j + 2] = ab + (hb - ab) * k
+    }
+  }
+  return { xs, ys, n, cs }
+}
+
 // Reads the active palette's accent triplet at runtime
 function accentRGB(): { r: number; g: number; b: number } {
   if (typeof window === "undefined") return { r: 204, g: 24, b: 44 }
@@ -108,6 +246,9 @@ function accentRGB(): { r: number; g: number; b: number } {
 
 export interface ParticleTextHandle {
   nextWord: (word: string) => void
+  /** Retarget the pool onto an arbitrary cloud (e.g. a sampled photo).
+   *  Stops word cycling; `onFormed` fires once the cloud has assembled. */
+  showPoints: (cloud: Cloud, onFormed?: () => void) => void
   killAll: () => void
 }
 
@@ -121,6 +262,9 @@ export interface ParticleTextEffectProps {
   onCycleComplete?: () => void
   fontSize?: number
   fontFamily?: string
+  /** Extra pool capacity to allocate up front, for clouds handed in later via
+   *  showPoints() that are denser than any of the words. */
+  reserve?: number
 }
 
 export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEffectProps>(
@@ -133,16 +277,20 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
       onCycleComplete,
       fontSize = 110,
       fontFamily = "Arial Black, Arial",
+      reserve = 0,
     },
     ref
   ) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const rafRef    = useRef<number>(0)
-    const apiRef    = useRef<ParticleTextHandle>({ nextWord: () => {}, killAll: () => {} })
+    const apiRef    = useRef<ParticleTextHandle>({
+      nextWord: () => {}, showPoints: () => {}, killAll: () => {},
+    })
 
     useImperativeHandle(ref, () => ({
-      nextWord: (w: string) => apiRef.current.nextWord(w),
-      killAll:  () => apiRef.current.killAll(),
+      nextWord:   (w: string) => apiRef.current.nextWord(w),
+      showPoints: (c: Cloud, cb?: () => void) => apiRef.current.showPoints(c, cb),
+      killAll:    () => apiRef.current.killAll(),
     }))
 
     // Callbacks live in refs so the sim never has to be torn down and rebuilt
@@ -187,7 +335,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
            assignment: no rasterising, no getImageData, no mid-animation hitch. */
         const off = document.createElement("canvas")
         const clouds = words.map((w) => sampleCloud(off, w, cw, ch, size, fontFamily, budget))
-        const cap = clouds.reduce((m, c) => Math.max(m, c.n), 0)
+        const cap = Math.max(clouds.reduce((m, c) => Math.max(m, c.n), 0), reserve)
         if (cap === 0) return
 
         /* ── particle pool (struct-of-arrays) ─────────────────────────
@@ -235,9 +383,16 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
         let first = true
         const showCloud = (cloud: Cloud) => {
           const accent = accentRGB()
-          for (let i = 0; i < cloud.n; i++) {
+          const cs = cloud.cs
+          const n = Math.min(cloud.n, cap)
+          for (let i = 0; i < n; i++) {
             captureColor(i)
-            tr[i] = accent.r; tg[i] = accent.g; tb[i] = accent.b
+            if (cs) {
+              const j = i * 3
+              tr[i] = cs[j]; tg[i] = cs[j + 1]; tb[i] = cs[j + 2]
+            } else {
+              tr[i] = accent.r; tg[i] = accent.g; tb[i] = accent.b
+            }
             tx[i] = cloud.xs[i]
             ty[i] = cloud.ys[i]
             // Recycled particles drop in near their new target so the word
@@ -251,7 +406,7 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
             }
             state[i] = LIVE
           }
-          for (let i = cloud.n; i < cap; i++) kill(i)
+          for (let i = n; i < cap; i++) kill(i)
           first = false
         }
 
@@ -268,6 +423,9 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
         let formedAt: number | null = null
         let finished = false
         let last = wordStart
+        // Set once showPoints() takes over — word cycling stops for good.
+        let manual = false
+        let pendingFormed: (() => void) | null = null
 
         showCloud(clouds[0])
 
@@ -362,15 +520,22 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
             for (let i = 0; i < bucket.length; i += 2) ctx.fillRect(bucket[i], bucket[i + 1], 2, 2)
           }
 
-          if (!autoAdvance || finished) return
-
-          /* Advance on *formation*, not on a stopwatch. A word is only swapped
-             out once it has actually assembled and been held — so every word
-             is guaranteed to be seen, however slow the device. maxMs is the
-             escape hatch if it somehow never forms. */
+          /* Formation tracking drives both word pacing and showPoints()
+             callbacks: nothing advances on a stopwatch alone, so every cloud
+             is guaranteed to be seen assembled however slow the device.
+             maxMs is the escape hatch if one somehow never forms. */
           if (formedAt === null && live > 0 && formed / live >= FORMED_PCT) formedAt = now
-          const settled = formedAt !== null && now - formedAt >= holdMs
           const timedOut = now - wordStart >= maxMs
+
+          if (pendingFormed && (formedAt !== null || timedOut)) {
+            const cb = pendingFormed
+            pendingFormed = null
+            cb()
+          }
+
+          if (manual || !autoAdvance || finished) return
+
+          const settled = formedAt !== null && now - formedAt >= holdMs
 
           if (settled || timedOut) {
             const next = wordIndex + 1
@@ -392,6 +557,13 @@ export const ParticleTextEffect = forwardRef<ParticleTextHandle, ParticleTextEff
             const idx = words.indexOf(word)
             const cloud = idx >= 0 ? clouds[idx] : sampleCloud(off, word, cw, ch, size, fontFamily, budget)
             wordIndex = idx >= 0 ? idx : wordIndex
+            showCloud(cloud)
+            wordStart = performance.now()
+            formedAt = null
+          },
+          showPoints(cloud: Cloud, onFormed?: () => void) {
+            manual = true
+            pendingFormed = onFormed ?? null
             showCloud(cloud)
             wordStart = performance.now()
             formedAt = null

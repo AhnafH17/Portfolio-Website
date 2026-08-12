@@ -113,6 +113,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="/fonts/Sddystopiandemo-GO7xa.otf"
           crossOrigin="anonymous"
         />
+        {/* Hero photo: the LCP image, and the preloader samples it into
+            particles before the reveal — it needs to be decoded early. */}
+        <link rel="preload" as="image" href="/AhnafHussain.png" fetchPriority="high" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
