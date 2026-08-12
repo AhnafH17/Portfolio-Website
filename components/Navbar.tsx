@@ -61,13 +61,36 @@ export default function Navbar() {
     const obs = new IntersectionObserver(
       (entries) => {
         entries.forEach((en) => {
-          if (en.isIntersecting) en.target.classList.add('visible');
+          if (en.isIntersecting) {
+            en.target.classList.add('visible');
+            obs.unobserve(en.target);   // revealed once; stop watching it
+          }
         });
       },
       { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
     );
-    document.querySelectorAll('.reveal').forEach((el) => obs.observe(el));
-    return () => obs.disconnect();
+
+    const observeIn = (root: Element | Document) => {
+      if (root instanceof Element && root.classList.contains('reveal')) obs.observe(root);
+      root.querySelectorAll('.reveal:not(.visible)').forEach((el) => obs.observe(el));
+    };
+
+    observeIn(document);
+
+    /* Sections below the fold are lazy and mount after the preloader hands
+       over — long after this effect ran. A one-shot querySelectorAll misses
+       them entirely and they stay stuck at opacity 0, so watch for anything
+       added later too. */
+    const mo = new MutationObserver((records) => {
+      for (const rec of records) {
+        rec.addedNodes.forEach((n) => {
+          if (n.nodeType === Node.ELEMENT_NODE) observeIn(n as Element);
+        });
+      }
+    });
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => { obs.disconnect(); mo.disconnect(); };
   }, []);
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
