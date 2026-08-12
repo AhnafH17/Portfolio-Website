@@ -43,6 +43,42 @@ export default function Home() {
     return () => clearTimeout(mount);
   }, [reveal]);
 
+  /* Warm the heavy below-fold chunks while the preloader is still on screen.
+     Fetching and mounting are deliberately separated: mounting during the
+     preloader was what cost frames, but the download is off the main thread,
+     and Three.js + R3F is ~260KB that used to arrive during the preloader for
+     free. Left until mount it downloads, parses, and initialises WebGL only
+     once the section is already scrolling into view.
+     Evaluation is spread across idle callbacks so it lands between particle
+     frames rather than inside one. */
+  useEffect(() => {
+    let cancelled = false;
+    const jobs: (() => Promise<unknown>)[] = [
+      () => import('@/components/device/DeviceCanvas'),   // heaviest, needed first
+      () => import('@/components/DeviceShowcase'),
+      () => import('@/components/AboutSection'),
+      () => import('@/components/ContactSection'),
+      () => import('@/components/TestimonialSection'),
+      () => import('@/components/MarqueeStrip'),
+      () => import('@/components/Footer'),
+    ];
+
+    const idle = (cb: () => void) =>
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(cb, { timeout: 1500 })
+        : window.setTimeout(cb, 250);
+
+    let i = 0;
+    const step = () => {
+      if (cancelled || i >= jobs.length) return;
+      jobs[i++]().catch(() => {}).then(() => { if (!cancelled) idle(step); });
+    };
+
+    idle(step);
+
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     if (!belowFold) return;
     // These sections change page height, so ScrollTrigger's cached start/end
