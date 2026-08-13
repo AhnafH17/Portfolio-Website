@@ -86,10 +86,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        {/* Pick a random color palette before first paint (no flash) */}
+        {/* Pick a random color palette before first paint (no flash), and
+            preload the matching hero portrait. The preload has to live here
+            because which file is needed isn't known until the palette is
+            chosen — a static preload would fetch the wrong one. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=['crimson','teal','amber','purple'];document.documentElement.setAttribute('data-palette',p[Math.floor(Math.random()*p.length)]);}catch(e){}})();`,
+            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/AhnafHussain-'+c+'.png';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`,
           }}
         />
         {/* The preloader traces this font's glyphs into particles on first
@@ -105,9 +108,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             these preloads itself. latin-ext and italic stay lazy. */}
         <link rel="preload" as="font" type="font/woff2" href="/fonts/DMSans-latin.woff2" crossOrigin="anonymous" />
         <link rel="preload" as="font" type="font/woff2" href="/fonts/Syne-latin.woff2" crossOrigin="anonymous" />
-        {/* Hero photo: the LCP image, and the preloader samples it into
-            particles before the reveal — it needs to be decoded early. */}
-        <link rel="preload" as="image" href="/AhnafHussain.png" fetchPriority="high" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />

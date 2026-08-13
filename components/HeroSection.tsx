@@ -145,13 +145,16 @@ export default function HeroSection({ paused = false }: { paused?: boolean }) {
             />
           </div>
 
-          {/* Arch photo frame */}
+          {/* Arch photo frame. The photo is a CSS background rather than an
+              <img> so the palette-matched file is chosen by a stylesheet rule:
+              the palette is picked client-side, and swapping a src after
+              hydration would either mismatch or download two images. Only the
+              matching rule's background is ever fetched. */}
           <div className="hero-image-frame">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/AhnafHussain.png"
-              alt="Ahnaf Hussain, Head of Web Development at AurixLab"
-              style={{ objectFit: 'cover', objectPosition: 'center 30%', transform: 'scale(1.35)', width: '100%', height: '100%' }}
+            <div
+              className="hero-photo"
+              role="img"
+              aria-label="Ahnaf Hussain, Head of Web Development at AurixLab"
             />
           </div>
 

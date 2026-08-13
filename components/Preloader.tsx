@@ -29,10 +29,13 @@ const WORD_MS = 1500;
 // Absolute ceiling — if anything goes wrong the site still gets revealed.
 const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 5000;
 
-// The hero photo, and the transform its <img> carries, so the particle
-// portrait can be sampled to land exactly on top of it.
-const PHOTO_SRC = '/AhnafHussain.png';
-const PHOTO_FOCUS_Y = 0.30;   // objectPosition: 'center 30%'
+// The hero photo, and the transform it carries, so the particle portrait can
+// be sampled to land exactly on top of it. The photo is graded per palette, so
+// this must resolve to the same variant the hero is about to show — otherwise
+// the morph dissolves into a differently-coloured picture.
+const photoSrc = () =>
+  `/AhnafHussain-${document.documentElement.dataset.palette || 'crimson'}.png`;
+const PHOTO_FOCUS_Y = 0.30;   // background-position: center 30%
 const PHOTO_ZOOM = 1.35;      // transform: scale(1.35)
 
 // A photo is a filled region, not a few glyph strokes, so it needs several
@@ -85,7 +88,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
 
       const img = new Image();
       img.decoding = 'async';
-      img.src = PHOTO_SRC;
+      img.src = photoSrc();
       try { await img.decode(); } catch { return; }
       if (cancelled) return;
 
