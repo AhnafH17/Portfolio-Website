@@ -39,17 +39,22 @@ import os
 SRC = 'public/AhnafHussain.png'
 OUT = 'public'
 
-# --accent-glow from app/globals.css
+# --accent-glow from app/globals.css, with how fully the ambient takes each
+# hue. The source ambient is only ~0.30 saturated; much above 0.6 stops
+# reading as a photograph.
+#
+# Crimson needs its own value. The tint carries each pixel's luminance by
+# scaling the accent by 1/its luminance, and crimson's is far the lowest
+# (0.314 against teal's 0.536), so red gets a 2.55x multiplier where teal's
+# green gets 1.30. At a shared 0.60 that pushed background saturation to 0.70
+# against teal's 0.50 and clipped a quarter of the frame, flattening the wall
+# into a hot wash. 0.34 lands crimson at 0.50, matching teal, with no clipping.
 ACCENTS = {
-    'crimson': (204, 24, 44),
-    'teal':    (43, 178, 169),
-    'amber':   (218, 150, 38),
-    'purple':  (255, 1, 255),
+    'crimson': ((204, 24, 44), 0.34),
+    'teal':    ((43, 178, 169), 0.60),
+    'amber':   ((218, 150, 38), 0.60),
+    'purple':  ((255, 1, 255), 0.60),
 }
-
-# How fully the ambient takes the accent hue. The source ambient is only ~0.30
-# saturated; much above 0.6 stops reading as a photograph.
-SAT = 0.60
 
 # Gradient below this is "flat enough to flood through". Higher leaks through
 # his outline; lower strands pockets of background.
@@ -114,12 +119,12 @@ def main(audit=False):
     crop = np.zeros(L.shape, bool)
     crop[CROP[1]:CROP[3], CROP[0]:CROP[2]] = True
 
-    for name, rgb in ACCENTS.items():
+    for name, (rgb, sat) in ACCENTS.items():
         acc = np.array(rgb, np.float32) / 255.0
         acc_lum = 0.299 * acc[0] + 0.587 * acc[1] + 0.114 * acc[2]
         # Scale the accent so it carries each pixel's own luminance
         tint = gray * (acc / acc_lum)[None, None, :]
-        tint = gray + (tint - gray) * SAT
+        tint = gray + (tint - gray) * sat
         out = np.clip(a * (1 - mask) + np.clip(tint, 0, 1) * mask, 0, 1)
 
         path = f'{OUT}/AhnafHussain-{name}.png'
@@ -130,9 +135,13 @@ def main(audit=False):
             gold = gold_hue(out) & crop
             outside = int((gold & (subject < 0.4)).sum())
             inside = int((gold & (subject >= 0.4)).sum())
+            bg = crop & (subject < 0.4)
+            mx, mn = out.max(2), out.min(2)
+            bg_sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0)[bg].mean()
             line += (f'  | gold-hue: {outside} outside subject'
                      f' ({100 * outside / crop.sum():.2f}%),'
-                     f' {inside} on him (skin/suit, expected)')
+                     f' {inside} on him (skin/suit, expected)'
+                     f'  | bg saturation {bg_sat:.2f}')
         print(line)
 
 
