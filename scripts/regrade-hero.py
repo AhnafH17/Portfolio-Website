@@ -56,24 +56,31 @@ def blur(m, radius):
     return np.asarray(img.filter(ImageFilter.GaussianBlur(radius))).astype(np.float32) / 255.0
 
 
-def subject_mask(L, warm):
-    """Rough silhouette of the person, used to keep the grade off him entirely.
+def skin_mask(L, warm):
+    """Face/neck and hands, grown outward from unambiguously-skin pixels.
 
-    Warmth alone cannot protect shadowed skin: the shadowed jaw sits at 0.44
-    and the wall at 0.40, and a spatial grow from confident skin does not
-    separate them either — that jaw is as far from lit skin as the wall is.
-    But the subject is a single solid region and the wall is not, so seeding
-    on "brighter than the wall or clearly skin" and closing the holes gives a
-    silhouette that covers shadowed skin, the collar and the suit.
+    Only skin needs protecting spatially. Suit and shirt protect themselves by
+    being neutral — warmth 0.07-0.25, against the glow's 0.22-0.60 — and
+    folding them into a silhouette caused more trouble than it solved.
 
-    Closing the holes inflates the outline past his edge, which would leave a
-    gold band hugging him, so it is eroded back before a tight feather.
+    Shadowed skin cannot be found by colour: the shadowed jaw sits at warmth
+    0.44 against the wall's 0.40. It has to be reached by growing outward from
+    lit skin far enough to cover it (~46px) while stopping short of the glow,
+    which is ~150px away.
+
+    Head and hands grow separately — the hands are a thin horizontal band and
+    dissolve under a radius large enough for the head.
     """
-    seed = ((L > 0.32) | (warm > 0.55)).astype(np.float32)
-    solid = (blur(seed, 26) > 0.42).astype(np.float32)   # close glasses/hair/shadow
-    solid = (blur(solid, 18) > 0.40).astype(np.float32)  # smooth the outline
-    solid = (blur(solid, 12) > 0.88).astype(np.float32)  # erode back onto him
-    return blur(solid, 3)                                # tight feather
+    conf = ((warm > 0.62) & (L > 0.15)).astype(np.float32)
+    head = conf.copy()
+    head[700:] = 0
+    hands = conf.copy()
+    hands[:700] = 0
+    grown = np.maximum(
+        (blur(head, 46) > 0.14).astype(np.float32),
+        (blur(hands, 26) > 0.13).astype(np.float32),
+    )
+    return blur(grown, 10)
 
 
 def main():
@@ -82,12 +89,11 @@ def main():
     L = 0.299 * R + 0.587 * G + 0.114 * B
     warm = (R - B) / (L + 1e-3)
 
-    mask = (
-        smoothstep(0.24, 0.36, warm)          # exclude neutral fabric
-        * (1 - smoothstep(0.40, 0.62, warm))  # exclude skin
-        * (1 - smoothstep(0.50, 0.72, L))     # exclude highlights
-        * (1 - subject_mask(L, warm))         # exclude the subject outright
-    )
+    # Grade what is actually warm, and keep it off skin. There is deliberately
+    # no upper warmth bound: the earlier "exclude skin" gate at 0.40-0.62 also
+    # excluded the bright core of the glow, which lives at 0.50-0.60 — that was
+    # the gold that survived behind his head.
+    mask = smoothstep(0.26, 0.36, warm) * (1 - skin_mask(L, warm))
     # Along the hair/wall boundary single pixels alternate between hair and
     # wall, so the mask alternates too and the grade speckles. A small blur
     # resolves it into a clean edge.
