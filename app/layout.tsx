@@ -1,21 +1,9 @@
 import type { Metadata } from 'next';
-import { Syne, DM_Sans } from 'next/font/google';
 import './globals.css';
 
-const syne = Syne({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-display',
-  display: 'swap',
-});
-
-const dmSans = DM_Sans({
-  subsets: ['latin'],
-  weight: ['300', '400', '500', '600'],
-  style: ['normal', 'italic'],
-  variable: '--font-body',
-  display: 'swap',
-});
+/* Syne and DM Sans are self-hosted via @font-face in globals.css rather than
+   next/font/google — see the note there. --font-display and --font-body are
+   defined on :root, so nothing needs to be wired onto <html>. */
 
 const DESCRIPTION =
   'Ahnaf Hussain is Head of Web Development at AurixLab — architecting high-performance SaaS frontends, interactive digital experiences, and leading a team that delivers world-class products.';
@@ -96,7 +84,7 @@ import LenisProvider from '@/components/LenisProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
+    <html lang="en">
       <head>
         {/* Pick a random color palette before first paint (no flash) */}
         <script
@@ -113,6 +101,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="/fonts/Sddystopiandemo-GO7xa.otf"
           crossOrigin="anonymous"
         />
+        {/* Latin subsets of the body/display faces — next/font used to emit
+            these preloads itself. latin-ext and italic stay lazy. */}
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/DMSans-latin.woff2" crossOrigin="anonymous" />
+        <link rel="preload" as="font" type="font/woff2" href="/fonts/Syne-latin.woff2" crossOrigin="anonymous" />
         {/* Hero photo: the LCP image, and the preloader samples it into
             particles before the reveal — it needs to be decoded early. */}
         <link rel="preload" as="image" href="/AhnafHussain.png" fetchPriority="high" />
