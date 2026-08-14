@@ -34,7 +34,7 @@ const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 5000;
 // this must resolve to the same variant the hero is about to show — otherwise
 // the morph dissolves into a differently-coloured picture.
 const photoSrc = () =>
-  `/AhnafHussain-${document.documentElement.dataset.palette || 'crimson'}.png`;
+  `/images/hero/portrait-${document.documentElement.dataset.palette || 'crimson'}.png`;
 const PHOTO_FOCUS_Y = 0.30;   // background-position: center 30%
 const PHOTO_ZOOM = 1.35;      // transform: scale(1.35)
 

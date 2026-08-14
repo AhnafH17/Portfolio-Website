@@ -32,16 +32,22 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `components/LenisProvider.tsx` | Lenis smooth scroll, throttled scroll events |
 | `components/Modal.tsx` | Project detail modal |
 | `lib/projects.ts` | Project data + `stripMeta` array |
-| `public/AhnafHussain.png` | Hero photo (1024×1024, full original, uncompressed) |
+| `public/images/hero/` | Hero portraits (one per palette) + the 4 floating UI cards |
+| `public/images/projects/` | Project thumbnails, each named after its key in `lib/projects.ts` |
+| `assets/hero-portrait-master.png` | Ungraded hero source — input to `scripts/regrade-hero.py`, never served |
 
 ## Architecture Decisions
 
 ### Hero Photo
 - Uses plain `<img>` tag, NOT `next/image` — Next.js optimization pipeline was making the photo blurry
-- File: `public/AhnafHussain.png` (1024×1024 original, not compressed)
+- Rendered as a CSS `background-image` on `.hero-photo`, not an `<img>`: the palette is
+  chosen client-side, so a stylesheet rule per `[data-palette]` picks the matching file
+  without a hydration mismatch or a second download
+- Files: `public/images/hero/portrait-<palette>.png`, generated from
+  `assets/hero-portrait-master.png` by `scripts/regrade-hero.py`
 
 ### Navbar Logo
-- Inline SVG monogram "AH" with gold gradient — replaced 828KB `logo-placeholder.svg`
+- Inline SVG monogram "AH" with gold gradient (the old 828KB `logo-placeholder.svg` is gone)
 
 ### Showcase Background
 - Pure CSS `stroke-dashoffset` animation on SVG paths — replaced Framer Motion `BackgroundPaths` which caused main-thread lag

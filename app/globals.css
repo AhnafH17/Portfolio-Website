@@ -455,15 +455,15 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
    Geometry matches the old <img>: cover / center 30% / scale(1.35). */
 .hero-photo{
   width:100%;height:100%;
-  background-image:url('/AhnafHussain-crimson.png');
+  background-image:url('/images/hero/portrait-crimson.png');
   background-size:cover;
   background-position:center 30%;
   background-repeat:no-repeat;
   transform:scale(1.35);
 }
-[data-palette="teal"]   .hero-photo{background-image:url('/AhnafHussain-teal.png')}
-[data-palette="amber"]  .hero-photo{background-image:url('/AhnafHussain-amber.png')}
-[data-palette="purple"] .hero-photo{background-image:url('/AhnafHussain-purple.png')}
+[data-palette="teal"]   .hero-photo{background-image:url('/images/hero/portrait-teal.png')}
+[data-palette="amber"]  .hero-photo{background-image:url('/images/hero/portrait-amber.png')}
+[data-palette="purple"] .hero-photo{background-image:url('/images/hero/portrait-purple.png')}
 
 .hero-image-frame::after{content:'';position:absolute;inset:0;background:linear-gradient(to top,var(--black) 0%,transparent 30%)}
 .hero-image-frame::before{content:'';position:absolute;inset:0;z-index:2;border-radius:inherit;

@@ -32,13 +32,13 @@ export const metadata: Metadata = {
     url: 'https://ahnafhussain.vercel.app/',
     type: 'website',
     locale: 'en_CA',
-    images: [{ url: '/OG_image__resized.png', width: 1200, height: 630 }],
+    images: [{ url: '/images/social/og-image.png', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Ahnaf Hussain | Head of Web Development at AurixLab',
     description: DESCRIPTION,
-    images: ['/OG_image__resized.png'],
+    images: ['/images/social/og-image.png'],
   },
 };
 
@@ -92,7 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             chosen — a static preload would fetch the wrong one. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/AhnafHussain-'+c+'.png';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`,
+            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/images/hero/portrait-'+c+'.png';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`,
           }}
         />
         {/* The preloader traces this font's glyphs into particles on first
@@ -109,9 +109,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" as="font" type="font/woff2" href="/fonts/DMSans-latin.woff2" crossOrigin="anonymous" />
         <link rel="preload" as="font" type="font/woff2" href="/fonts/Syne-latin.woff2" crossOrigin="anonymous" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(schemaOrg) }}

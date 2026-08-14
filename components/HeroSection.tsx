@@ -113,33 +113,33 @@ export default function HeroSection({ paused = false }: { paused?: boolean }) {
           <div className="hero-ring hero-ring-2" />
           <div className="hero-ring hero-ring-3" />
 
-          {/* LEFT — 3.png top, 4.png bottom */}
+          {/* LEFT — code editor top, code tablet bottom */}
           <div className="hero-fc-wrap hero-fc-left-top">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/3.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
+            <img src="/images/hero/card-code-editor.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[0] = el; }}
               className="hero-fc-img"
             />
           </div>
           <div className="hero-fc-wrap hero-fc-left-bot">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/4.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
+            <img src="/images/hero/card-code-tablet.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[1] = el; }}
               className="hero-fc-img"
             />
           </div>
 
-          {/* RIGHT — 1.png top (mirrored), 2.png bottom (mirrored) */}
+          {/* RIGHT — dashboard top (mirrored), form bottom (mirrored) */}
           <div className="hero-fc-wrap hero-fc-right-top">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/1.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
+            <img src="/images/hero/card-dashboard.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[2] = el; }}
               className="hero-fc-img"
             />
           </div>
           <div className="hero-fc-wrap hero-fc-right-bot">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/2.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
+            <img src="/images/hero/card-form.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
               ref={el => { tiltRefs.current[3] = el; }}
               className="hero-fc-img"
             />

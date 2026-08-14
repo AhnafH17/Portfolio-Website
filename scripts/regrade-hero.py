@@ -5,8 +5,9 @@ Regenerate the palette-graded hero portraits.
     python3 scripts/regrade-hero.py        # writes the four variants
     python3 scripts/regrade-hero.py audit  # + reports leftover gold-hue pixels
 
-Reads public/AhnafHussain.png (the master, shot against a warm gold ambient)
-and writes public/AhnafHussain-<palette>.png for each palette.
+Reads assets/hero-portrait-master.png (shot against a warm gold ambient) and
+writes public/images/hero/portrait-<palette>.png for each palette. The master
+lives outside public/ because it is only ever an input to this script.
 
 Why a flood-filled silhouette and not a colour rule
 ---------------------------------------------------
@@ -36,8 +37,8 @@ import numpy as np
 import sys
 import os
 
-SRC = 'public/AhnafHussain.png'
-OUT = 'public'
+SRC = 'assets/hero-portrait-master.png'
+OUT = 'public/images/hero'
 
 # --accent-glow from app/globals.css, with how fully the ambient takes each
 # hue. The source ambient is only ~0.30 saturated; much above 0.6 stops
@@ -127,7 +128,7 @@ def main(audit=False):
         tint = gray + (tint - gray) * sat
         out = np.clip(a * (1 - mask) + np.clip(tint, 0, 1) * mask, 0, 1)
 
-        path = f'{OUT}/AhnafHussain-{name}.png'
+        path = f'{OUT}/portrait-{name}.png'
         Image.fromarray((out * 255).round().astype(np.uint8)).save(path, optimize=True)
         line = f'  {path}  {os.path.getsize(path) // 1024}KB'
 

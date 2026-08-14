@@ -28,10 +28,10 @@ const ICONS: Record<string, string> = {
   'Vercel Cron': 'vercel', 'Vercel': 'vercel',
   'JWT Auth': 'jsonwebtokens',
   'WordPress': 'wordpress', 'Elementor': 'elementor',
-  'Yoast SEO': 'yoast', 'Wordfence': 'wordfence',
+  'Yoast SEO': 'yoast',   // Wordfence has no Simple Icons entry — renders text-only
   'GSAP': 'greensock',
   'Swiper.js': 'swiper',
-  'JavaScript': 'javascript', 'CSS3': 'css3', 'HTML5': 'html5',
+  'JavaScript': 'javascript', 'CSS3': 'css', 'HTML5': 'html5',
   'Python': 'python', 'Pandas': 'pandas',
   'Jupyter Notebook': 'jupyter',
   'Mailchimp': 'mailchimp',
