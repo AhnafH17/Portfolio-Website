@@ -16,9 +16,11 @@ const LOGOS = [
   { key: 'python', icon: siPython },
 ];
 
+// Drawn from the tech actually tagged across lib/projects.ts, ordered by how
+// often it appears there.
 const SKILLS = [
-  'Next.js', 'WordPress', 'Shopify', 'Python', 'Systems Architecture',
-  'GSAP', 'Team Leadership', 'SEO', 'Data Science',
+  'WordPress', 'Next.js', 'TypeScript', 'Shopify', 'GSAP',
+  'Supabase', 'LangGraph', 'Python', 'SEO',
 ];
 
 const CARDS = [

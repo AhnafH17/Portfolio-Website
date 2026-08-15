@@ -115,10 +115,15 @@ export const delivers = [
   'scalable frontend infrastructure',
 ];
 
-export const stack = [
-  'Next.js', 'WordPress', 'Shopify',
-  'Python', 'GSAP', 'SEO', 'Data Science',
-];
+export const stack = {
+  frontend: ['Next.js', 'React', 'TypeScript'],
+  cms:      ['WordPress', 'Elementor', 'Shopify'],
+  motion:   ['GSAP', 'Lenis', 'Three.js', 'WebGL'],
+  backend:  ['Supabase', 'Prisma', 'Fastify'],
+  ai:       ['LangGraph', 'Claude API', 'MCP'],
+  data:     ['Python', 'Pandas', 'Jupyter'],
+  seo:      ['Yoast', 'Schema.org', 'Core Web Vitals'],
+};
 
 // ── My journey ──────────────────────────
 const journey = [
@@ -223,10 +228,10 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
     c.beginPath(); c.arc(24 + i * 22, 22, 6.5, 0, Math.PI * 2);
     c.fillStyle = col; c.fill();
   });
-  c.font = `500 19px ${SANS}`;
+  c.font = `500 20px ${SANS}`;
   c.fillStyle = DIM;
   c.textAlign = 'center';
-  c.fillText('about.ts — ahnaf-hussain', cw / 2, 28);
+  c.fillText('about.ts — ahnaf-hussain', cw / 2, 29);
   c.textAlign = 'left';
 
   // Activity bar (icon rail)
@@ -262,9 +267,9 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
   c.strokeStyle = LINE;
   c.beginPath(); c.moveTo(310.5, 44); c.lineTo(310.5, ch - 30); c.stroke();
 
-  c.font = `600 16px ${SANS}`;
+  c.font = `600 17px ${SANS}`;
   c.fillStyle = DIM;
-  c.fillText('EXPLORER', 72, 74);
+  c.fillText('EXPLORER', 72, 76);
 
   const tree: { label: string; depth: number; active?: boolean; folder?: boolean }[] = [
     { label: 'PORTFOLIO', depth: 0, folder: true },
@@ -278,7 +283,7 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
     { label: 'README.md', depth: 1 },
   ];
   tree.forEach((n, i) => {
-    const y = 108 + i * 34;
+    const y = 112 + i * 37;
     if (n.active) {
       c.fillStyle = 'rgba(255,255,255,0.055)';
       c.fillRect(52, y - 20, 258, 30);
@@ -295,7 +300,7 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
       c.fillRect(x + 1, y - 9, 9, 12);
       c.fillStyle = n.active ? WHITE : TEXT;
     }
-    c.font = `${n.depth === 0 ? 600 : 400} ${n.depth === 0 ? 15 : 17}px ${SANS}`;
+    c.font = `${n.depth === 0 ? 600 : 400} ${n.depth === 0 ? 16 : 19}px ${SANS}`;
     c.fillText(n.label, x + 18, y);
   });
 
@@ -305,8 +310,8 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
   const tabs = ['about.ts', 'projects.ts', 'README.md'];
   let tx = 310;
   tabs.forEach((t, i) => {
-    c.font = `400 17px ${SANS}`;
-    const w = c.measureText(t).width + 56;
+    c.font = `400 19px ${SANS}`;
+    const w = c.measureText(t).width + 58;
     if (i === 0) {
       c.fillStyle = BG;
       c.fillRect(tx, 44, w, 46);
@@ -314,7 +319,7 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
       c.fillRect(tx, 44, w, 2.5);
     }
     c.fillStyle = i === 0 ? WHITE : DIM;
-    c.fillText(t, tx + 22, 74);
+    c.fillText(t, tx + 23, 75);
     c.strokeStyle = LINE;
     c.beginPath(); c.moveTo(tx + w + 0.5, 50); c.lineTo(tx + w + 0.5, 84); c.stroke();
     tx += w;
@@ -323,17 +328,20 @@ function paintLaptopChrome(c: CanvasRenderingContext2D, s: Dims, a: ReturnType<t
   c.beginPath(); c.moveTo(310, 90.5); c.lineTo(cw, 90.5); c.stroke();
 
   // Status bar
+  c.fillStyle = '#0d1219';
+  c.fillRect(0, ch - 34, cw, 34);
   c.fillStyle = accent;
-  c.globalAlpha = 0.85;
-  c.fillRect(0, ch - 30, cw, 30);
+  c.globalAlpha = 0.5;
+  c.fillRect(0, ch - 34, cw, 1.5);
   c.globalAlpha = 1;
-  c.font = `500 16px ${SANS}`;
-  c.fillStyle = 'rgba(0,0,0,0.75)';
-  c.fillText('main*', 44, ch - 10);
-  c.fillText('No problems', 140, ch - 10);
-  c.beginPath(); c.arc(24, ch - 15, 6, 0, Math.PI * 2); c.fill();
+  c.font = `500 17px ${SANS}`;
+  c.fillStyle = accent;
+  c.beginPath(); c.arc(26, ch - 17, 5.5, 0, Math.PI * 2); c.fill();
+  c.fillText('main', 42, ch - 11);
+  c.fillStyle = 'rgba(255,255,255,0.42)';
+  c.fillText('No problems', 118, ch - 11);
   c.textAlign = 'right';
-  c.fillText('TypeScript   Ln 42, Col 8   UTF-8', cw - 24, ch - 10);
+  c.fillText('TypeScript    UTF-8', cw - 26, ch - 11);
   c.textAlign = 'left';
 }
 
@@ -421,7 +429,7 @@ function laptopContent(): ContentSurface {
   // Auto-fit: measure the widest line and shrink the type until it fits the
   // editor column. Without this, editing CODE silently clips at the edge.
   const fit = document.createElement('canvas').getContext('2d')!;
-  let FS = 25;
+  let FS = 31;
   const avail = cw - GUTTER - PAD_L - 16;
   for (; FS > 12; FS -= 1) {
     fit.font = `400 ${FS}px ${MONO}`;
@@ -648,7 +656,7 @@ export function createLiveSurface(): LiveSurface {
     c.fillText('TERMINAL', 24, 26);
 
     const typed = Math.min(cmd.length, Math.floor((t / 0.34) * cmd.length));
-    c.font = `400 21px ${MONO}`;
+    c.font = `400 23px ${MONO}`;
     c.fillStyle = a.glow;
     c.fillText('$', 24, 66);
     c.fillStyle = TEXT;
@@ -662,7 +670,7 @@ export function createLiveSurface(): LiveSurface {
     }
 
     if (t > 0.42) {
-      c.font = `400 19px ${MONO}`;
+      c.font = `400 21px ${MONO}`;
       c.fillStyle = t > 0.5 ? '#7fd18a' : DIM;
       const reveal = Math.min(out.length, Math.floor(((t - 0.42) / 0.2) * out.length));
       c.fillText(out.slice(0, reveal), 46, 100);
@@ -673,7 +681,7 @@ export function createLiveSurface(): LiveSurface {
       c.beginPath();
       c.arc(52, 94, 8, ang, ang + Math.PI * 1.3);
       c.stroke();
-      c.font = `400 19px ${MONO}`;
+      c.font = `400 21px ${MONO}`;
       c.fillStyle = DIM;
       c.fillText('building…', 72, 100);
     }

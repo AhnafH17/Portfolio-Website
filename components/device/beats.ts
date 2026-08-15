@@ -9,6 +9,12 @@ export const BEATS = {
   spin: [0.0, 0.26] as const,   // rotate 180° (back → front)
   open: [0.22, 0.46] as const,  // laptop lid opens / phone stands up → docked
   wake: [0.36, 0.54] as const,  // screen powers on + real content fades in
+  // The phone wakes earlier than the laptop. Mid-spin its front face is edge-on
+  // beside the bright titanium rail, and an unlit screen there is a featureless
+  // void — the two read as separate slabs. Lighting it while it turns ties the
+  // object together. The laptop doesn't need this: its screen is face-down on
+  // the keyboard until the lid opens.
+  wakePhone: [0.13, 0.40] as const,
   read: [0.5, 1.0] as const,    // device is LOCKED; content scrolls inside the screen
 };
 

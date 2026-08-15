@@ -110,7 +110,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
       {/* ── Lid (hinged at back edge) ── */}
       <group ref={lid} position={[0, BASE_TOP, HINGE_Z]} rotation={[P.lidClosed, 0, 0]}>
-        <RoundedBox args={[3.06, 2.0, 0.06]} radius={0.04} smoothness={4} position={[0, 1.0, 0]}>
+        {/* radius must stay under half the depth or RoundedBox self-intersects */}
+        <RoundedBox args={[3.06, 2.0, 0.06]} radius={0.028} smoothness={4} position={[0, 1.0, 0]}>
           <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
         </RoundedBox>
         {/* Outer-lid logo (the "back" you see at the start) */}
