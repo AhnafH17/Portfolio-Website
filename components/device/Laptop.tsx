@@ -4,7 +4,10 @@ import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
-import { createScreenSurface } from './screenTexture';
+import {
+  createChromeSurface, createContentSurface, createLiveSurface,
+  REGION, toPlane,
+} from './screenTexture';
 import { makeDeckTexture } from './deckTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
@@ -27,14 +30,22 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   const screenMat = useRef<THREE.MeshStandardMaterial>(null);
 
   const accent = useMemo(() => readAccent(), []);
-  const surface = useMemo(() => createScreenSurface('laptop'), []);
+  const chrome = useMemo(() => createChromeSurface('laptop'), []);
+  const content = useMemo(() => createContentSurface('laptop'), []);
+  const live = useMemo(() => createLiveSurface(), []);
   const deckTex = useMemo(() => makeDeckTexture(), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
+
+  // Where the editor and terminal sit on the screen, derived from the same
+  // canvas rects the chrome is drawn against — so they line up exactly.
+  const editorRect = useMemo(() => toPlane('laptop', REGION.laptop.editor), []);
+  const termRect = useMemo(() => toPlane('laptop', REGION.laptop.terminal), []);
 
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 30);
     const p = progress.current;
     if (!root.current || !lid.current) return;
+    live.update(state.clock.elapsedTime);
 
     // Beat A — spin 180°: π (back) → 0 (front). Ends dead-on, facing forward.
     const spin = easeInOut(phase(p, BEATS.spin));
@@ -71,9 +82,19 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
       screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
     }
 
-    // Scroll the content inside the screen via texture offset (no re-upload).
-    surface.render(read);
+    // Scroll the editor via texture offset (no redraw, no re-upload).
+    content.render(read);
   });
+
+  // The editor, terminal and chrome share one emissive look; only the chrome
+  // plane carries the ref that the wake beat animates, and the other two track
+  // it through the same material settings.
+  const panel = {
+    emissive: '#ffffff' as const,
+    toneMapped: false as const,
+    roughness: 0.25,
+    metalness: 0,
+  };
 
   return (
     <group ref={root} rotation={[0, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
@@ -102,18 +123,36 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
           <planeGeometry args={[3.0, 1.95]} />
           <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
         </mesh>
-        {/* Screen — content drawn onto the texture, scrolled via UV offset */}
+        {/* Screen — three planes: static IDE chrome, the scrolling editor on
+            top of it, and the live terminal strip. Keeping the chrome on its
+            own plane is what lets the title bar, sidebar and status bar stay
+            put while the code scrolls. */}
         <mesh position={[0, 1.0, 0.046]}>
           <planeGeometry args={[2.92, 1.87]} />
           <meshStandardMaterial
             ref={screenMat}
-            map={surface.texture}
-            emissiveMap={surface.texture}
-            emissive={'#ffffff'}
+            map={chrome.texture}
+            emissiveMap={chrome.texture}
             emissiveIntensity={0.15}
-            toneMapped={false}
-            roughness={0.25}
-            metalness={0}
+            {...panel}
+          />
+        </mesh>
+        <mesh position={[editorRect.x, 1.0 + editorRect.y, 0.0475]}>
+          <planeGeometry args={[editorRect.w, editorRect.h]} />
+          <meshStandardMaterial
+            map={content.texture}
+            emissiveMap={content.texture}
+            emissiveIntensity={0.95}
+            {...panel}
+          />
+        </mesh>
+        <mesh position={[termRect.x, 1.0 + termRect.y, 0.0475]}>
+          <planeGeometry args={[termRect.w, termRect.h]} />
+          <meshStandardMaterial
+            map={live.texture}
+            emissiveMap={live.texture}
+            emissiveIntensity={0.95}
+            {...panel}
           />
         </mesh>
       </group>
