@@ -11,12 +11,32 @@ const navItems = [
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeHref, setActiveHref] = useState('');
   const navRef = useRef<HTMLElement>(null);
+  // Read inside the scroll handler, which is bound once
+  const menuOpenRef = useRef(false);
+  menuOpenRef.current = menuOpen;
 
+  /* Hide on scroll down, reveal on scroll up. The threshold stops the bar
+     flickering on the small jitter Lenis produces while easing, and it always
+     comes back near the top so the logo is reachable. */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    let last = window.scrollY;
+    const THRESHOLD = 6;
+
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 60);
+
+      const delta = y - last;
+      if (Math.abs(delta) < THRESHOLD) return;
+      // The mobile menu covers the screen — never pull the close button away.
+      if (!menuOpenRef.current) setHidden(delta > 0 && y > 140);
+      last = y;
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -109,7 +129,11 @@ export default function Navbar() {
 
   return (
     <>
-      <nav ref={navRef} id="navbar" className={scrolled ? 'scrolled' : ''}>
+      <nav
+        ref={navRef}
+        id="navbar"
+        className={`${scrolled ? 'scrolled' : ''}${hidden ? ' nav-hidden' : ''}`}
+      >
         <div className="nav-logo">
           <svg
             viewBox="0 0 64 40"

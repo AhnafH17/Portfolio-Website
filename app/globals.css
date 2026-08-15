@@ -133,7 +133,9 @@ body::after{content:'';position:fixed;inset:0;background-image:url("data:image/s
 .cursor-dot{width:8px;height:8px;background:var(--accent-glow);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:10000;will-change:transform;box-shadow:0 0 6px rgba(var(--accent-rgb),0.6)}
 .cursor-ring{width:40px;height:40px;border:1.5px solid rgba(var(--accent-rgb),0.5);border-radius:50%;position:fixed;top:0;left:0;pointer-events:none;z-index:10000;transition:width .3s,height .3s,border-color .3s;will-change:transform}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1.25rem 3rem;display:flex;justify-content:space-between;align-items:center;transition:background .4s,padding .4s}
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;padding:1.25rem 3rem;display:flex;justify-content:space-between;align-items:center;transition:background .4s,padding .4s,transform .35s cubic-bezier(.4,0,.2,1);will-change:transform}
+/* Hidden while scrolling down, revealed on the way back up */
+nav.nav-hidden{transform:translateY(-102%)}
 nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8rem 3rem;border-bottom:1px solid var(--gold-border)}
 
 .nav-logo{display:flex;align-items:center;gap:.5rem}

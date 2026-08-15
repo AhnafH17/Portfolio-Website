@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import { roundedSlab } from './roundedSlab';
 import * as THREE from 'three';
-import { createChromeSurface, createContentSurface, REGION, toPlane } from './screenTexture';
+import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -19,13 +19,13 @@ const BODY_H = 3.02;
 const BODY_D = 0.17;
 const BODY_R = 0.26;
 
-const SCREEN_W = 1.30;
-const SCREEN_H = 2.82;
+const SCREEN_W = 1.42;
+const SCREEN_H = 3.00;
 
 // Phone bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 1.62;
-const DEVICE_H = 3.25;
-const FIT = 0.86;
+const DEVICE_H = 3.14;
+const FIT = 0.98;
 
 export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
@@ -36,17 +36,19 @@ export default function Phone({ progress }: { progress: { current: number } }) {
   const content = useMemo(() => createContentSurface('phone'), []);
   const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
   const contentRect = useMemo(() => toPlane('phone', REGION.phone.editor), []);
+  const island = useMemo(() => createLiveSurface('phone'), []);
+  const islandRect = useMemo(() => toPlane('phone', REGION.phone.terminal), []);
 
   // Extruded slabs, not RoundedBox — see roundedSlab.ts for why.
   const bodyGeo = useMemo(() => roundedSlab(BODY_W, BODY_H, BODY_D, BODY_R, 0.02), []);
   const backGeo = useMemo(() => roundedSlab(BODY_W - 0.03, BODY_H - 0.03, 0.014, BODY_R - 0.014, 0.004), []);
-  const frontGeo = useMemo(() => roundedSlab(BODY_W - 0.03, BODY_H - 0.03, 0.014, BODY_R - 0.014, 0.004), []);
   const plateauGeo = useMemo(() => roundedSlab(0.66, 0.66, 0.05, 0.17, 0.012), []);
 
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 30);
     const p = progress.current;
     if (!root.current) return;
+    island.update(state.clock.elapsedTime);
 
     const spin = easeInOut(phase(p, BEATS.spin));
     const rotY = Math.PI * (1 - spin);
@@ -101,9 +103,9 @@ export default function Phone({ progress }: { progress: { current: number } }) {
             as solid accent while it turned. */}
         <meshStandardMaterial color={BACK} metalness={0.25} roughness={0.8} envMapIntensity={0.3} />
       </mesh>
-      <mesh geometry={frontGeo} position={[0, 0, BODY_D / 2 - 0.007]}>
-        <meshStandardMaterial color="#05070b" metalness={0.6} roughness={0.12} envMapIntensity={1.5} />
-      </mesh>
+      {/* No separate front glass: it sat at the same depth as the body's front
+          face and z-fought with it, striping the edges. The screen plane now
+          spans the whole face and paints its own bezel and rounded corners. */}
 
       {/* Display: chrome plane (status bar, Dynamic Island, home indicator)
           with the scrolling content on top. The island is painted into the
@@ -124,6 +126,15 @@ export default function Phone({ progress }: { progress: { current: number } }) {
         <meshStandardMaterial
           map={content.texture}
           emissiveMap={content.texture}
+          emissiveIntensity={0.95}
+          {...panel}
+        />
+      </mesh>
+      <mesh position={[islandRect.x, islandRect.y, BODY_D / 2 + 0.0028]}>
+        <planeGeometry args={[islandRect.w, islandRect.h]} />
+        <meshStandardMaterial
+          map={island.texture}
+          emissiveMap={island.texture}
           emissiveIntensity={0.95}
           {...panel}
         />
