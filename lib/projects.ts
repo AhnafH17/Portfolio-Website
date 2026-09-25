@@ -375,7 +375,7 @@ export const projectData: Record<ProjectKey, Project> = {
 
   bp: {
     label: 'Project 07',
-    title: 'Budget Promotion',
+    title: 'Merch Express',
     link: 'https://budgetpromotion.ca/',
     image: 'images/projects/bp.png',
     imagePlaceholder: '',
@@ -383,10 +383,15 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          '<p>Budget Promotion is a Calgary-based promotional products company running on Shopify. I worked across the full stack: uploading products, fixing critical front-end and back-end bugs, building customization features, integrating with the Printavo fulfillment API, and driving performance scores above 95.</p>',
+          '<p>Merch Express (formerly Budget Promotion) is a Calgary-based promotional products company running on Shopify. I led the technical and visual transition during their major rebranding phase, completely overhauling the front-end experience. Prior to the rebrand, I worked across the full stack building customization tools, API integrations, and optimizing performance.</p>',
       },
       {
-        heading: 'Work Done',
+        heading: 'The Rebrand (Merch Express)',
+        content:
+          '<ul><li><strong>Front-End Overhaul:</strong> Redesigned the hero section with custom-coded regional branding elements and developed a custom website preloader</li><li><strong>UI/UX Enhancements:</strong> Redesigned the popular products layout, adjusted marquee sections (color grading, logos, margins), and optimized the mobile version of the popular categories section</li><li><strong>Custom Features & Sections:</strong> Built the Proof section featuring a moving background SVG and 3D cards, implemented a new process flow with specific iconography, and developed visual elements for the decoration methods section</li><li><strong>Navigation & Architecture:</strong> Updated the header and footer, implemented a custom-planned search bar, and maintained the "Outfitting every industry" section</li><li><strong>Content & Pages:</strong> Enhanced the About Us page with a comprehensive video presentation and updated collection pages across 9 industry and 9 custom apparel categories</li></ul>',
+      },
+      {
+        heading: 'Previous Work (Budget Promotion)',
         content:
           '<ul><li>Managed bulk product uploads and organized catalog structure within Shopify</li><li>Built and refined the <strong>product customization modal</strong>, allowing customers to upload images, position designs on products via a canvas-based tool, and preview before ordering</li><li>Fixed cross-platform compatibility issues between Mac and Windows devices for the product customizer</li><li>Developed the <strong>AJAX cart system</strong> for smooth add-to-cart and checkout flows without page reloads</li><li>Integrated the Shopify backend with <strong>Printavo</strong> for automated print-on-demand fulfillment via webhook architecture</li><li>Implemented the custom quote system for bulk/corporate orders</li></ul>',
       },
@@ -399,10 +404,10 @@ export const projectData: Record<ProjectKey, Project> = {
         heading: 'Results',
         type: 'results',
         items: [
+          { big: 'Live', label: 'Merch Express Rebrand' },
           { big: '90+', label: 'SEO Score' },
           { big: '95+', label: 'Load Speed Score' },
           { big: '100%', label: 'Cross-Platform Fix' },
-          { big: 'Live', label: 'Printavo Integration' },
         ],
       },
       {
@@ -415,7 +420,7 @@ export const projectData: Record<ProjectKey, Project> = {
           'AJAX',
           'Canvas API',
           'Printavo API',
-          'Webhooks',
+          'SVG Animation',
           'CSS',
         ],
       },

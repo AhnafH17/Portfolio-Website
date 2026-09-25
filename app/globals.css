@@ -1796,3 +1796,331 @@ footer span{color:var(--accent-glow)}
 .ab2-links line:nth-child(4){ animation-delay:1.2s; }
 .ab2-links line:nth-child(5){ animation-delay:1.6s; }
 .ab2-links line:nth-child(6){ animation-delay:2.0s; }
+
+/* ══════════════════════════════════════════════════════════════
+   Canvas Showcase — scroll-pinned 3D project section
+   ══════════════════════════════════════════════════════════════ */
+.cs-section{
+  position:relative; width:100%; height:100vh;
+  background-color:var(--black-deep); overflow:hidden;
+  padding:0;
+}
+
+/* ── Deep-space backdrop layer (planets / nebula / asteroids / horizon) ── */
+.cs-bg{ position:absolute; inset:0; z-index:1; overflow:hidden; pointer-events:none; }
+
+/* Planets: a tileable procedural surface (SVG feTurbulence, stitched so it
+   repeats seamlessly) drawn on a 200%-wide ::before that slides one planet
+   width per cycle inside the circular clip — reads as the planet slowly
+   rotating. It's a transform animation, so it stays on the compositor.
+   ::after lays spherical shading on top, lit from the side facing the
+   centre of the screen. */
+.cs-planet{
+  position:absolute; border-radius:50%; overflow:hidden; isolation:isolate;
+  /* JS scales it up with scroll progress (the planet "approaches"); its own
+     layer keeps that off the paint path despite the big box-shadow. */
+  will-change:transform;
+}
+/* Three tiles wide: one tile of idle spin (the keyframes) plus up to a third
+   of a tile of scroll-driven spin (`translate`, set from JS via
+   --spin-shift) always leaves the circle fully covered. `translate` and
+   `transform` compose, so the two motions stack. */
+.cs-planet::before{
+  content:''; position:absolute; top:0; left:0; width:300%; height:100%;
+  background-image:var(--planet-tex);
+  background-size:33.3334% 100%; background-repeat:repeat-x;
+  animation:cs-planet-spin var(--planet-spin) linear infinite;
+  translate:calc(var(--spin-shift, 0%) * -1) 0;
+  will-change:transform;
+}
+.cs-planet::after{
+  content:''; position:absolute; inset:0; border-radius:50%;
+  background:radial-gradient(circle at var(--light-x) var(--light-y),
+    rgba(255,255,255,0.10) 0%,
+    transparent 16%,
+    rgba(0,0,0,0.55) 40%,
+    rgba(0,0,0,0.93) 62%);
+  box-shadow:inset 0 0 40px var(--planet-rim);
+}
+@keyframes cs-planet-spin{
+  from{ transform:translateX(0); }
+  to{ transform:translateX(-33.3333%); }
+}
+.cs-planet-tl{
+  top:-14vw; left:-10vw; width:32vw; height:32vw;
+  background:#06201e;
+  box-shadow:0 0 90px rgba(43,178,169,0.14);
+  --light-x:80%; --light-y:84%;
+  --planet-rim:rgba(90,210,195,0.22);
+  --planet-spin:90s;
+  --planet-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' preserveAspectRatio='none'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.007 0.016' numOctaves='5' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.25 0 0 0 0  0.7 0 0 0 0.02  0.65 0 0 0 0.03  1.1 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.cs-planet-tr{
+  top:-16vw; right:-12vw; width:26vw; height:26vw;
+  background:#2a1606;
+  box-shadow:0 0 100px rgba(218,150,38,0.18);
+  --light-x:20%; --light-y:84%;
+  --planet-rim:rgba(255,190,100,0.25);
+  --planet-spin:70s;
+  --planet-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' preserveAspectRatio='none'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.002 0.03' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.95 0 0 0 0.05  0.55 0 0 0 0.02  0.2 0 0 0 0  1.1 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@media (prefers-reduced-motion:reduce){
+  .cs-planet::before{ animation:none; }
+}
+
+.cs-nebula{
+  position:absolute; top:8%; left:50%; width:64vw; height:46vw; max-height:60vh;
+  transform:translateX(-50%);
+  background:
+    radial-gradient(ellipse 40% 55% at 30% 40%, rgba(43,178,169,0.16), transparent 60%),
+    radial-gradient(ellipse 35% 50% at 68% 55%, rgba(218,150,38,0.14), transparent 60%),
+    radial-gradient(ellipse 30% 40% at 50% 30%, rgba(200,170,255,0.06), transparent 65%);
+  filter:blur(18px);
+  opacity:0.8;
+}
+
+.cs-asteroids{ position:absolute; inset:0; }
+.cs-asteroid{
+  position:absolute; border-radius:42% 58% 60% 40% / 55% 45% 58% 42%;
+  background:radial-gradient(circle at 35% 30%, rgba(80,70,60,0.9), rgba(6,5,4,0.98) 65%);
+  box-shadow:inset -6px -6px 14px rgba(0,0,0,0.6), 0 6px 18px rgba(0,0,0,0.5);
+}
+
+.cs-horizon{ position:absolute; left:0; right:0; bottom:-18vh; height:38vh; }
+.cs-horizon-curve{
+  position:absolute; left:50%; bottom:0; width:150vw; height:60vh;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:linear-gradient(to bottom, transparent 0%, rgba(4,10,9,0.7) 8%, var(--black-deep) 30%);
+  box-shadow:0 -2px 60px rgba(var(--accent-rgb),0.35), 0 -1px 0 rgba(var(--accent-rgb),0.55);
+}
+.cs-surface{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.cs-horizon-glow{
+  position:absolute; left:50%; bottom:22vh; width:150vw; height:2px;
+  transform:translateX(-50%);
+  background:linear-gradient(to right, transparent 0%, rgba(var(--accent-rgb),0.75) 20%, rgba(var(--accent-rgb),0.95) 50%, rgba(var(--accent-rgb),0.75) 80%, transparent 100%);
+  box-shadow:0 0 24px 4px rgba(var(--accent-rgb),0.55);
+}
+.cs-horizon-lights{ position:absolute; left:0; right:0; bottom:20.5vh; height:4px; }
+.cs-city-light{
+  position:absolute; bottom:0; width:2px; height:2px; border-radius:50%;
+  background:rgba(255,232,180,0.6);
+  box-shadow:0 0 4px 1px rgba(255,220,140,0.5);
+  animation:cs-twinkle 3.2s ease-in-out infinite;
+}
+.cs-city-light.is-bright{
+  width:3px; height:3px;
+  background:rgba(255,240,200,0.9);
+  box-shadow:0 0 8px 2px rgba(255,220,140,0.7);
+}
+@keyframes cs-twinkle{ 0%,100%{ opacity:0.4; } 50%{ opacity:1; } }
+
+/* ── Left-side numbered timeline ── */
+.cs-timeline{
+  position:absolute; left:1.75rem; top:50%; transform:translateY(-38%);
+  z-index:5; display:flex; flex-direction:column; gap:2.1rem;
+}
+.cs-timeline-line{
+  position:absolute; left:13px; top:13px; bottom:13px; width:1px;
+  background:rgba(var(--accent-rgb),0.25);
+}
+.cs-timeline-item{ position:relative; display:flex; align-items:center; gap:0.9rem; }
+.cs-timeline-node{
+  position:relative; z-index:1; flex:none;
+  width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font-display); font-size:0.6rem; font-weight:700;
+  color:var(--gold-dim);
+  border:1px solid rgba(var(--accent-rgb),0.3);
+  background:rgba(6,8,10,0.6);
+  transition:all 0.35s ease;
+}
+.cs-timeline-label{
+  font-size:0.68rem; font-weight:600; letter-spacing:0.01em;
+  color:var(--gold-dim); line-height:1.3; max-width:120px;
+  transition:color 0.35s ease;
+}
+.cs-timeline-item.is-active .cs-timeline-node{
+  color:var(--black-deep);
+  background:var(--accent-glow);
+  border-color:var(--accent-glow);
+  box-shadow:0 0 16px 2px rgba(var(--accent-rgb),0.6);
+}
+.cs-timeline-item.is-active .cs-timeline-label{ color:var(--gold-bright); }
+
+/* ── Corner label (counter) ── */
+.cs-corner{
+  position:absolute; z-index:5;
+  font-size:0.7rem; letter-spacing:0.16em; text-transform:uppercase;
+  color:var(--gold-dim); font-weight:500;
+}
+.cs-corner-tl{
+  /* Sits below the fixed navbar's painted area (nav is z-index:1000 and
+     auto-shows on scroll-up) so it's never covered regardless of nav state. */
+  top:6.5rem; left:2.5rem;
+  font-family:var(--font-display); font-size:0.9rem; letter-spacing:0.05em;
+  text-shadow:0 1px 8px rgba(0,0,0,0.85);
+}
+.cs-counter-active{ color:var(--accent-glow); font-weight:700; }
+.cs-counter-sep{ margin:0 0.4rem; opacity:0.5; }
+
+/* ── Category heading stack ── */
+.cs-heading-stack{
+  position:absolute; top:0; left:0; width:100%; z-index:3;
+  pointer-events:none; text-align:center; padding-top:5.5vh;
+}
+.cs-heading{
+  /* Kept where the title sat when it had a label line above it, so it
+     stays clear of the navbar when that slides back in. */
+  position:absolute; top:calc(5.5vh + 1.6rem); left:0; width:100%; padding:0 1.5rem;
+  transition:opacity 0.7s cubic-bezier(0.22,1,0.36,1);
+}
+.cs-title{
+  font-family:var(--font-display); font-size:clamp(1.7rem, 3.6vw, 3.1rem);
+  font-weight:600; letter-spacing:-0.01em; color:var(--gold-bright);
+  margin:0 0 0.6rem 0; line-height:1.15;
+  text-shadow:0 0 32px rgba(var(--accent-rgb),0.35);
+}
+/* Syne is a variable font that widens dramatically at heavy weights, so a
+   bolder half reads as a different typeface — keep the whole title one weight. */
+.cs-title strong{ font-weight:inherit; }
+.cs-subtitle{
+  font-size:clamp(0.75rem, 1.1vw, 0.9rem); color:var(--gold-dim);
+  max-width:500px; margin:0 auto; line-height:1.5;
+}
+.cs-title-divider{
+  width:44px; height:1.5px; margin:1.1rem auto 0;
+  background:linear-gradient(to right, transparent, var(--accent-glow), transparent);
+  opacity:0.7;
+}
+
+/* ── 3D card layer: 3 persistent slots that flip in place ── */
+.cs-cards-layer{
+  position:absolute; top:0; left:0; width:100%; height:100%; z-index:2;
+  display:flex; align-items:center; justify-content:center;
+  gap:clamp(1rem, 2vw, 2rem);
+  pointer-events:none; perspective:1200px; padding-top:6vh;
+  /* Same gutter both sides so the row is centred under the title while
+     still clearing the timeline on the left. */
+  padding-left:220px; padding-right:220px;
+}
+/* Static off-center offset — deliberately not perfectly aligned/centered. */
+.cs-slot{
+  transform:translate(var(--ox,0px), var(--oy,0px)) rotate(var(--orz,0deg));
+  pointer-events:auto;
+}
+/* Gentle continuous float, isolated on its own element so it doesn't fight
+   the static offset above (both would otherwise write the same
+   `transform` property and clobber each other). */
+.cs-slot-float{
+  animation-name:cs-float; animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+}
+@keyframes cs-float{
+  0%,100%{ transform:translateY(0); }
+  50%{ transform:translateY(-12px); }
+}
+/* The flip itself — rotateY is eased and written per frame from JS (no CSS
+   transition, so the swap logic always knows the on-screen angle). */
+.cs-flip{
+  /* As wide as three cards can go between the two gutters. */
+  position:relative; width:clamp(260px, calc((100vw - 440px) / 3 - 1.4vw), 420px);
+  transform-style:preserve-3d;
+  will-change:transform;
+}
+.cs-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
+.cs-face-front{ position:relative; }
+.cs-face-back{ position:absolute; inset:0; transform:rotateY(180deg); }
+.cs-card{
+  --tilt:0deg;
+  width:100%; border-radius:12px; overflow:visible;
+  cursor:pointer; position:relative; transform-style:preserve-3d;
+  border:1.5px solid transparent; background-clip:padding-box; background-origin:border-box;
+  transform:perspective(800px) rotateY(var(--tilt));
+  transition:transform 0.4s ease;
+}
+.cs-card:hover{ transform:perspective(800px) rotateY(var(--tilt)) translateY(-6px); }
+.cs-card-rim{
+  position:absolute; inset:-1.5px; border-radius:13px; z-index:0; pointer-events:none;
+  background:linear-gradient(135deg,
+    rgba(var(--accent-rgb),0.65) 0%,
+    rgba(var(--accent-rgb),0.15) 35%,
+    rgba(var(--accent-rgb),0.05) 60%,
+    rgba(var(--accent-rgb),0.5) 100%);
+  box-shadow:0 0 34px rgba(var(--accent-rgb),0.14);
+}
+.cs-card-inner{ position:relative; z-index:1; background-color:var(--black-card); border-radius:11px; overflow:hidden; }
+
+/* ── 3D side "thickness" faces (visible edge of the tilted outer cards) ──
+   Note: a true rotateY(90deg) cube-face projects to a screen width of
+   thickness*sin(tiltAngle) — at our subtle 8deg card tilt that's under 2px
+   and invisible. So instead of chasing physically-"correct" (but invisible)
+   geometry, this draws a flat beveled strip at the card's edge: a
+   deliberately stylized bezel, same trick used by most CSS card-thickness
+   mockups, that reliably reads as depth regardless of tilt angle. */
+.cs-card-edge{
+  position:absolute; top:4px; bottom:4px; width:14px; z-index:2; pointer-events:none;
+  background:linear-gradient(to bottom,
+    rgba(255,255,255,0.22) 0%,
+    rgba(var(--accent-rgb),0.35) 8%,
+    rgba(14,11,7,0.95) 22%,
+    rgba(5,4,3,0.98) 70%,
+    rgba(var(--accent-rgb),0.4) 100%);
+  box-shadow:inset 0 0 8px rgba(0,0,0,0.7), 2px 4px 14px rgba(0,0,0,0.45);
+}
+.cs-card-edge-right{ left:100%; border-radius:0 7px 7px 0; }
+.cs-card-edge-left{ right:100%; border-radius:7px 0 0 7px; }
+.cs-card-media{ position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; }
+.cs-card-img{ width:100%; height:100%; object-fit:cover; display:block; }
+.cs-card-media-fade{
+  position:absolute; bottom:0; left:0; right:0; height:40%;
+  background:linear-gradient(to top, var(--black-card), transparent);
+}
+.cs-card-body{ padding:0.9rem 1.1rem 1.1rem; }
+.cs-card-tags{ display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.65rem; }
+.cs-tag-pill{
+  font-size:0.56rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
+  padding:0.28rem 0.55rem; border-radius:20px; white-space:nowrap;
+  color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.35);
+  background:rgba(var(--accent-rgb),0.06);
+}
+.cs-card-title{
+  font-family:var(--font-display); font-size:clamp(0.85rem, 1.1vw, 1.05rem); font-weight:600;
+  color:var(--gold-bright); margin:0 0 0.3rem 0; line-height:1.3;
+}
+.cs-card-desc{ font-size:clamp(0.65rem, 0.85vw, 0.78rem); color:var(--gold-dim); line-height:1.45; margin:0 0 0.7rem 0; }
+.cs-card-cta{
+  display:flex; align-items:center; font-size:0.65rem; font-weight:600;
+  color:var(--accent-glow); letter-spacing:0.12em; text-transform:uppercase; font-family:var(--font-body);
+}
+.cs-card-cta svg{ margin-left:0.4rem; width:12px; height:12px; }
+
+/* ── Bottom-center: divider / progress / scroll cue ── */
+.cs-bottom-center{
+  position:absolute; bottom:2.6vh; left:50%; transform:translateX(-50%);
+  z-index:5; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.85rem;
+}
+.cs-progress{ display:flex; gap:0.4rem; }
+.cs-progress-track{
+  width:44px; height:2px; border-radius:2px; overflow:hidden;
+  background:rgba(var(--accent-rgb),0.18); display:inline-block;
+}
+.cs-progress-fill{
+  display:block; width:100%; height:100%; transform-origin:left center;
+  background:var(--accent-glow); box-shadow:0 0 6px rgba(var(--accent-rgb),0.6);
+  transition:transform 0.1s linear;
+}
+.cs-scroll-cue{ font-size:0.6rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold-dim); font-weight:500; }
+
+/* ── Responsive ── */
+/* Below this width the bigger cards and the timeline can't share a row. */
+@media (max-width:1200px){
+  .cs-timeline{ display:none; }
+  .cs-cards-layer{ padding-left:20px; padding-right:20px; }
+}
+@media (max-width:1024px){
+  .cs-nebula{ width:90vw; height:60vw; }
+}
+@media (max-width:768px){
+  .cs-planet-tl,.cs-planet-tr{ width:44vw; height:44vw; }
+  .cs-heading{ top:calc(5.5vh + 3.2rem); }
+}

@@ -67,6 +67,25 @@ function GlobeViz() {
     const container = containerRef.current;
     if (!container) return;
     let rafId: number;
+    let started = false;
+    // Set once the globe exists, so the observer can pause/resume it.
+    let globe: { pauseAnimation: () => void; resumeAnimation: () => void } | null = null;
+
+    // Loading + building the globe blocks the main thread for a long stretch,
+    // so don't do it at mount (that landed while the user was scrolling the
+    // showcase near the top of the page) — wait until this section is close.
+    // Once built, stop its render loop whenever it's off screen.
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !started) {
+        started = true;
+        rafId = requestAnimationFrame(init);
+      }
+      if (globe) {
+        if (entry.isIntersecting) globe.resumeAnimation();
+        else globe.pauseAnimation();
+      }
+    }, { rootMargin: '800px 0px' });
+    io.observe(container);
 
     const init = () => {
       if (container.clientWidth === 0) { rafId = requestAnimationFrame(init); return; }
@@ -104,11 +123,14 @@ function GlobeViz() {
           globeInstance.width(container.clientWidth).height(container.clientHeight);
         });
         ro.observe(container);
+        globe = globeInstance;
       };
       document.head.appendChild(script);
     };
-    rafId = requestAnimationFrame(init);
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(rafId);
+      io.disconnect();
+    };
   }, []);
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />;

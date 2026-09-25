@@ -2,7 +2,7 @@
 
 import { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
-import ScrollShowcase from '@/components/ScrollShowcase';
+import CanvasShowcase from '@/components/CanvasShowcase';
 import HeroSection from '@/components/HeroSection';
 import CustomCursor from '@/components/CustomCursor';
 import Preloader from '@/components/Preloader';
@@ -16,13 +16,19 @@ const TestimonialSection = lazy(() => import('@/components/TestimonialSection'))
 const ContactSection = lazy(() => import('@/components/ContactSection'));
 const Footer = lazy(() => import('@/components/Footer'));
 
+// Mounted in this order, one per idle slot; Footer (outside <main>) last.
+const BELOW_FOLD = [MarqueeStrip, DeviceShowcase, AboutSection, TestimonialSection, ContactSection];
+
 export default function Home() {
   // `reveal` starts the site fading in; `preloaderGone` removes the preloader
   // once its dissolve has finished. Collapsing these into one flag unmounts
   // the preloader mid-animation and the dissolve never renders.
   const [reveal, setReveal] = useState(false);
   const [preloaderGone, setPreloaderGone] = useState(false);
-  const [belowFold, setBelowFold] = useState(false);
+  // How many below-fold sections are mounted (see BELOW_FOLD). They go in one
+  // at a time — mounting all six in one commit blocked the main thread for
+  // ~430ms, which landed on anyone already scrolling into the showcase.
+  const [mounted, setMounted] = useState(0);
   const siteRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,11 +43,29 @@ export default function Home() {
       gsap.to(siteRef.current!, { opacity: 1, duration: 0.5, ease: 'power2.out' });
     });
 
-    // Held until the cross-dissolve is over — mounting six sections mid-fade
-    // is the one thing that would visibly stutter it.
-    const mount = setTimeout(() => setBelowFold(true), 1200);
+    // Held until the cross-dissolve is over — mounting sections mid-fade is
+    // the one thing that would visibly stutter it.
+    const mount = setTimeout(() => setMounted(1), 1200);
     return () => clearTimeout(mount);
   }, [reveal]);
+
+  useEffect(() => {
+    if (mounted === 0) return;
+    if (mounted >= BELOW_FOLD.length + 1) {
+      // These sections change page height, so ScrollTrigger's cached
+      // start/end positions need recomputing once they're all in.
+      const id = setTimeout(() => ScrollTrigger.refresh(), 300);
+      return () => clearTimeout(id);
+    }
+    // Next section in the next idle slot, so each mount is its own short task.
+    const next = () => setMounted((m) => m + 1);
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(next, { timeout: 500 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(next, 60);
+    return () => window.clearTimeout(id);
+  }, [mounted]);
 
   /* Warm the heavy below-fold chunks while the preloader is still on screen.
      Fetching and mounting are deliberately separated: mounting during the
@@ -79,14 +103,6 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
-  useEffect(() => {
-    if (!belowFold) return;
-    // These sections change page height, so ScrollTrigger's cached start/end
-    // positions need recomputing once they're in.
-    const id = setTimeout(() => ScrollTrigger.refresh(), 300);
-    return () => clearTimeout(id);
-  }, [belowFold]);
-
   return (
     <>
       {!preloaderGone && (
@@ -103,20 +119,18 @@ export default function Home() {
               and tilt loops are invisible behind it but were still burning
               frames the particle animation needed. */}
           <HeroSection paused={!reveal} />
-          <ScrollShowcase />
+          <CanvasShowcase />
           {/* Below-fold sections are held back so their chunk eval and mount
               cost doesn't land during the preloader. */}
-          {belowFold && (
-            <Suspense fallback={null}>
-              <MarqueeStrip />
-              <DeviceShowcase />
-              <AboutSection />
-              <TestimonialSection />
-              <ContactSection />
+          {BELOW_FOLD.slice(0, mounted).map((Section, i) => (
+            // Own boundary each, so a later section suspending never blanks
+            // one that's already on screen.
+            <Suspense key={i} fallback={null}>
+              <Section />
             </Suspense>
-          )}
+          ))}
         </main>
-        {belowFold && (
+        {mounted > BELOW_FOLD.length && (
           <Suspense fallback={null}>
             <Footer />
           </Suspense>
