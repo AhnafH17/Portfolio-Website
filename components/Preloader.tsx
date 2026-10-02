@@ -209,7 +209,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
             onCycleComplete={handleCycleComplete}
             reserve={portraitBudget(window.innerWidth)}
             fontSize={Math.min(130, Math.floor(window.innerWidth / 6.5))}
-            fontFamily="'Sddystopian', sans-serif"
+            fontFamily="'Greater Theory', sans-serif"
           />
         )}
       </div>

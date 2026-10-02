@@ -1,7 +1,20 @@
+@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-400.woff2') format('woff2'); font-weight:400; font-display:swap; }
+@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-600.woff2') format('woff2'); font-weight:600; font-display:swap; }
+@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-700.woff2') format('woff2'); font-weight:700; font-display:swap; }
+
+/* Greater Theory (brandsemut) — personal-use licence only; needs a
+   commercial licence before this ships on the live site. */
 @font-face {
   font-family: 'Sddystopian';
   src: url('/fonts/Sddystopiandemo-GO7xa.otf') format('opentype');
   font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Greater Theory';
+  src: url('/fonts/GreaterTheory.otf') format('opentype');
+  font-weight: 400 900;
   font-display: swap;
 }
 
@@ -70,7 +83,7 @@
 
 :root{
   color-scheme:dark;
-  --font-display:'Syne',sans-serif;
+  --font-display:'Greater Theory','Syne',sans-serif;
   --font-body:'DM Sans',sans-serif;
 }
 
@@ -412,7 +425,7 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hero-bg-line:nth-child(1){left:20%}.hero-bg-line:nth-child(2){left:40%}.hero-bg-line:nth-child(3){left:60%}.hero-bg-line:nth-child(4){left:80%}
 .hero-content{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1300px;margin:0 auto;width:100%;position:relative;z-index:1}
 .hero-text{position:relative;z-index:2}
-.hero-name{font-family:'Sddystopian',var(--font-display);font-size:clamp(3.8rem,8vw,8rem);font-weight:400;line-height:1.0;letter-spacing:0.01em;margin-bottom:1.4rem;opacity:0;transform:translateY(30px);animation:fadeUp .8s ease .5s forwards}
+.hero-name{font-family:'Greater Theory',var(--font-display);font-size:clamp(2.6rem,5.2vw,5.4rem);font-weight:400;line-height:1.0;letter-spacing:0.01em;margin-bottom:1.4rem;opacity:0;transform:translateY(30px);animation:fadeUp .8s ease .5s forwards}
 .hero-name .accent{color:var(--accent-glow)}
 .accent{color:var(--accent-glow)}
 /* Gold moving glow — text-shadow only, zero background box */
@@ -558,7 +571,7 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 /* ===== SHARED ===== */
 section{padding:7rem 3rem;position:relative}
 .section-label{font-size:.75rem;letter-spacing:.25em;text-transform:uppercase;color:var(--accent-glow);font-weight:600;margin-bottom:1rem}
-.section-title{font-family:'Sddystopian',var(--font-display);font-size:clamp(1.9rem,3.8vw,3rem);font-weight:400;letter-spacing:0.02em;line-height:1.18;margin-bottom:2rem}
+.section-title{font-family:'Greater Theory',var(--font-display);font-size:clamp(1.9rem,3.8vw,3rem);font-weight:400;letter-spacing:0.02em;line-height:1.18;margin-bottom:2rem}
 .section-divider{width:60px;height:2px;background:linear-gradient(to right,var(--accent-glow),transparent);margin-bottom:3rem}
 .reveal{opacity:0;transform:translateY(40px);transition:opacity .8s ease,transform .8s ease}
 .reveal.visible{opacity:1;transform:translateY(0)}
@@ -620,7 +633,7 @@ section{padding:7rem 3rem;position:relative}
 .sv-header{display:flex;align-items:center;gap:1.5rem;padding:0 5vw;margin-bottom:5rem}
 .sv-header-label{font-size:.65rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-glow);opacity:.7}
 .sv-header-line{flex:1;height:1px;background:rgba(var(--accent-rgb),0.1)}
-.sv-header-count{font-family:'Sddystopian',var(--font-display);font-size:.78rem;color:var(--gold-dim);opacity:.45;letter-spacing:.1em}
+.sv-header-count{font-family:'Greater Theory',var(--font-display);font-size:.78rem;color:var(--gold-dim);opacity:.45;letter-spacing:.1em}
 .sv-list{display:flex;flex-direction:column}
 .sv-case{display:grid;grid-template-columns:56% 1fr;align-items:center;border-top:1px solid rgba(var(--accent-rgb),0.07);padding:5vw;gap:0;position:relative;overflow:hidden;min-height:62vh}
 .sv-case-flip{grid-template-columns:1fr 56%}
@@ -639,11 +652,11 @@ section{padding:7rem 3rem;position:relative}
 .sv-tl{top:10px;left:10px}.sv-tr{top:10px;right:10px}.sv-bl{bottom:10px;left:10px}.sv-br{bottom:10px;right:10px}
 /* info panel */
 .sv-info{padding:3rem 2rem 3rem 4rem;display:flex;flex-direction:column;gap:.8rem;position:relative}
-.sv-bg-num{position:absolute;top:50%;right:-0.1em;transform:translateY(-50%);font-family:'Sddystopian',var(--font-display);font-size:clamp(4rem,10vw,9rem);font-weight:400;color:transparent;-webkit-text-stroke:1px rgba(var(--accent-rgb),.05);line-height:1;pointer-events:none;user-select:none;z-index:0}
+.sv-bg-num{position:absolute;top:50%;right:-0.1em;transform:translateY(-50%);font-family:'Greater Theory',var(--font-display);font-size:clamp(4rem,10vw,9rem);font-weight:400;color:transparent;-webkit-text-stroke:1px rgba(var(--accent-rgb),.05);line-height:1;pointer-events:none;user-select:none;z-index:0}
 .sv-divider{width:36px;height:1px;background:var(--accent-glow);opacity:.45;flex-shrink:0}
 .sv-tags{display:flex;gap:.55rem;flex-wrap:wrap;position:relative;z-index:1}
 .sv-tag{font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-light);padding:.3rem .85rem;border:1px solid rgba(var(--accent-rgb),.5);background:rgba(var(--accent-rgb),.12);border-radius:3px}
-.sv-title{font-family:'Sddystopian',var(--font-display);font-size:clamp(2.4rem,4vw,3.8rem);font-weight:400;color:var(--accent-glow);line-height:1.05;letter-spacing:-.02em;position:relative;z-index:1;text-shadow:0 0 18px rgba(var(--accent-rgb),0.55),0 0 38px rgba(var(--accent-rgb),0.3)}
+.sv-title{font-family:'Greater Theory',var(--font-display);font-size:clamp(2.4rem,4vw,3.8rem);font-weight:400;color:var(--accent-glow);line-height:1.05;letter-spacing:-.02em;position:relative;z-index:1;text-shadow:0 0 18px rgba(var(--accent-rgb),0.55),0 0 38px rgba(var(--accent-rgb),0.3)}
 .sv-desc{color:var(--gold-dim);font-size:1.05rem;line-height:1.8;max-width:480px;position:relative;z-index:1}
 .sv-word{display:inline-block;will-change:transform,opacity,filter}
 .sv-btn{display:inline-flex;align-items:center;gap:.55rem;margin-top:.6rem;font-size:.82rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-glow);background:none;border:1px solid rgba(var(--accent-rgb),.22);padding:.78rem 1.7rem;cursor:pointer;width:fit-content;transition:background .25s,gap .25s,border-color .25s;position:relative;z-index:1}
@@ -677,7 +690,7 @@ section{padding:7rem 3rem;position:relative}
 .proj-back{position:absolute;top:1.5rem;left:2rem;z-index:10;display:inline-flex;align-items:center;gap:.5rem;color:rgba(var(--accent-rgb),0.75);font-size:.75rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;background:rgba(8,6,3,0.55);padding:.45rem 1rem;border-radius:100px;border:1px solid rgba(var(--accent-rgb),0.18);backdrop-filter:blur(10px);transition:color .2s,background .2s}
 .proj-back:hover{color:var(--accent-glow);background:rgba(8,6,3,0.75)}
 .proj-hero-content{position:absolute;bottom:0;left:0;right:0;padding:2.5rem 5vw 3.5rem}
-.proj-title{font-family:'Sddystopian',var(--font-display);font-size:clamp(2.4rem,5.5vw,5rem);font-weight:400;color:var(--gold);line-height:1.0;letter-spacing:-0.02em;margin:.5rem 0 1.4rem}
+.proj-title{font-family:'Greater Theory',var(--font-display);font-size:clamp(2.4rem,5.5vw,5rem);font-weight:400;color:var(--gold);line-height:1.0;letter-spacing:-0.02em;margin:.5rem 0 1.4rem}
 .proj-live-link{display:inline-flex;align-items:center;gap:.5rem;color:var(--accent-glow);font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;border:1px solid rgba(var(--accent-rgb),0.28);padding:.5rem 1.2rem;border-radius:100px;background:rgba(var(--accent-rgb),0.06);transition:background .25s,gap .25s}
 .proj-live-link:hover{background:rgba(var(--accent-rgb),0.14);gap:.8rem}
 
@@ -687,7 +700,7 @@ section{padding:7rem 3rem;position:relative}
 .proj-stat:last-child{border-right:none}
 .proj-stat::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30px;height:1px;background:var(--accent-glow);opacity:0;transition:opacity .3s}
 .proj-stat:hover::after{opacity:0.5}
-.proj-stat-big{font-family:'Sddystopian',var(--font-display);font-size:clamp(1.8rem,3vw,2.8rem);font-weight:400;color:var(--accent-glow);display:block;margin-bottom:.4rem}
+.proj-stat-big{font-family:'Greater Theory',var(--font-display);font-size:clamp(1.8rem,3vw,2.8rem);font-weight:400;color:var(--accent-glow);display:block;margin-bottom:.4rem}
 .proj-stat-label{font-size:.68rem;color:var(--gold-dim);letter-spacing:.1em;text-transform:uppercase;display:block;line-height:1.4}
 
 /* Body */
@@ -927,7 +940,7 @@ footer span{color:var(--accent-glow)}
 }
 .sc-mockup-info{position:absolute;bottom:1.6rem;left:1.8rem;right:1.8rem;z-index:2}
 .sc-mockup-title{
-  font-family:'Sddystopian',var(--font-display);font-size:clamp(1.1rem,2vw,1.8rem);
+  font-family:'Greater Theory',var(--font-display);font-size:clamp(1.1rem,2vw,1.8rem);
   font-weight:400;letter-spacing:.04em;line-height:1.1;
   color:#fff;margin-bottom:.3rem;text-transform:uppercase;
 }
@@ -1223,7 +1236,7 @@ footer span{color:var(--accent-glow)}
   align-items:center;
 }
 .ts-heading{
-  font-family:'Sddystopian',var(--font-display);
+  font-family:'Greater Theory',var(--font-display);
   font-size:clamp(2rem,3.5vw,3rem);
   font-weight:400;
   line-height:1.15;
@@ -1671,131 +1684,119 @@ footer span{color:var(--accent-glow)}
 }
 
 
-/* ═══════════════ About — architecture diagram redesign ═══════════════ */
-.ab2{ position:relative; padding:7rem 6vw; }
-.ab2-inner{
-  max-width:1320px; margin:0 auto;
-  display:grid; grid-template-columns:0.82fr 1.18fr; gap:4.5rem; align-items:center;
+/* ═══════════════ About — 3D workspace as the section background, copy on top ═══════════════
+   Laid out to the reference design: label + target, two-line headline,
+   name/role/bio, one glowing card of three focus rows, 3×2 skill pills. */
+.ab3{ position:relative; overflow:hidden; min-height:100vh; padding:6.5rem 6.3vw; display:flex; align-items:center; }
+.ab3-inner{
+  position:relative; z-index:1; width:100%;
+  display:grid; grid-template-columns:minmax(0, 44rem) 1fr; align-items:center;
+  pointer-events:none; /* hover/clicks fall through to the scene except on the copy */
+}
+.ab3-left{ pointer-events:auto; }
+/* Blend into the Impacts section's darker background below, so the two
+   sections meet without a visible seam. */
+.ab3::after{
+  content:''; position:absolute; left:0; right:0; bottom:0; height:16%; pointer-events:none;
+  background:linear-gradient(to bottom, transparent, var(--black-deep));
 }
 
-/* Left bio column */
-.ab2-title{
-  font-family:'Sddystopian',var(--font-display); font-weight:400;
-  font-size:clamp(2.3rem,4.2vw,3.9rem); line-height:1.06; letter-spacing:.01em; margin:0;
+.ab3-label{ margin:0 0 3.4rem; }
+.ab3-target{ display:block; width:150px; height:52px; overflow:visible; fill:none; stroke:rgba(var(--accent-rgb),.55); stroke-width:1.2; }
+.ab3-target-line{ stroke:rgba(var(--accent-rgb),.28); }
+.ab3-target-dot{ fill:var(--accent-glow); stroke:none; filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.95)); }
+.ab3-label p{
+  margin:.9rem 0 0; font-family:'Chakra Petch',var(--font-body); font-weight:600;
+  font-size:.82rem; letter-spacing:.42em; text-transform:uppercase; color:var(--accent-glow);
 }
-.ab2-left .section-divider{ margin:1.6rem 0 2rem; }
-.ab2-bio{ color:var(--gold-dim); font-size:1.04rem; line-height:1.78; margin:0 0 1.3rem; max-width:31rem; }
-.ab2-bio strong{ color:var(--gold); font-weight:600; }
-.ab2-left .skills-wrap{ margin-top:2.2rem; }
 
-/* Right stage */
-.ab2-stage{ position:relative; min-height:700px; }
+.ab3-title{
+  margin:0; font-family:'Chakra Petch',var(--font-display); font-weight:700; text-transform:uppercase;
+  font-size:clamp(2.2rem, 3.6vw, 4rem); line-height:1.08; letter-spacing:.005em; color:var(--gold-bright);
+}
+.ab3-title span{ display:block; white-space:nowrap; }
+.ab3-title-accent{ color:var(--accent-glow); text-shadow:0 0 26px rgba(var(--accent-rgb),.3); }
+.ab3-rule{
+  display:block; width:50px; height:4px; border-radius:2px; margin:2.1rem 0 2rem;
+  background:var(--accent-glow); box-shadow:0 0 12px rgba(var(--accent-rgb),.75);
+}
+.ab3-name{ margin:0; font-family:'Chakra Petch',var(--font-display); font-weight:600; font-size:clamp(1.5rem, 1.9vw, 1.95rem); color:var(--gold-bright); letter-spacing:.01em; }
+.ab3-role{ margin:.15rem 0 1.3rem; font-family:'Chakra Petch',var(--font-body); font-weight:400; font-size:clamp(1.05rem, 1.3vw, 1.32rem); color:var(--gold-dim); }
+.ab3-bio{ margin:0 0 1.9rem; max-width:24rem; font-size:1.06rem; line-height:1.55; color:var(--gold-dim); }
 
-.ab2-panel{
-  position:absolute; left:47%; top:50%; transform:translate(-50%,-50%);
-  width:min(450px,80%); aspect-ratio:1/1; border-radius:26px;
-  background:
-    radial-gradient(120% 120% at 50% 0%, rgba(var(--accent-rgb),0.12), transparent 62%),
-    rgba(255,255,255,0.018);
-  border:1px solid rgba(var(--accent-rgb),0.14);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,0.05), 0 36px 90px rgba(0,0,0,0.5);
-  backdrop-filter:blur(6px);
+/* One glowing card, three rows. */
+.ab3-focus{
+  list-style:none; margin:0 0 2.1rem; padding:.3rem 1.8rem; width:min(100%, 27rem);
+  border:1px solid rgba(var(--accent-rgb),.55); border-radius:14px;
+  background:linear-gradient(110deg, rgba(var(--accent-rgb),.10), rgba(var(--accent-rgb),.02) 55%);
+  box-shadow:0 0 22px rgba(var(--accent-rgb),.18), inset 0 0 28px rgba(var(--accent-rgb),.07);
 }
-.ab2-links{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
-.ab2-link{ stroke:rgba(var(--accent-rgb),0.42); stroke-width:0.4; fill:none; }
-.ab2-arrowhead{ fill:rgba(var(--accent-rgb),0.75); }
+.ab3-focus li{ display:flex; align-items:center; gap:1.6rem; height:4.1rem; }
+.ab3-focus li + li{ border-top:1px solid rgba(var(--accent-rgb),.18); }
+.ab3-focus-icon{
+  flex:none; width:3.35rem; height:3.35rem; display:grid; place-items:center; border-radius:9px;
+  color:var(--accent-glow); border:1px solid rgba(var(--accent-rgb),.45); background:rgba(var(--accent-rgb),.07);
+}
+.ab3-focus-icon svg{ width:1.6rem; height:1.6rem; }
+.ab3-focus-title{ font-size:1.12rem; color:var(--gold-bright); }
 
-.ab2-core{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:35%; aspect-ratio:1/1; border-radius:50%; z-index:2;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
-  border:1px solid rgba(var(--accent-rgb),0.5);
-  background:radial-gradient(circle at 50% 32%, rgba(var(--accent-rgb),0.2), rgba(8,9,12,0.9));
-  box-shadow:0 0 36px rgba(var(--accent-rgb),0.28), inset 0 0 22px rgba(var(--accent-rgb),0.1);
-  font-family:var(--font-display); font-weight:700; text-transform:uppercase; letter-spacing:.05em;
-  font-size:.6rem; color:var(--gold); line-height:1.45;
+/* 3×2 skill pills. */
+.ab3-skills{ list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3, auto); justify-content:start; gap:.95rem .85rem; }
+.ab3-skills li{
+  min-width:7.8rem; padding:.78rem 1.4rem; text-align:center; border-radius:999px;
+  font-size:1rem; color:var(--gold-bright);
+  border:1px solid rgba(var(--accent-rgb),.42); background:rgba(var(--accent-rgb),.03);
 }
-.ab2-node{
-  position:absolute; transform:translate(-50%,-50%); z-index:2;
-  display:flex; flex-direction:column; align-items:center; text-align:center; gap:.12rem;
-  padding:.5rem .65rem; min-width:84px;
-  border:1px solid rgba(var(--accent-rgb),0.32); border-radius:11px;
-  background:rgba(10,11,14,0.72); backdrop-filter:blur(4px);
-  box-shadow:0 0 18px rgba(var(--accent-rgb),0.12);
-}
-.ab2-node-label{ font-family:var(--font-display); font-weight:700; font-size:.58rem; letter-spacing:.05em; text-transform:uppercase; color:var(--gold); line-height:1.2; }
-.ab2-node-sub{ font-size:.5rem; color:var(--gold-dim); letter-spacing:.03em; }
 
-.ab2-logos{ position:absolute; top:7%; left:6%; display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; z-index:3; }
-.ab2-logo{
-  width:34px; height:34px; padding:7px; display:grid; place-items:center; border-radius:9px;
-  border:1px solid rgba(var(--accent-rgb),0.3); background:rgba(10,11,14,0.72); color:var(--gold);
-  box-shadow:0 0 14px rgba(var(--accent-rgb),0.12);
+/* The 3D scene fills the entire section behind the copy (transparent canvas,
+   so the section's own background shows through). */
+.ab3-bg{ position:absolute; inset:0; z-index:0; }
+/* Fade the scene out at the section's top and bottom: the floor is darker
+   than the page, so without this the section boundary shows as a hard line. */
+.ab3-canvas{
+  position:absolute; inset:0;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 8%, #000 86%, transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 8%, #000 86%, transparent 100%);
 }
-.ab2-logo svg{ display:block; }
+.ab3-stage{ align-self:stretch; min-height:480px; }
 
-.ab2-card{
-  position:absolute; width:240px; z-index:4; padding:1.15rem 1.25rem; border-radius:16px;
-  background:rgba(12,13,16,0.62); border:1px solid rgba(var(--accent-rgb),0.16);
-  backdrop-filter:blur(14px); box-shadow:0 24px 64px rgba(0,0,0,0.45);
-}
-.ab2-card h3{
-  font-family:var(--font-display); font-weight:700; font-size:.78rem; letter-spacing:.08em;
-  text-transform:uppercase; color:var(--gold); margin:0 0 .75rem;
-}
-.ab2-card ul{ list-style:none; margin:0; padding:0; }
-.ab2-card li{ position:relative; padding-left:.95rem; margin-bottom:.55rem; font-size:.72rem; line-height:1.55; color:var(--gold-dim); }
-.ab2-card li:last-child{ margin-bottom:0; }
-.ab2-card li::before{ content:''; position:absolute; left:0; top:.5rem; width:4px; height:4px; border-radius:50%; background:var(--accent-glow); }
-.ab2-card--journey{ top:-1rem; right:-1rem; }
-.ab2-card--drives{ bottom:1.5rem; left:-1.5rem; }
-.ab2-card--work{ bottom:-1rem; right:-1rem; }
-
+/* Phones and narrow tablets — laid out to the mobile reference: no label or
+   bio, a three-line headline, three separate focus cards, the model full
+   bleed between them and the skills, then a full-width 3×2 grid of pills. */
+.ab3-mbr{ display:none; }
 @media (max-width:1024px){
-  .ab2{ padding:5rem 6vw; }
-  .ab2-inner{ grid-template-columns:1fr; gap:3.5rem; }
-  .ab2-stage{ min-height:0; display:flex; flex-direction:column; align-items:center; gap:1.5rem; }
-  .ab2-panel{ position:relative; left:auto; top:auto; transform:none; width:min(460px,94%); }
-  .ab2-card{ position:relative; inset:auto; width:100%; max-width:460px; }
-  .ab2-card--journey,.ab2-card--drives,.ab2-card--work{ top:auto; bottom:auto; left:auto; right:auto; }
-}
-@media (max-width:520px){
-  .ab2-node{ min-width:64px; padding:.4rem .45rem; }
-  .ab2-node-label{ font-size:.5rem; }
-  .ab2-node-sub{ display:none; }
-  .ab2-core{ font-size:.5rem; }
-}
+  .ab3{ display:block; padding:4.5rem 10.5vw 4.5rem; }
+  .ab3-inner{ display:flex; flex-direction:column; align-items:flex-start; }
+  /* The copy's pieces join the column directly, so the model can sit
+     between the focus cards and the skills. */
+  .ab3-left{ display:contents; }
+  .ab3-label, .ab3-bio{ display:none; }
+  .ab3-title{ font-size:clamp(2.2rem, 10.4vw, 4.4rem); line-height:1.06; }
+  .ab3-mbr{ display:inline; }
+  .ab3-rule{ width:42px; margin:1.6rem 0 1.5rem; }
+  .ab3-name{ font-size:clamp(1.4rem, 6.2vw, 1.9rem); }
+  .ab3-role{ font-size:clamp(.98rem, 4.2vw, 1.2rem); margin:.15rem 0 1.4rem; }
 
-/* ── About diagram animations ── */
-@keyframes ab2-float{
-  0%,100%{ transform:translate(-50%,-50%) translateY(0); }
-  50%{ transform:translate(-50%,-50%) translateY(-6px); }
-}
-@keyframes ab2-pulse{
-  0%,100%{ box-shadow:0 0 36px rgba(var(--accent-rgb),0.28), inset 0 0 22px rgba(var(--accent-rgb),0.1); }
-  50%{ box-shadow:0 0 56px rgba(var(--accent-rgb),0.48), inset 0 0 32px rgba(var(--accent-rgb),0.22); }
-}
-@keyframes ab2-link-glow{
-  0%,100%{ stroke:rgba(var(--accent-rgb),0.3); }
-  50%{ stroke:rgba(var(--accent-rgb),0.65); }
-}
-@keyframes ab2-card-in{
-  from{ opacity:0; transform:translateY(14px); }
-  to{ opacity:1; transform:translateY(0); }
-}
+  .ab3-focus{
+    display:flex; flex-direction:column; gap:.45rem; width:min(87%, 27rem); margin:0; padding:0;
+    border:0; border-radius:0; background:none; box-shadow:none;
+  }
+  .ab3-focus li, .ab3-focus li + li{
+    height:3rem; gap:1rem; padding:0 .4rem;
+    border:1px solid rgba(var(--accent-rgb),.34); border-radius:16px;
+    background:linear-gradient(100deg, rgba(var(--accent-rgb),.08), rgba(var(--accent-rgb),.015) 60%);
+    box-shadow:0 0 16px rgba(var(--accent-rgb),.09), inset 0 0 18px rgba(var(--accent-rgb),.05);
+  }
+  .ab3-focus-icon{ width:2.35rem; height:2.35rem; border-radius:10px; }
+  .ab3-focus-icon svg{ width:1.25rem; height:1.25rem; }
+  .ab3-focus-title{ margin-left:.4rem; font-size:.95rem; }
 
-.ab2-node{ animation:ab2-float 4.5s ease-in-out infinite; }
-.ab2-core{ animation:ab2-pulse 3.5s ease-in-out infinite; }
-.ab2-link{ animation:ab2-link-glow 3.5s ease-in-out infinite; }
-.ab2-card{ animation:ab2-card-in 0.7s ease both; }
-.ab2-card:hover{ transform:translateY(-4px); transition:transform .35s ease; }
+  /* Wider than the column, so the island runs off both edges. */
+  .ab3-stage{ order:1; align-self:stretch; height:min(112vw, 700px); min-height:0; margin:-2.6rem -22vw 1.3rem; }
 
-/* Stagger link glow per line */
-.ab2-links line:nth-child(2){ animation-delay:.4s; }
-.ab2-links line:nth-child(3){ animation-delay:.8s; }
-.ab2-links line:nth-child(4){ animation-delay:1.2s; }
-.ab2-links line:nth-child(5){ animation-delay:1.6s; }
-.ab2-links line:nth-child(6){ animation-delay:2.0s; }
+  .ab3-skills{ order:2; align-self:stretch; grid-template-columns:repeat(3, 1fr); gap:.6rem .7rem; }
+  .ab3-skills li{ min-width:0; padding:.6rem .3rem; font-size:.95rem; }
+}
 
 /* ══════════════════════════════════════════════════════════════
    Canvas Showcase — scroll-pinned 3D project section
@@ -2243,6 +2244,59 @@ footer span{color:var(--accent-glow)}
     radial-gradient(ellipse 35% 30% at 80% 74%, rgba(218,150,38,0.06), transparent 70%);
 }
 .im-canvas{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:1; }
+/* Layout box for the title, stars and results: the whole section, except on
+   phones (see the media query below). */
+.im-stage{ position:absolute; left:0; top:0; width:100%; height:100%; }
+
+/* The core cube that flies down from the About section's 3D island and
+   bursts into the title (built and driven by ImpactsSection). 100px faces,
+   scaled from script; centred on the wrapper's origin. */
+.im-cube-wrap{
+  position:fixed; left:0; top:0; width:0; height:0; z-index:40; pointer-events:none;
+  visibility:hidden; perspective:1600px; will-change:transform, opacity;
+}
+.im-cube-glow{
+  position:absolute; left:-150px; top:-150px; width:300px; height:300px; border-radius:50%;
+  background:radial-gradient(circle, rgba(var(--accent-rgb),0.9) 0%, rgba(var(--accent-rgb),0.45) 16%, rgba(var(--accent-rgb),0.14) 36%, rgba(var(--accent-rgb),0.04) 54%, transparent 70%);
+  will-change:transform, opacity;
+}
+.im-cube-ring{
+  position:absolute; left:-80px; top:-80px; width:160px; height:160px; border-radius:50%;
+  border:2px solid rgba(var(--accent-rgb),0.95); opacity:0;
+  box-shadow:0 0 22px rgba(var(--accent-rgb),0.8), inset 0 0 22px rgba(var(--accent-rgb),0.6);
+  will-change:transform, opacity;
+}
+.im-cube{
+  position:absolute; left:-50px; top:-50px; width:100px; height:100px;
+  transform-style:preserve-3d; --b:0;
+  /* The model's edges glow so hot under bloom they read pale. */
+  --edge:rgb(var(--accent-rgb));
+  --edge:color-mix(in srgb, rgb(var(--accent-rgb)) 50%, #fff);
+}
+.im-cube-face{
+  position:absolute; inset:0; box-sizing:border-box;
+  border:2px solid var(--edge);
+  background:
+    linear-gradient(150deg, rgba(255,255,255,calc(var(--fa) * 0.55)), transparent 60%),
+    rgba(var(--accent-rgb), var(--fa));
+  box-shadow:0 0 10px rgba(var(--accent-rgb),0.95), 0 0 3px var(--edge), inset 0 0 14px rgba(var(--accent-rgb),0.5);
+  transform:var(--f) translateZ(calc(50px + var(--b) * 150px));
+  opacity:calc(1 - var(--b));
+}
+.im-cube-core{
+  position:absolute; left:48px; top:6px; width:4px; height:88px;
+  background:linear-gradient(to bottom, transparent, rgb(var(--accent-rgb)) 25%, var(--edge) 50%, rgb(var(--accent-rgb)) 75%, transparent);
+  box-shadow:0 0 8px 1px rgba(var(--accent-rgb),0.9);
+  transform:var(--f) scaleY(calc(1 + var(--b) * 2.5));
+  opacity:calc(1 - var(--b));
+}
+/* Bright point at the heart of the cube; always faces the viewer. */
+.im-cube-spark{
+  position:absolute; left:-9px; top:-9px; width:18px; height:18px; border-radius:50%;
+  background:radial-gradient(circle, #fff 0%, var(--edge, #fff) 30%, rgba(var(--accent-rgb),0.85) 55%, transparent 72%);
+  box-shadow:0 0 18px 6px rgba(var(--accent-rgb),0.7);
+  will-change:transform, opacity;
+}
 .im-title{
   position:absolute; left:50%; top:50%; z-index:2; margin:0;
   transform:translate(-50%, -50%) translateY(70px); opacity:0;
@@ -2303,7 +2357,7 @@ footer span{color:var(--accent-glow)}
 .im-item[data-side="l"] .im-item-inner{ align-items:flex-end; transform-origin:right center; }
 .im-item[data-side="b"] .im-item-inner{ align-items:center; transform-origin:center top; }
 .im-big{
-  font-family:var(--font-display); font-weight:600; font-size:clamp(1.5rem, 2.3vw, 2.2rem); line-height:1;
+  font-family:'Sddystopian',var(--font-display); font-weight:400; font-size:clamp(1.5rem, 2.3vw, 2.2rem); line-height:1;
   color:var(--accent-light);
   text-shadow:0 0 18px rgba(var(--accent-rgb),0.5);
 }
@@ -2314,8 +2368,13 @@ footer span{color:var(--accent-glow)}
 }
 
 @media (max-width:768px){
-  .im-section{ height:100vh; }
-  @supports (height:100svh){ .im-section{ height:100svh; } }
+  /* As tall as the screen with the browser toolbars hidden, so collapsing
+     them mid-pin never uncovers a strip at the bottom; the layout stays in
+     the part that is visible with them showing. */
+  @supports (height:100lvh){
+    .im-section{ height:100lvh; }
+    .im-stage{ height:100svh; }
+  }
   .im-item{ width:min(44vw, 170px); }
   .im-item[data-side="b"]{ transform:translate(-50%, 11px); }
   .im-item-inner{ gap:0.1rem; }

@@ -36,7 +36,7 @@ export default function StarField({ className, paused = false }: { className?: s
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let rafId: number;
+    let rafId: number | null = null;
     const acc = readAccent();                         // active palette accent
     const { r: AR, g: AG, b: AB } = acc;
     const sv = acc.silver.replace('#', '');
@@ -114,9 +114,16 @@ export default function StarField({ className, paused = false }: { className?: s
       rafId = requestAnimationFrame(draw);
     };
 
-    rafId = requestAnimationFrame(draw);
+    // Only animate while on screen: it lives in the hero, and drawing it for
+    // the rest of the page took frame time from every section below.
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && rafId === null) rafId = requestAnimationFrame(draw);
+      else if (!entry.isIntersecting && rafId !== null) { cancelAnimationFrame(rafId); rafId = null; }
+    });
+    io.observe(canvas);
     return () => {
-      cancelAnimationFrame(rafId);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      io.disconnect();
       ro.disconnect();
     };
   }, [paused]);

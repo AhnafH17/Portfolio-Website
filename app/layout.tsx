@@ -84,7 +84,7 @@ import LenisProvider from '@/components/LenisProvider';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Pick a random color palette before first paint (no flash), and
             preload the matching hero portrait. The preload has to live here
@@ -101,7 +101,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="preload"
           as="font"
           type="font/otf"
-          href="/fonts/Sddystopiandemo-GO7xa.otf"
+          href="/fonts/GreaterTheory.otf"
           crossOrigin="anonymous"
         />
         {/* Latin subsets of the body/display faces — next/font used to emit

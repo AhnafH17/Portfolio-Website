@@ -60,15 +60,23 @@ export default function HeroSection({ paused = false }: { paused?: boolean }) {
         el.style.transform = `${i >= 2 ? 'scaleX(-1) ' : ''}rotateX(${tx}deg) rotateY(${ty}deg)`;
       });
 
-      rafRef.current = requestAnimationFrame(animate);
+      if (running) rafRef.current = requestAnimationFrame(animate);
     };
 
-    rafRef.current = requestAnimationFrame(animate);
+    // Only while the hero is on screen (it used to restyle the cards every
+    // frame for the whole page).
+    let running = false;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting && !running) { running = true; rafRef.current = requestAnimationFrame(animate); }
+      else if (!entry.isIntersecting && running) { running = false; cancelAnimationFrame(rafRef.current); }
+    });
+    io.observe(wrapper);
 
     return () => {
       window.removeEventListener('mousemove', onMouseMove);
       wrapper.removeEventListener('mouseleave', onMouseLeave);
       cancelAnimationFrame(rafRef.current);
+      io.disconnect();
     };
   }, [paused]);
 

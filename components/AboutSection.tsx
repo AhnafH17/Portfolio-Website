@@ -1,139 +1,76 @@
-import { siNextdotjs, siShopify, siWordpress, siPython } from 'simple-icons';
+'use client';
 
-const NODES = [
-  { id: 'frontend', label: 'Frontend Standards', sub: 'Next.js · GSAP', x: 50, y: 13 },
-  { id: 'client', label: 'Client Websites', sub: 'Shopify · WordPress', x: 15, y: 47 },
-  { id: 'saas', label: 'Mission Control', sub: 'Internal SaaS PM', x: 85, y: 47 },
-  { id: 'automation', label: 'Email Scraping', sub: 'Python', x: 24, y: 84 },
-  { id: 'seo', label: 'SEO Systems', sub: '', x: 50, y: 92 },
-  { id: 'team', label: 'Team Workflows', sub: '', x: 76, y: 84 },
-];
+import { useRef } from 'react';
+import dynamic from 'next/dynamic';
 
-const LOGOS = [
-  { key: 'next', icon: siNextdotjs },
-  { key: 'shopify', icon: siShopify },
-  { key: 'wordpress', icon: siWordpress },
-  { key: 'python', icon: siPython },
-];
+// Three.js only on the client, and only once this section mounts.
+const WorkspaceCanvas = dynamic(() => import('./about/WorkspaceCanvas'), { ssr: false });
 
-// Drawn from the tech actually tagged across lib/projects.ts, ordered by how
-// often it appears there.
-const SKILLS = [
-  'WordPress', 'Next.js', 'TypeScript', 'Shopify', 'GSAP',
-  'Supabase', 'LangGraph', 'Python', 'SEO',
-];
+const SKILLS = ['WordPress', 'Next.js', 'TypeScript', 'Shopify', 'Python', 'SEO'];
 
-const CARDS = [
+const FOCUS = [
+  { id: 'systems', title: 'Systems Architecture', icon: <path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Zm-9 9 9 4.5 9-4.5M3 16.5 12 21l9-4.5" /> },
+  { id: 'frontend', title: 'Frontend Standards', icon: <path d="m8 7-5 5 5 5m8-10 5 5-5 5M14 4l-4 16" /> },
   {
-    id: 'journey', title: 'My Journey', items: [
-      'Joined AurixLab in August 2025, rapidly advancing from technical specialist to leading the entire development function',
-      'Architected Mission Control — a full-stack internal PM system used daily by all 11 team members',
-      'Established frontend standards and boilerplates adopted across all client projects',
-    ],
-  },
-  {
-    id: 'drives', title: 'What Drives Me', items: [
-      'Building systems that scale — tooling, workflows, and architectures that outlast any single project',
-      'The intersection of engineering rigour and design quality',
-    ],
-  },
-  {
-    id: 'work', title: 'How I Work', items: [
-      'Architecture-first: define the system before writing a line of code',
-      'Lead by doing — from recovering hacked sites to directing GSAP pipelines',
-      'Raise the floor, not just the ceiling: standards over heroic one-off fixes',
-    ],
+    id: 'team',
+    title: 'Team Leadership',
+    icon: <path d="M16 19v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 17.5V19m16 0v-1.5a3.5 3.5 0 0 0-2.5-3.35M14.5 4.15a3.5 3.5 0 0 1 0 6.7M13 7.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z" />,
   },
 ];
-
-// shorten a center→node vector so the arrowhead lands just before the node box
-const end = (v: number) => 50 + (v - 50) * 0.78;
 
 export default function AboutSection() {
+  const stageRef = useRef<HTMLDivElement>(null);
   return (
-    <section id="about" className="ab2">
-      <div className="ab2-inner">
-        {/* ── Left: bio ── */}
-        <div className="ab2-left reveal">
-          <p className="section-label">About Me</p>
-          <h2 className="ab2-title">
-            <span className="gold-glow">Technical leader by role,</span>
-            <br />
-            architect by craft.
-          </h2>
-          <div className="section-divider" />
-          <p className="ab2-bio">
-            Hi, I&apos;m <strong>Ahnaf Hussain</strong> — Head of Web Development at{' '}
-            <strong>AurixLab</strong>. I lead a development team building high-performance websites,
-            SaaS frontends, and data-driven digital products for clients across North America.
-            Currently finishing my degree at <strong>BRAC University</strong> while running a
-            professional engineering team full-time.
-          </p>
-          <p className="ab2-bio">
-            My focus is on <strong>systems architecture</strong> — building internal boilerplates,
-            component standards, and development workflows that let my team consistently deliver 90+
-            SEO scores, GSAP-driven interactivity, and scalable frontend infrastructure at speed.
-          </p>
-          <div className="skills-wrap">
-            {SKILLS.map((s) => (
-              <span key={s} className="skill-tag">{s}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Right: architecture diagram + floating journey cards ── */}
-        <div className="ab2-stage reveal">
-          <div className="ab2-panel">
-            <svg className="ab2-links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <defs>
-                <marker id="ab2arrow" markerWidth="3" markerHeight="3" refX="3" refY="1.5"
-                  orient="auto" markerUnits="userSpaceOnUse">
-                  <path d="M0,0 L3,1.5 L0,3 Z" className="ab2-arrowhead" />
-                </marker>
-              </defs>
-              {NODES.map((n) => (
-                <line
-                  key={n.id}
-                  x1="50" y1="50" x2={end(n.x)} y2={end(n.y)}
-                  className="ab2-link" markerEnd="url(#ab2arrow)"
-                />
-              ))}
+    <section id="about" className="ab3">
+      {/* The 3D scene is the whole section's background; the copy sits on top. */}
+      <div className="ab3-bg" aria-hidden="true">
+        <WorkspaceCanvas stageRef={stageRef} />
+      </div>
+      <div className="ab3-inner">
+        <div className="ab3-left reveal">
+          <div className="ab3-label">
+            <svg className="ab3-target" viewBox="0 0 150 52" aria-hidden="true">
+              <path className="ab3-target-line" d="M46 26H150" />
+              <path className="ab3-target-cross" d="M26 2v10M26 40v10M2 26h10M40 26h6" />
+              <circle cx="26" cy="26" r="15" />
+              <circle cx="26" cy="26" r="4" className="ab3-target-dot" />
             </svg>
+            <p>About Me</p>
+          </div>
 
-            <div className="ab2-core">
-              <span>Core Systems</span>
-              <span>Architecture</span>
-            </div>
+          <h2 className="ab3-title">
+            <span className="ab3-title-accent">Lead by role,</span>
+            {/* Phones break it as "Architect / by craft." */}
+            <span>Architect <br className="ab3-mbr" />by craft.</span>
+          </h2>
+          <span className="ab3-rule" aria-hidden="true" />
 
-            {NODES.map((n, i) => (
-              <div key={n.id} className="ab2-node" style={{ left: `${n.x}%`, top: `${n.y}%`, animationDelay: `${i * 0.55}s` }}>
-                <span className="ab2-node-label">{n.label}</span>
-                {n.sub && <span className="ab2-node-sub">{n.sub}</span>}
-              </div>
-            ))}
+          <p className="ab3-name">Ahnaf Hussain</p>
+          <p className="ab3-role">Head of Web Development at AurixLab</p>
+          <p className="ab3-bio">I design scalable systems and lead teams building modern web products.</p>
 
-            <div className="ab2-logos">
-              {LOGOS.map((l) => (
-                <span key={l.key} className="ab2-logo">
-                  <svg viewBox="0 0 24 24" width="100%" height="100%" fill="currentColor" aria-hidden="true">
-                    <path d={l.icon.path} />
+          <ul className="ab3-focus">
+            {FOCUS.map((f) => (
+              <li key={f.id}>
+                <span className="ab3-focus-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                    {f.icon}
                   </svg>
                 </span>
-              ))}
-            </div>
-          </div>
+                <span className="ab3-focus-title">{f.title}</span>
+              </li>
+            ))}
+          </ul>
 
-          {CARDS.map((c, i) => (
-            <div key={c.id} className={`ab2-card ab2-card--${c.id}`} style={{ animationDelay: `${0.4 + i * 0.3}s` }}>
-              <h3>{c.title}</h3>
-              <ul>
-                {c.items.map((it, i) => (
-                  <li key={i}>{it}</li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <ul className="ab3-skills" aria-label="Skills">
+            {SKILLS.map((s) => <li key={s}>{s}</li>)}
+          </ul>
         </div>
+
+        {/* Empty placeholder: on phones the canvas fits the model into wherever
+            this lands (between the focus cards and the skills); on desktop the
+            model is framed across the right side. */}
+        <div ref={stageRef} className="ab3-stage" aria-hidden="true" />
       </div>
     </section>
   );

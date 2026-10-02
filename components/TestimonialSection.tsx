@@ -58,6 +58,8 @@ const POINTS = [
   { lat: -33.87, lng: 151.2,   color: '#cc182c', label: 'Australia' },
 ];
 
+const GLOBE_SRC = 'https://unpkg.com/globe.gl@2/dist/globe.gl.min.js';
+
 function GlobeViz() {
   const containerRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
@@ -71,28 +73,70 @@ function GlobeViz() {
     // Set once the globe exists, so the observer can pause/resume it.
     let globe: { pauseAnimation: () => void; resumeAnimation: () => void } | null = null;
 
-    // Loading + building the globe blocks the main thread for a long stretch,
-    // so don't do it at mount (that landed while the user was scrolling the
-    // showcase near the top of the page) — wait until this section is close.
-    // Once built, stop its render loop whenever it's off screen.
+    // Starting up the globe blocks the main thread for ~1/4 s (the script's
+    // start-up, then its first frame), so it must not land mid-scroll: at
+    // mount that hit the showcase near the top of the page, and "when this
+    // section is close" hit the pinned Impacts scene right above it. So the
+    // script is downloaded now (that blocks nothing) but only run in the first
+    // quiet moment after that — the visitor has stopped scrolling for a bit —
+    // falling back to "close" if they never pause. Once built, the globe's
+    // render loop stops whenever it's off screen.
+    let visible = false;
+    // Set on cleanup: a download or start-up still in flight from an
+    // unmounted run must not build a globe nobody will resume (in dev, React
+    // mounts effects twice, and that orphaned globe froze after its warm-up).
+    let cancelled = false;
+    let scriptUrl: string | null = null;
+    fetch(GLOBE_SRC)
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
+      .then((b) => { if (cancelled) return; scriptUrl = URL.createObjectURL(b); waitForQuiet(); })
+      .catch(() => { /* the script tag will fetch it itself */ });
+    let quietTimer: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | undefined;
+    const cancelIdle = () => {
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+      idleId = undefined;
+    };
+    const waitForQuiet = () => {
+      clearTimeout(quietTimer);
+      cancelIdle();
+      quietTimer = setTimeout(() => {
+        if (!scriptUrl) return; // still downloading: asked again once it's in
+        if (typeof window.requestIdleCallback === 'function') idleId = window.requestIdleCallback(start, { timeout: 1000 });
+        else start();
+      }, 1500);
+    };
+    const stopWaiting = () => {
+      clearTimeout(quietTimer);
+      cancelIdle();
+      window.removeEventListener('scroll', waitForQuiet);
+    };
+    const start = () => {
+      if (started || cancelled) return;
+      started = true;
+      stopWaiting();
+      rafId = requestAnimationFrame(init);
+    };
+    window.addEventListener('scroll', waitForQuiet, { passive: true });
+    waitForQuiet();
+
     const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !started) {
-        started = true;
-        rafId = requestAnimationFrame(init);
-      }
+      visible = entry.isIntersecting;
+      if (visible) start();
       if (globe) {
-        if (entry.isIntersecting) globe.resumeAnimation();
+        if (visible) globe.resumeAnimation();
         else globe.pauseAnimation();
       }
-    }, { rootMargin: '800px 0px' });
+    }, { rootMargin: '200px 0px' }); // small: the pinned Impacts scene sits right above
     io.observe(container);
 
     const init = () => {
       if (container.clientWidth === 0) { rafId = requestAnimationFrame(init); return; }
       const script = document.createElement('script');
-      script.src = 'https://unpkg.com/globe.gl@2/dist/globe.gl.min.js';
+      script.src = scriptUrl ?? GLOBE_SRC;
       script.onload = () => {
-        if (initialized.current) return;
+        if (scriptUrl) URL.revokeObjectURL(scriptUrl);
+        if (cancelled || initialized.current) return;
         initialized.current = true;
         const Globe = (window as any).Globe;
         if (!Globe) return;
@@ -124,11 +168,16 @@ function GlobeViz() {
         });
         ro.observe(container);
         globe = globeInstance;
+        // Let it draw for a moment (compiling its shaders and uploading the
+        // map now, in the quiet), then rest until it's on screen.
+        setTimeout(() => { if (!visible) globeInstance.pauseAnimation(); }, 2000);
       };
       document.head.appendChild(script);
     };
     return () => {
+      cancelled = true;
       cancelAnimationFrame(rafId);
+      stopWaiting();
       io.disconnect();
     };
   }, []);
