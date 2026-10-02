@@ -81,6 +81,11 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - `PLT_*`, `CUBE_Core`, `PANEL_*`, `TOWER_*` are separate nodes with origin at their
   bottom-face centre; props are children of their platform, so lifting a node's
   position.y lifts everything on it. Root node `AboutWorkspace`; front faces +Z in three.js
+- Each `PLT_*` mesh is single-material on purpose: GLTFLoader names a multi-material
+  node's sub-meshes `PLT_Desk_1`, `_2`… which would match a `startsWith('PLT_')` check.
+  Seams/glow live in `TRIM_*` / `GLOW_*` children. Never name a non-platform `PLT_*`
+- `CUBE_Core` has a glowing child `CORE_Glow`; bridges, cube socket and under-desk
+  glow are static (`BASE_Static`)
 - Metallic dark body reads flat black without an environment map — give the scene
   `RoomEnvironment` (PMREM) and `NeutralToneMapping` (the Blender preview uses
   Khronos PBR Neutral to match)

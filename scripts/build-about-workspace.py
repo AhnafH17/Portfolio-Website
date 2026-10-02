@@ -270,12 +270,14 @@ def _cut(t, co, no):
 def _bevel(t, edges, offset, segs):
     if not edges:
         return
+    # material=-1: bevel faces take the adjacent face's material (the op's
+    # default is slot 0, which would turn an accent or recess block's edges body)
     try:
         bmesh.ops.bevel(t, geom=edges, offset=offset, offset_type="OFFSET", segments=segs,
-                        profile=0.5, affect="EDGES", clamp_overlap=True)
+                        profile=0.5, affect="EDGES", clamp_overlap=True, material=-1)
     except TypeError:
         bmesh.ops.bevel(t, geom=edges, offset=offset, segments=segs, profile=0.5,
-                        vertex_only=False, clamp_overlap=True)
+                        vertex_only=False, clamp_overlap=True, material=-1)
 
 
 def _inset(t, faces, thick, depth, mat):
@@ -302,14 +304,21 @@ def merge(dst, src, uv=False):
                 ln[uv_d].uv = lo[uv_s].uv
 
 
-def block(bm, x0, x1, y0, y1, z0, z1, mat=BODY, bevel=0.012, segs=1,
+def block(bm, x0, x1, y0, y1, z0, z1, mat=BODY, bevel=0.018, segs=None,
           top=(0.035, -0.006), top_mat=RECESS, side=(0.028, -0.006), side_mat=BODY,
-          xcuts=(), ycuts=(), zcuts=()):
+          xcuts=(), ycuts=(), zcuts=(), groove=None):
     """Bevelled slab with optional panel tiling (cut lines) and recessed panels.
 
     top / side are (inset, depth) pairs for the top face and the vertical faces;
     cut lines split those faces into tiles that are each recessed on their own.
+    Bevels of 12 mm and up get two segments so the edges catch a rounded
+    highlight (weighted normals keep the big faces flat, see realize()).
+
+    groove=(rim, width, depth) replaces the recessed top with flush top panels
+    split by narrow MAT_Body_Recess seams along the cut lines, inside a rim.
     """
+    if segs is None:
+        segs = 2 if bevel >= 0.012 else 1
     t = bmesh.new()
     _box(t, x0, x1, y0, y1, z0, z1, mat)
     for x in xcuts:
@@ -327,9 +336,20 @@ def block(bm, x0, x1, y0, y1, z0, z1, mat=BODY, bevel=0.012, segs=1,
                  and e.link_faces[0].normal.dot(e.link_faces[1].normal) < 0.5]
         _bevel(t, edges, bevel, segs)
         t.normal_update()
-    if top:
-        tops = [f for f in t.faces if f.normal.z > 0.999
-                and abs(f.calc_center_median().z - z1) < 1e-4]
+    tops = [f for f in t.faces if f.normal.z > 0.999
+            and abs(f.calc_center_median().z - z1) < 1e-4]
+    if groove and tops:
+        rim, gw, gd = groove
+        if rim:
+            bmesh.ops.inset_region(t, faces=tops, thickness=rim, depth=0, use_even_offset=True)
+        for f in tops:
+            seam = []
+            for th, dp in ((0.0006, -gd), (gw, 0.0), (0.0006, gd)):     # wall, floor, wall
+                seam += bmesh.ops.inset_individual(t, faces=[f], thickness=th, depth=dp,
+                                                   use_even_offset=True)["faces"]
+            for g in seam:
+                g.material_index = RECESS
+    elif top:
         _inset(t, tops, top[0], top[1], top_mat)
     if side:
         sides = [f for f in t.faces if abs(f.normal.z) < 1e-3
@@ -345,6 +365,60 @@ def strip(bm, x0, x1, y0, y1, z0, z1, mat=ACCENT):
     _box(t, x0, x1, y0, y1, z0, z1, mat)
     merge(bm, t)
     t.free()
+
+
+def fbox(bm, axis, s, plane, h0, h1, z0, z1, o0, o1, mat):
+    """Box on a vertical face. axis 'x' or 'y' is the face normal's axis, s its
+    sign (outward), plane the face's coordinate; h runs along the face, o is the
+    offset out of the face (negative sinks into the slab)."""
+    a, b = sorted((plane + s * o0, plane + s * o1))
+    if axis == "y":
+        strip(bm, h0, h1, a, b, z0, z1, mat)
+    else:
+        strip(bm, a, b, h0, h1, z0, z1, mat)
+
+
+def vent(bm, axis, s, plane, hc, zc, w, h, louvres=None):
+    """Louvred vent: dark plate in a raised frame with horizontal slats."""
+    t = 0.012
+    louvres = louvres or max(3, round(h / 0.03))
+    fbox(bm, axis, s, plane, hc - w / 2, hc + w / 2, zc - h / 2, zc + h / 2, -0.006, 0.001, RECESS)
+    for h0, h1, z0, z1 in ((hc - w / 2, hc + w / 2, zc + h / 2 - t, zc + h / 2),
+                           (hc - w / 2, hc + w / 2, zc - h / 2, zc - h / 2 + t),
+                           (hc - w / 2, hc - w / 2 + t, zc - h / 2 + t, zc + h / 2 - t),
+                           (hc + w / 2 - t, hc + w / 2, zc - h / 2 + t, zc + h / 2 - t)):
+        fbox(bm, axis, s, plane, h0, h1, z0, z1, -0.006, 0.006, BODY)
+    pitch = (h - 2 * t) / louvres
+    for i in range(louvres):
+        zl = zc - h / 2 + t + (i + 0.5) * pitch
+        fbox(bm, axis, s, plane, hc - w / 2 + t, hc + w / 2 - t, zl - pitch * 0.22, zl + pitch * 0.22,
+             -0.006, 0.003, BODY)
+
+
+def hatch(bm, axis, s, plane, hc, zc, w, h, light=True):
+    """Access panel: a raised plate with a handle slot and a small status light."""
+    a, b = sorted((plane - s * 0.006, plane + s * 0.005))
+    if axis == "y":
+        block(bm, hc - w / 2, hc + w / 2, a, b, zc - h / 2, zc + h / 2, bevel=0.004, top=None, side=None)
+    else:
+        block(bm, a, b, hc - w / 2, hc + w / 2, zc - h / 2, zc + h / 2, bevel=0.004, top=None, side=None)
+    fbox(bm, axis, s, plane, hc - w * 0.3, hc + w * 0.3, zc - h / 2 + 0.03, zc - h / 2 + 0.042,
+         0.005, 0.007, RECESS)
+    if light:
+        hl = hc + w / 2 - 0.035
+        fbox(bm, axis, s, plane, hl - 0.008, hl + 0.008, zc + h / 2 - 0.045, zc + h / 2 - 0.029,
+             0.005, 0.008, ACCENT)
+
+
+def channel(bm, axis, s, plane, hc, z0, z1, lights=3):
+    """Recessed vertical channel between two rails, with indicator lights."""
+    fbox(bm, axis, s, plane, hc - 0.022, hc + 0.022, z0, z1, -0.006, 0.001, RECESS)
+    for sgn in (-1, 1):
+        r = hc + sgn * 0.028
+        fbox(bm, axis, s, plane, r - 0.007, r + 0.007, z0, z1, -0.006, 0.008, BODY)
+    for i in range(lights):
+        zc = z1 - 0.08 - i * (z1 - z0 - 0.16) / max(1, lights - 1) if lights > 1 else (z0 + z1) / 2
+        fbox(bm, axis, s, plane, hc - 0.008, hc + 0.008, zc - 0.018, zc + 0.018, 0.001, 0.005, ACCENT)
 
 
 def cylinder(bm, cx, cy, z0, z1, r, segs=16, mat=BODY, top=None, top_mat=RECESS):
@@ -441,7 +515,62 @@ def get(name, parent=ROOT_NAME, **props):
     return b.bm
 
 
+def split_off(bm, mats):
+    """Move the faces using any of mats out of bm into a new bmesh (or None)."""
+    faces = [f for f in bm.faces if f.material_index in mats]
+    if not faces:
+        return None
+    out, vmap = bmesh.new(), {}
+    for f in faces:
+        vs = []
+        for v in f.verts:
+            if v not in vmap:
+                vmap[v] = out.verts.new(v.co)
+            vs.append(vmap[v])
+        out.faces.new(vs).material_index = f.material_index
+    bmesh.ops.delete(bm, geom=faces, context="FACES")
+    return out
+
+
+def split_platforms():
+    """Keep every PLT_* node single-material.
+
+    three.js GLTFLoader turns a multi-material node into a Group whose
+    per-material child meshes are named PLT_Desk_1, PLT_Desk_2, ... The site
+    treats anything named PLT_* as a liftable platform, so those children would
+    drift and lift on their own. Seams and glow therefore live in children
+    named TRIM_* and GLOW_*, parented to the platform so they move with it.
+    """
+    for name in [n for n in BUILDERS if n.startswith("PLT_")]:
+        word = name[len("PLT_"):]
+        for mat, prefix, role in ((RECESS, "TRIM", "trim"), (ACCENT, "GLOW", "accent")):
+            out = split_off(BUILDERS[name].bm, {mat})
+            if out is None:
+                continue
+            child = Builder(f"{prefix}_{word}", name, {"role": role})
+            child.bm.free()
+            child.bm = out
+            BUILDERS[child.name] = child
+
+
+_WN = None
+
+
+def add_weighted_normals(ob):
+    """Face-area weighted normals: big faces stay flat, bevels shade round."""
+    global _WN
+    if _WN is None:
+        _WN = "WEIGHTED_NORMAL" in enum_ids(bpy.types.Modifier, "type")
+    if not _WN:
+        return
+    m = ob.modifiers.new("WeightedNormal", "WEIGHTED_NORMAL")
+    modes = enum_ids(m, "mode")
+    m.mode = "FACE_AREA" if "FACE_AREA" in modes else modes[0]
+    m.keep_sharp = True
+
+
 def realize(coll):
+    split_platforms()
     root = bpy.data.objects.new(ROOT_NAME, None)
     root.empty_display_type = "PLAIN_AXES"
     root.empty_display_size = 0.5
@@ -471,10 +600,13 @@ def realize(coll):
         remap = {old: new for new, old in enumerate(used)}
         me.polygons.foreach_set("material_index", [remap[p.material_index] for p in me.polygons])
         me.polygons.foreach_set("use_smooth", [True] * len(me.polygons))
-        me.set_sharp_from_angle(angle=math.radians(35))
+        # 2-segment bevels bend 22.5/45 degrees per step (kept smooth); recess
+        # and groove walls are 90 degrees (kept sharp).
+        me.set_sharp_from_angle(angle=math.radians(50))
 
         ob = bpy.data.objects.new(name, me)
         coll.objects.link(ob)
+        add_weighted_normals(ob)
         ob.parent = objs[b.parent]
         ob.location = c - world_pos[b.parent]
         for k, v in b.props.items():
@@ -486,6 +618,10 @@ def realize(coll):
 
 # ---------------------------------------------------------------- step 1: base
 
+# Platform-top panel seams: (rim inset, seam width, seam depth).
+GROOVE = (0.045, 0.006, 0.006)
+
+
 def step_base():
     bm = get("BASE_Static", role="static")
     side = (0.03, -0.006)
@@ -494,33 +630,34 @@ def step_base():
     block(bm, -1.97, 1.97, -1.97, 1.97, 0.0, Z0, mat=RECESS, bevel=0.008, top=None, side=None)
 
     # front-corner fillers either side of DEPLOYMENT / GROWTH
-    block(bm, -2.0, -1.51, -1.92, -1.05, Z0, 0.42, ycuts=(-1.48,), zcuts=(0.24,), side=side)
-    block(bm, 1.55, 2.0, -1.9, -1.05, Z0, 0.40, ycuts=(-1.48,), zcuts=(0.23,), side=side)
+    block(bm, -2.0, -1.51, -1.92, -1.05, Z0, 0.42, ycuts=(-1.48,), zcuts=(0.24,), side=side,
+          groove=GROOVE)
+    block(bm, 1.55, 2.0, -1.9, -1.05, Z0, 0.40, ycuts=(-1.48,), zcuts=(0.23,), side=side,
+          groove=GROOVE)
 
     # side blocks beside the desk platform
     block(bm, -2.0, -1.25, -0.15, 1.35, Z0, 0.98, xcuts=(-1.62,), ycuts=(0.4, 0.9),
-          zcuts=(0.36, 0.68), side=side)
+          zcuts=(0.36, 0.68), side=side, groove=GROOVE)
     block(bm, 1.25, 2.0, -0.15, 1.35, Z0, 0.92, xcuts=(1.62,), ycuts=(0.45, 0.95),
-          zcuts=(0.34, 0.64), side=side)
+          zcuts=(0.34, 0.64), side=side, groove=GROOVE)
 
     # back row the towers stand on
-    block(bm, -2.0, -0.95, 1.4, 2.0, Z0, 1.00, xcuts=(-1.45,), zcuts=(0.38, 0.7), side=side)
-    block(bm, -0.9, 0.2, 1.4, 2.0, Z0, 1.22, xcuts=(-0.35,), zcuts=(0.42, 0.84), side=side)
-    block(bm, 0.25, 1.15, 1.4, 2.0, Z0, 1.12, xcuts=(0.7,), zcuts=(0.4, 0.78), side=side)
-    block(bm, 1.2, 2.0, 1.4, 2.0, Z0, 0.95, xcuts=(1.6,), zcuts=(0.36, 0.66), side=side)
+    block(bm, -2.0, -0.95, 1.4, 2.0, Z0, 1.00, xcuts=(-1.45,), zcuts=(0.38, 0.7), side=side,
+          groove=GROOVE)
+    block(bm, -0.9, 0.2, 1.4, 2.0, Z0, 1.22, xcuts=(-0.35,), zcuts=(0.42, 0.84), side=side,
+          groove=GROOVE)
+    block(bm, 0.25, 1.15, 1.4, 2.0, Z0, 1.12, xcuts=(0.7,), zcuts=(0.4, 0.78), side=side,
+          groove=GROOVE)
+    block(bm, 1.2, 2.0, 1.4, 2.0, Z0, 0.95, xcuts=(1.6,), zcuts=(0.36, 0.66), side=side,
+          groove=GROOVE)
 
     # pedestal under PLT_Desk, inset so the platform overhangs it
     block(bm, -1.1, 1.1, -0.05, 1.28, Z0, DESK_Z0, mat=RECESS, top=None,
           xcuts=(-0.55, 0.0, 0.55), zcuts=(0.6,), side=(0.03, -0.01), side_mat=RECESS)
 
     # courtyard floor in front of the desk, between ARCHITECTURE and DEVELOPMENT
-    block(bm, -0.75, 0.73, -1.0, -0.08, Z0, 0.80, xcuts=(0.0,), ycuts=(-0.55,),
-          zcuts=(0.43,), side=side)
-
-    # cube pedestal and the L-shaped conduit on the courtyard
-    block(bm, 0.12, 0.66, -0.85, -0.31, 0.80, 0.88, bevel=0.01, side=None)
-    block(bm, -0.75, -0.28, -0.52, -0.36, 0.80, 0.96, bevel=0.01, side=None)
-    block(bm, -0.44, -0.28, -0.95, -0.52, 0.80, 0.96, bevel=0.01, side=None)
+    block(bm, -0.75, 0.73, -1.0, -0.08, Z0, 0.80, xcuts=(-0.38, 0.0, 0.38), ycuts=(-0.55,),
+          zcuts=(0.43,), side=side, groove=GROOVE)
 
 
 # ---------------------------------------------------------------- text
@@ -535,14 +672,14 @@ def font():
     return _FONT
 
 
-def text_bm(body, size, spacing=1.25):
+def text_bm(body, size, spacing=1.25, res=5):
     """Flat text mesh in the XY plane, facing +Z, left end of baseline at origin."""
     cu = bpy.data.curves.new("_txt", "FONT")
     cu.body = body
     cu.font = font()
     cu.size = size
     cu.space_character = spacing
-    cu.resolution_u = 3
+    cu.resolution_u = res
     cu.extrude = 0.0
     ob = bpy.data.objects.new("_txt", cu)
     sc = bpy.data.scenes[SCENE_NAME]
@@ -562,10 +699,14 @@ def text_bm(body, size, spacing=1.25):
     return t
 
 
-def place_text(bm, body, size, matrix, mat=LABEL, spacing=1.25):
-    """Text rotated upright (+Z normal -> -Y) and moved by matrix. Returns its width."""
+def place_text(bm, body, size, matrix, mat=LABEL, spacing=1.25, max_w=None):
+    """Text rotated upright (+Z normal -> -Y) and moved by matrix. Returns its
+    width; text wider than max_w is scaled down (about its baseline start)."""
     t = text_bm(body, size, spacing)
     width = max((v.co.x for v in t.verts), default=0.0)
+    if max_w and width > max_w:
+        bmesh.ops.scale(t, vec=(max_w / width,) * 3, verts=t.verts)
+        width = max_w
     for f in t.faces:
         f.material_index = mat
     bmesh.ops.transform(t, matrix=matrix @ Matrix.Rotation(math.radians(90), 4, "X"), verts=t.verts)
@@ -580,19 +721,20 @@ def place_text(bm, body, size, matrix, mat=LABEL, spacing=1.25):
 # cut lines (kept clear of the label), and node boxes (cx, cy, sx, sy, h).
 PLATFORMS = {
     "PLT_Architecture": dict(box=(-2.0, -0.8, -1.0, -0.2), top=1.12, label="ARCHITECTURE",
-                             lx=-1.86, lz=0.95, xcuts=(-1.1,), ycuts=(-0.6,), zcuts=(0.78,),
+                             lx=-1.86, lz=0.95, xcuts=(-1.0,), ycuts=(-0.6,), zcuts=(0.78,),
                              nodes=[(-1.02, -0.46, 0.15, 0.15, 0.17)]),
     "PLT_Development": dict(box=(0.78, 2.0, -1.0, -0.2), top=1.06, label="DEVELOPMENT",
-                            lx=0.97, lz=0.89, xcuts=(1.7,), ycuts=(-0.6,), zcuts=(0.72,),
+                            lx=0.97, lz=0.89, xcuts=(1.82,), ycuts=(-0.6,), zcuts=(0.72,),
                             nodes=[(1.08, -0.5, 0.16, 0.16, 0.22), (1.76, -0.38, 0.11, 0.11, 0.12)]),
     "PLT_Deployment": dict(box=(-1.46, -0.03, -2.0, -1.05), top=0.64, label="DEPLOYMENT",
-                           lx=-1.3, lz=0.49, xcuts=(-0.6,), ycuts=(-1.52,), zcuts=(0.33,),
+                           lx=-1.3, lz=0.49, xcuts=(-0.5,), ycuts=(-1.52,), zcuts=(0.33,),
                            nodes=[(-0.4, -1.32, 0.14, 0.14, 0.16), (-1.18, -1.24, 0.1, 0.18, 0.1)]),
     "PLT_Growth": dict(box=(0.03, 1.5, -2.0, -1.05), top=0.56, label="GROWTH",
                        lx=0.19, lz=0.42, xcuts=(0.8,), ycuts=(-1.52,), zcuts=(0.28,),
                        nodes=[(1.2, -1.28, 0.14, 0.14, 0.2)]),
 }
 SIDE_DEPTH = 0.006   # recess of side panels; labels sit just proud of it
+LABEL_SIZE = 0.12    # cut lines above are placed to keep each label on one panel
 
 
 def node_box(bm, cx, cy, sx, sy, z0, h):
@@ -607,15 +749,15 @@ def step_platforms():
         z1 = p["top"]
         word = p["label"].title()
         bm = get(name, role="platform", label=p["label"])
-        block(bm, x0, x1, y0, y1, Z0, z1, bevel=0.014, top=(0.035, -0.006),
+        block(bm, x0, x1, y0, y1, Z0, z1, bevel=0.02, groove=GROOVE,
               side=(0.03, -SIDE_DEPTH), xcuts=p["xcuts"], ycuts=p["ycuts"], zcuts=p["zcuts"])
 
         # engraved label on the front face, with a short glowing dash under it
         lab = get(f"LABEL_{word}", parent=name, role="label")
         yf = y0 + SIDE_DEPTH - 0.0015
-        width = place_text(lab, p["label"], 0.1, Matrix.Translation((p["lx"], yf, p["lz"])))
+        width = place_text(lab, p["label"], LABEL_SIZE, Matrix.Translation((p["lx"], yf, p["lz"])))
         dash = get(f"DASH_{word}", parent=name, role="accent")
-        strip(dash, p["lx"], p["lx"] + 0.12, yf - 0.003, yf, p["lz"] - 0.058, p["lz"] - 0.044)
+        strip(dash, p["lx"], p["lx"] + 0.15, yf - 0.003, yf, p["lz"] - 0.065, p["lz"] - 0.049)
         p["label_width"] = width
 
         for i, (cx, cy, sx, sy, h) in enumerate(p["nodes"], 1):
@@ -687,8 +829,10 @@ def chair(t):
         def sx(a, b):
             return sorted((s * a, s * b))
         block(t, *sx(0.1, 0.138), -0.11, 0.14, 0.235, 0.262, bevel=0.01, segs=2, top=None, side=None)
+        strip(t, *sx(0.137, 0.142), -0.1, 0.13, 0.244, 0.254)              # seat piping
         block(t, *sx(0.148, 0.165), -0.03, 0.01, 0.22, 0.33, bevel=0.004, top=None, side=None)
         block(t, *sx(0.138, 0.175), -0.08, 0.07, 0.33, 0.345, bevel=0.006, top=None, side=None)
+        strip(t, *sx(0.174, 0.178), -0.07, 0.06, 0.334, 0.341)             # armrest trim
 
     def back(b):
         block(b, -0.125, 0.125, -0.028, 0.02, 0.0, 0.31, bevel=0.016, segs=2, top=None, side=None)
@@ -699,6 +843,7 @@ def chair(t):
             strip(b, pa, pb, -0.035, -0.029, 0.04, 0.27)          # accent piping
         block(b, -0.07, 0.07, -0.02, 0.015, 0.3, 0.335, bevel=0.008, top=None, side=None)
         block(b, -0.095, 0.095, -0.026, 0.02, 0.33, 0.44, bevel=0.018, segs=2, top=None, side=None)
+        strip(b, -0.06, 0.06, -0.031, -0.025, 0.405, 0.413)               # headrest band
 
     # upright at the seat's back edge, then reclined 10 degrees
     put(t, back, Matrix.Translation((0, -0.1, 0.23)) @ Matrix.Rotation(math.radians(10), 4, "X"))
@@ -711,8 +856,8 @@ DESK_NODES = [(-1.05, 1.15, 0.14, 0.14, 0.34), (1.0, 0.62, 0.16, 0.14, 0.44),
 def step_desk():
     P = "PLT_Desk"
     bm = get(P, role="platform", label="DESK")
-    block(bm, -1.2, 1.2, -0.15, 1.35, DESK_Z0, DZ, bevel=0.014, top=(0.035, -0.004),
-          side=(0.03, -SIDE_DEPTH), xcuts=(-0.4, 0.4), ycuts=(0.6,))
+    block(bm, -1.2, 1.2, -0.15, 1.35, DESK_Z0, DZ, bevel=0.02, groove=(0.06, 0.006, 0.005),
+          side=(0.03, -SIDE_DEPTH), xcuts=(-0.8, -0.4, 0.4, 0.8), ycuts=(0.25, 0.6))
 
     def table(d):
         block(d, -0.74, 0.74, 0.5, 1.02, DZ + 0.305, DZT, bevel=0.008, top=None, side=None)
@@ -737,16 +882,43 @@ def step_desk():
     def mouse(m):
         block(m, 0.31, 0.355, 0.62, 0.69, DZT + 0.004, DZT + 0.022, bevel=0.008, segs=2,
               top=None, side=None)
+        strip(m, 0.331, 0.334, 0.635, 0.68, DZT + 0.0215, DZT + 0.0235)     # glow line
+        strip(m, 0.329, 0.336, 0.66, 0.675, DZT + 0.021, DZT + 0.025)       # lit wheel
 
     def mug(t):
-        cylinder(t, -0.56, 0.7, DZT, DZT + 0.085, 0.038, segs=20, mat=ACCENT, top=(0.005, -0.012))
+        cylinder(t, -0.56, 0.7, DZT, DZT + 0.085, 0.038, segs=24, mat=BODY, top=(0.005, -0.012),
+                 top_mat=ACCENT)
+        cylinder(t, -0.56, 0.7, DZT + 0.073, DZT + 0.081, 0.0395, segs=24, mat=ACCENT)  # rim band
         sweep(t, [(x, 0.7 + y, z) for x, y, z in arc(-0.598, DZT + 0.044, 0.022, 0.024, 90, 270, 8)],
-              0.01, 0.012, (0, 1, 0))
+              0.01, 0.012, (0, 1, 0), mat=BODY)
+        sweep(t, arc(-0.56, DZT + 0.038, 0.013, 0.013, 0, 360, 16, 0.7 - 0.0395)[:-1],
+              0.004, 0.002, (0, 1, 0), closed=True)                          # logo ring
+
+    def speaker(t, cx):
+        block(t, cx - 0.04, cx + 0.04, 0.55, 0.65, DZT, DZT + 0.14, bevel=0.007, top=None, side=None)
+        for zc, r in ((DZT + 0.05, 0.026), (DZT + 0.108, 0.013)):
+            t.faces.new([t.verts.new(p) for p in arc(cx, zc, r, r, 0, 360, 16, 0.5488)[:-1]]
+                        ).material_index = RECESS
+            sweep(t, arc(cx, zc, r + 0.003, r + 0.003, 0, 360, 16, 0.549)[:-1], 0.005, 0.004,
+                  (0, 1, 0), closed=True, mat=BODY)
+        strip(t, cx - 0.005, cx + 0.005, 0.5465, 0.55, DZT + 0.127, DZT + 0.133)  # indicator
+
+    def pc(t):
+        block(t, 0.42, 0.62, 0.58, 0.9, DZ, DZ + 0.27, bevel=0.01, top=None, side=None)
+        fbox(t, "y", -1, 0.58, 0.45, 0.59, DZ + 0.03, DZ + 0.2, -0.004, 0.001, RECESS)
+        for i in range(6):
+            zl = DZ + 0.045 + i * 0.026
+            fbox(t, "y", -1, 0.58, 0.46, 0.58, zl, zl + 0.01, -0.004, 0.003, BODY)
+        fbox(t, "y", -1, 0.58, 0.595, 0.603, DZ + 0.06, DZ + 0.24, 0.0, 0.003, ACCENT)   # light bar
+        fbox(t, "y", -1, 0.58, 0.45, 0.47, DZ + 0.235, DZ + 0.248, 0.0, 0.003, ACCENT)   # power
 
     put(get("DESK_Table", parent=P, role="prop"), table, DESK_M)
     put(get("DESK_Keyboard", parent=P, role="prop"), keyboard, DESK_M)
     put(get("DESK_Mouse", parent=P, role="prop"), mouse, DESK_M)
     put(get("DESK_Mug", parent=P, role="prop"), mug, DESK_M)
+    put(get("DESK_Speaker_L", parent=P, role="prop"), lambda t: speaker(t, -0.67), DESK_M)
+    put(get("DESK_Speaker_R", parent=P, role="prop"), lambda t: speaker(t, 0.67), DESK_M)
+    put(get("DESK_PC", parent=P, role="prop"), pc, DESK_M)
     put(get("DESK_Chair", parent=P, role="prop"), chair,
         DESK_M @ Matrix.Translation((0.02, 0.3, DZ)) @ Matrix.Rotation(math.radians(-12), 4, "Z"))
 
@@ -785,7 +957,7 @@ def step_towers():
         zc = [z0 + h * i / n for i in range(1, n)]
         xc = (cx,) if sx > 0.4 else ()
         block(bm, cx - sx / 2, cx + sx / 2, cy - sy / 2, cy + sy / 2, z0, z0 + h,
-              bevel=0.012, top=(0.03, -0.008), side=(0.022, -0.006), zcuts=zc, xcuts=xc)
+              bevel=0.018, top=(0.03, -0.008), side=(0.022, -0.006), zcuts=zc, xcuts=xc)
 
 
 # ---------------------------------------------------------------- step 5: glass panels
@@ -814,65 +986,75 @@ def glass_sheet(t, w, h, x=0.0, y=0.0, r=0.05):
           bevel=0.006, top=None, side=None)
 
 
+ICON_W = 0.0055      # line-icon stroke width
+
+
 def icon_stroke(t, pts, closed=False):
-    sweep(t, pts, 0.0045, 0.003, (0, 1, 0), closed=closed)
+    sweep(t, pts, ICON_W, 0.003, (0, 1, 0), closed=closed)
 
 
-def icon_globe(t, cx, cz, R=0.03):
-    y = TXT_Y - 0.001
-    icon_stroke(t, arc(cx, cz, R, R, 0, 360, 20, y)[:-1], closed=True)
-    icon_stroke(t, arc(cx, cz, R * 0.42, R, 0, 360, 16, y)[:-1], closed=True)
+def icon_globe(t, cx, cz, k=1.0):
+    y, R = TXT_Y - 0.001, 0.03 * k
+    icon_stroke(t, arc(cx, cz, R, R, 0, 360, 24, y)[:-1], closed=True)
+    icon_stroke(t, arc(cx, cz, R * 0.42, R, 0, 360, 18, y)[:-1], closed=True)
     icon_stroke(t, [(cx - R, y, cz), (cx + R, y, cz)])
     for dz in (-0.5, 0.5):
         hw = R * math.sqrt(1 - dz * dz) * 0.95
         icon_stroke(t, [(cx - hw, y, cz + dz * R), (cx + hw, y, cz + dz * R)])
 
 
-def icon_database(t, cx, cz, rx=0.028, rz=0.009, hh=0.021):
-    y = TXT_Y - 0.001
-    icon_stroke(t, arc(cx, cz + hh, rx, rz, 0, 360, 18, y)[:-1], closed=True)
+def icon_database(t, cx, cz, k=1.0):
+    y, rx, rz, hh = TXT_Y - 0.001, 0.028 * k, 0.009 * k, 0.021 * k
+    icon_stroke(t, arc(cx, cz + hh, rx, rz, 0, 360, 20, y)[:-1], closed=True)
     for zc in (cz, cz - hh):
-        icon_stroke(t, arc(cx, zc, rx, rz, 180, 360, 9, y))
+        icon_stroke(t, arc(cx, zc, rx, rz, 180, 360, 10, y))
     for sx in (-1, 1):
         icon_stroke(t, [(cx + sx * rx, y, cz + hh), (cx + sx * rx, y, cz - hh)])
 
 
-def icon_people(t, cx, cz):
+def icon_people(t, cx, cz, k=1.0):
     y = TXT_Y - 0.001
-    icon_stroke(t, arc(cx - 0.011, cz + 0.011, 0.0095, 0.0095, 0, 360, 14, y)[:-1], closed=True)
-    icon_stroke(t, arc(cx + 0.014, cz + 0.016, 0.008, 0.008, 0, 360, 14, y)[:-1], closed=True)
-    icon_stroke(t, arc(cx - 0.011, cz - 0.022, 0.02, 0.019, 5, 175, 10, y))
-    icon_stroke(t, arc(cx + 0.016, cz - 0.011, 0.016, 0.014, 15, 165, 8, y))
+    for hx, hz, hr, sx, sz, srx, srz, a0, a1 in (
+            (-0.011, 0.011, 0.0095, -0.011, -0.022, 0.02, 0.019, 5, 175),
+            (0.014, 0.016, 0.008, 0.016, -0.011, 0.016, 0.014, 15, 165)):
+        icon_stroke(t, arc(cx + hx * k, cz + hz * k, hr * k, hr * k, 0, 360, 16, y)[:-1], closed=True)
+        icon_stroke(t, arc(cx + sx * k, cz + sz * k, srx * k, srz * k, a0, a1, 10, y))
 
 
-def bullet(t, cx, cz, r=0.009):
+def bullet(t, cx, cz, r=0.01):
     y = TXT_Y - 0.001
-    t.faces.new([t.verts.new(p) for p in arc(cx, cz, r, r, 0, 360, 12, y)[:-1]]).material_index = ACCENT
+    t.faces.new([t.verts.new(p) for p in arc(cx, cz, r, r, 0, 360, 16, y)[:-1]]).material_index = ACCENT
 
 
 PANEL_LEFT = dict(centre=(-0.98, 0.18), angle=45, w=0.62, h=0.92)
-PANEL_RIGHT = dict(centre=(0.92, 0.98), angle=-25, w=0.60, h=0.86)
+# Tucked into the gap between the desk's back edge and the centre panels (the
+# desk set grew 15%; at its old spot this sheet cut through the desk corner).
+PANEL_RIGHT = dict(centre=(0.92, 1.128), angle=-4, w=0.56, h=0.86)
 
 
 def panel_left(t):
     w, h = PANEL_LEFT["w"], PANEL_LEFT["h"]
     glass_sheet(t, w, h)
+    tx = -0.11
     for frac, word, icon in ((0.74, "WEB APPS", icon_globe), (0.5, "SYSTEMS", icon_database),
                              (0.26, "TEAMS", icon_people)):
         zc = PANEL_FOOT + h * frac
-        icon(t, -0.2, zc)
-        place_text(t, word, 0.05, Matrix.Translation((-0.13, TXT_Y, zc - 0.018)))
+        icon(t, -0.195, zc, 1.3)
+        place_text(t, word, 0.064, Matrix.Translation((tx, TXT_Y, zc - 0.023)),
+                   max_w=w / 2 - 0.04 - tx)
 
 
 def panel_right(t):
     w, h = PANEL_RIGHT["w"], PANEL_RIGHT["h"]
     glass_sheet(t, w, h)
-    for frac, word in ((0.72, "SCALABLE"), (0.52, "PERFORMANT"), (0.32, "USER FOCUSED")):
+    tx = -0.19
+    for frac, word in ((0.72, "SCALABLE"), (0.53, "PERFORMANT"), (0.34, "USER FOCUSED")):
         zc = PANEL_FOOT + h * frac
-        bullet(t, -0.215, zc)
-        place_text(t, word, 0.042, Matrix.Translation((-0.18, TXT_Y, zc - 0.015)))
+        bullet(t, -0.225, zc)
+        place_text(t, word, 0.054, Matrix.Translation((tx, TXT_Y, zc - 0.019)),
+                   max_w=w / 2 - 0.035 - tx)
     zd = PANEL_FOOT + h * 0.2
-    strip(t, -0.215, -0.115, TXT_Y - 0.003, TXT_Y, zd, zd + 0.012)
+    strip(t, -0.225, -0.105, TXT_Y - 0.003, TXT_Y, zd, zd + 0.014)
 
 
 def panel_center(t):
@@ -914,6 +1096,29 @@ def step_cube():
             x = cx + sx * (h - e / 2)
             strip(bm, x - e / 2, x + e / 2, cy - h + e, cy + h - e, z, z + e)
 
+    # inner core: a vertical light line through a small glowing diamond.
+    # A child of CUBE_Core (not named CUBE_Core*), so it rises with the cube.
+    core = get("CORE_Glow", parent="CUBE_Core", role="accent")
+    strip(core, cx - 0.007, cx + 0.007, cy - 0.007, cy + 0.007, z0 + 0.02, z0 + s - 0.02)
+    put(core, lambda t: block(t, -0.048, 0.048, -0.048, 0.048, -0.048, 0.048, mat=ACCENT,
+                              bevel=0.008, top=None, side=None),
+        Matrix.Translation((cx, cy, z0 + s / 2)) @ Matrix.Rotation(math.radians(45), 4, "Z")
+        @ Matrix.Rotation(math.radians(35.26), 4, "X"))
+
+    # static socket the cube stands in: its lower 8 cm sit below the rim, so
+    # on hover the cube visibly rises out of it
+    base = get("BASE_Static")
+    m, gap, rim = 0.07, 0.01, z0 + 0.08
+    x0, x1, y0, y1 = cx - h - m, cx + h + m, cy - h - m, cy + h + m
+    o0, o1, p0, p1 = cx - h - gap, cx + h + gap, cy - h - gap, cy + h + gap
+    block(base, x0, x1, y0, y1, 0.80, z0, bevel=0.012, top=None, side=(0.02, -0.004))
+    for bx0, bx1, by0, by1 in ((x0, x1, y0, p0), (x0, x1, p1, y1), (x0, o0, p0, p1), (o1, x1, p0, p1)):
+        block(base, bx0, bx1, by0, by1, z0, rim, bevel=0.01, top=None, side=None)
+    for sx0, sx1, sy0, sy1 in ((o0, o1, p0 - 0.004, p0), (o0, o1, p1, p1 + 0.004),
+                               (o0 - 0.004, o0, p0, p1), (o1, o1 + 0.004, p0, p1)):
+        strip(base, sx0, sx1, sy0, sy1, rim - 0.012, rim - 0.004)          # lit inner rim
+    fbox(base, "y", -1, y0, cx - 0.06, cx + 0.06, 0.835, 0.847, 0.0, 0.004, ACCENT)
+
 
 # ---------------------------------------------------------------- step 7: glow
 
@@ -934,15 +1139,9 @@ def step_glow():
     st(-2.0, 2.0, -1.035, -1.015, Z0, Z0 + 0.006)
     st(-1.495, -1.475, -2.0, -1.05, Z0, Z0 + 0.006)
     st(1.515, 1.535, -2.0, -1.05, Z0, Z0 + 0.006)
-    st(0.0, 0.405, -0.215, -0.185, ct - 0.003, ct + 0.003)
-    st(0.375, 0.405, -0.31, -0.185, ct - 0.003, ct + 0.003)
-    st(-0.28, 0.0, -0.765, -0.735, ct - 0.003, ct + 0.003)
-
-    # conduit: glowing channel in its top and a glowing end cap
-    st(-0.72, -0.35, -0.445, -0.435, 0.951, 0.956)
-    st(-0.365, -0.355, -0.92, -0.435, 0.951, 0.956)
-    st(-0.43, -0.29, -0.954, -0.95, 0.815, 0.945)
-    node_box(base, -0.12, -0.9, 0.12, 0.12, ct, 0.14)
+    st(0.015, 0.1, -0.595, -0.565, ct - 0.003, ct + 0.003)          # to the cube socket
+    st(-0.28, -0.015, -0.765, -0.735, ct - 0.003, ct + 0.003)       # to the Architecture bridge
+    node_box(base, 0.66, -0.93, 0.08, 0.08, ct, 0.1)                # corner node above GROWTH
 
     # vertical seams at the courtyard's front corners
     st(-0.745, -0.73, -1.004, -0.998, Z0, ct)
@@ -995,9 +1194,10 @@ def step_glow():
             strip(bm, ax - 0.008, ax + 0.008, cy - 0.008, cy + 0.008, z1, z1 + 0.4, mat=BODY)
             strip(bm, ax - 0.014, ax + 0.014, cy - 0.014, cy + 0.014, z1 + 0.4, z1 + 0.428)
         yf = cy - sy / 2
-        for k in range(slits):
-            x = cx + (k - (slits - 1) / 2) * 0.05
-            strip(bm, x - 0.007, x + 0.007, yf - 0.004, yf, z1 - 0.28, z1 - 0.22)
+        if h < TOWER_CHANNEL_MIN:                     # short towers keep plain slits
+            for k in range(slits):
+                x = cx + (k - (slits - 1) / 2) * 0.05
+                strip(bm, x - 0.007, x + 0.007, yf - 0.004, yf, z1 - 0.28, z1 - 0.22)
 
 
 # ---------------------------------------------------------------- step 8: screen
@@ -1022,8 +1222,121 @@ def step_screen():
             screen_matrix(s), uv=True)
 
 
+# ---------------------------------------------------------------- step 9: surface detail
+
+TOWER_CHANNEL_MIN = 0.7      # towers at least this tall get a lit channel
+
+
+def step_detail():
+    base = get("BASE_Static")
+
+    # vents and access hatches on the faces the site's camera sees (-Y, +X),
+    # plus a few on the left and back for the side / back views
+    vent(base, "y", -1, -1.92, -1.755, 0.15, 0.3, 0.1)              # front-left filler
+    vent(base, "y", -1, -1.9, 1.775, 0.145, 0.3, 0.1)               # front-right filler
+    vent(base, "y", -1, -1.0, -0.44, 0.62, 0.26, 0.24)              # courtyard front
+    hatch(base, "y", -1, -1.0, 0.45, 0.62, 0.3, 0.22)
+    vent(base, "x", 1, 2.0, 0.2, 0.2, 0.36, 0.2)                    # right side block
+    hatch(base, "x", 1, 2.0, 0.7, 0.49, 0.32, 0.2)
+    vent(base, "x", 1, 2.0, 1.15, 0.79, 0.26, 0.16)
+    vent(base, "x", -1, -2.0, 0.15, 0.2, 0.36, 0.2)                 # left side block
+    hatch(base, "x", -1, -2.0, 0.65, 0.52, 0.32, 0.22)
+    vent(base, "y", 1, 2.0, -0.62, 0.25, 0.4, 0.24)                 # back row
+    hatch(base, "y", 1, 2.0, -0.08, 0.63, 0.3, 0.26)
+    vent(base, "y", 1, 2.0, 0.95, 0.24, 0.3, 0.2)
+    vent(base, "y", 1, 2.0, -1.72, 0.2, 0.36, 0.18)
+
+    # platform sides (these parts go to the platforms' TRIM_ / GLOW_ children)
+    vent(get("PLT_Deployment"), "y", -1, -2.0, -0.27, 0.195, 0.3, 0.14)
+    hatch(get("PLT_Growth"), "y", -1, -2.0, 0.42, 0.17, 0.3, 0.13)
+    vent(get("PLT_Growth"), "y", -1, -2.0, 1.15, 0.17, 0.4, 0.12)
+    vent(get("PLT_Development"), "x", 1, 2.0, -0.8, 0.39, 0.24, 0.42)
+    hatch(get("PLT_Development"), "x", 1, 2.0, -0.4, 0.39, 0.26, 0.3)
+    vent(get("PLT_Architecture"), "x", -1, -2.0, -0.8, 0.42, 0.24, 0.42)
+    vent(get("PLT_Desk"), "x", 1, 1.2, 0.95, 1.29, 0.4, 0.1)
+    vent(get("PLT_Desk"), "x", -1, -1.2, 0.3, 1.29, 0.4, 0.1)
+
+    # lit channels up the tall towers (front face, and the back face on the back row)
+    for name, cx, cy, sx, sy, z0, h, *_ in TOWERS:
+        if h < TOWER_CHANNEL_MIN:
+            continue
+        bm = get(name)
+        lights = 2 if h < 1.2 else 3
+        channel(bm, "y", -1, cy - sy / 2, cx, z0 + 0.08, z0 + h - 0.12, lights)
+        if cy > 1.3:
+            channel(bm, "y", 1, cy + sy / 2, cx, z0 + 0.08, z0 + h - 0.12, lights)
+        if cx > 0.5:                                   # right faces face the site camera
+            channel(bm, "x", 1, cx + sx / 2, cy, z0 + 0.08, z0 + h - 0.12, lights)
+
+
+# ---------------------------------------------------------------- step 10: bridges
+
+def step_bridges():
+    """Raised beams across the courtyard (static, part of BASE_Static).
+
+    An L-beam leaves ARCHITECTURE's inner face, crosses toward the centre and
+    turns to the courtyard's front edge above DEPLOYMENT, standing on a lit
+    foot. A second beam runs from the centre to DEVELOPMENT, its top edge lit.
+    Each stops 1 cm short of the platform it points at, so lifting clears it.
+    """
+    b = get("BASE_Static")
+    g = (0.02, 0.005, 0.004)
+    top0, top1 = 0.92, 1.08
+
+    # Architecture L
+    block(b, -0.79, -0.27, -0.55, -0.34, top0, top1, bevel=0.018, groove=g, xcuts=(-0.53,),
+          side=(0.02, -0.004))
+    block(b, -0.48, -0.27, -0.98, -0.55, top0, top1, bevel=0.018, groove=g, ycuts=(-0.76,),
+          side=(0.02, -0.004))
+    block(b, -0.45, -0.30, -0.52, -0.37, 0.80, top0, bevel=0.01, top=None, side=None)
+    block(b, -0.47, -0.28, -0.97, -0.81, 0.80, top0, bevel=0.012, top=None, side=None)
+    fbox(b, "y", -1, -0.55, -0.76, -0.50, 0.935, 0.947, 0.0, 0.004, ACCENT)   # underglow lines
+    fbox(b, "x", 1, -0.27, -0.95, -0.58, 0.935, 0.947, 0.0, 0.004, ACCENT)
+    fbox(b, "y", -1, -0.98, -0.45, -0.30, 0.96, 1.05, 0.0, 0.004, ACCENT)     # end cap
+    for axis, s, plane, h0, h1 in (("y", -1, -0.97, -0.47, -0.28), ("y", 1, -0.81, -0.47, -0.28),
+                                   ("x", -1, -0.47, -0.97, -0.81), ("x", 1, -0.28, -0.97, -0.81)):
+        fbox(b, axis, s, plane, h0, h1, 0.80, 0.814, 0.0, 0.004, ACCENT)        # lit foot
+
+    # Development beam
+    block(b, 0.10, 0.77, -0.27, -0.15, 0.90, 1.0, bevel=0.016, groove=g, xcuts=(0.43,),
+          side=(0.02, -0.004))
+    block(b, 0.10, 0.22, -0.27, -0.15, 0.80, 0.90, bevel=0.01, top=None, side=None)
+    block(b, 0.50, 0.58, -0.25, -0.17, 0.80, 0.90, bevel=0.008, top=None, side=None)
+    fbox(b, "y", -1, -0.27, 0.13, 0.75, 0.981, 0.991, 0.0, 0.004, ACCENT)     # lit top edge
+    fbox(b, "x", -1, 0.10, -0.25, -0.17, 0.83, 0.97, 0.0, 0.004, ACCENT)       # end cap
+    strip(b, 0.70, 0.745, -0.235, -0.185, 1.0, 1.03)                           # end light
+
+    # small T-post node in the courtyard, lit at its foot
+    block(b, -0.145, -0.095, -0.925, -0.875, 0.8, 0.97, bevel=0.006, top=None, side=None)
+    block(b, -0.19, -0.05, -0.97, -0.83, 0.97, 0.995, bevel=0.008, top=(0.02, -0.004),
+          top_mat=ACCENT, side=None)
+    strip(b, -0.16, -0.08, -0.94, -0.86, 0.8, 0.81)
+
+
+# ---------------------------------------------------------------- step 11: under-desk glow
+
+def step_underglow():
+    """Light spilling from under PLT_Desk: a slatted front on its pedestal with
+    lit gaps, lit corners, and a glow line on the floor in front (all static)."""
+    b = get("BASE_Static")
+    yf, zt = -0.05, DESK_Z0 - 0.02
+    x = -1.05
+    while x < 1.06:                                             # vertical fins
+        strip(b, x - 0.011, x + 0.011, yf - 0.03, yf, 0.80, zt, mat=BODY)
+        x += 0.075
+    for xs in (-0.9375, -0.6375, -0.3375, -0.0375, 0.2625, 0.5625, 0.8625):
+        strip(b, xs - 0.006, xs + 0.006, yf - 0.006, yf, 0.80, zt)  # lit gaps between fins
+    for sx in (-1, 1):                                          # lit pedestal corners
+        xc = sx * 1.1
+        a, c = sorted((xc, xc + sx * 0.004))
+        strip(b, a, c, -0.05, -0.03, Z0, zt)
+        strip(b, xc - 0.012 if sx > 0 else xc - 0.004, xc + 0.004 if sx > 0 else xc + 0.012,
+              -0.054, -0.05, Z0, zt)
+    strip(b, -0.7, 0.7, -0.098, -0.088, 0.8, 0.806)            # floor glow line
+
+
 STEPS = [step_base, step_platforms, step_desk, step_towers, step_panels, step_cube, step_glow,
-         step_screen]
+         step_screen, step_detail, step_bridges, step_underglow]
 
 
 # ---------------------------------------------------------------- viewport
@@ -1035,6 +1348,8 @@ VIEWS = {   # view_rotation euler (deg), perspective?, look-at z, distance
     "back": ((78, 0, 180), False, 1.55, 9.6),
     "top": ((20, 0, 0), False, 1.0, 11.5),
     "persp": ((60, 0, 35), True, 1.3, 11.5),
+    # the site's camera: three.js CAM_DIR (6, 5.2, 7) plus its resting yaw
+    "site": ((60.6, 0, 47), True, 1.15, 10.5),
 }
 
 
