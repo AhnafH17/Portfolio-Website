@@ -35,6 +35,8 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `public/images/hero/` | Hero portraits (one per palette) + the 4 floating UI cards |
 | `public/images/projects/` | Project thumbnails, each named after its key in `lib/projects.ts` |
 | `assets/hero-portrait-master.png` | Ungraded hero source — input to `scripts/regrade-hero.py`, never served |
+| `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
+| `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
 
 ## Architecture Decisions
 
@@ -67,6 +69,21 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 ### Lenis Scroll
 - Throttled: only dispatches `window.scroll` event when actually scrolling (100ms debounce)
 - Was previously firing every rAF tick (60×/sec)
+
+### About Workspace Model (`about-workspace.glb`)
+- Rebuilt from scratch by `scripts/build-about-workspace.py` (run inside Blender; it only
+  touches the `AboutWorkspace` scene). References: `assets/references/about-workspace/`
+- Every glow shares ONE material, `MAT_Accent_Emissive`, so the palette recolours it at
+  runtime. No texture holds accent colour; the screen's accent marks are meshes
+- The exporter normalises emissive: colour is stored as a unit colour plus
+  `emissiveStrength` 2.415 (= #CC182C × 4). When recolouring set both `emissive` and
+  `emissiveIntensity` (≈ 2.4), not just the colour
+- `PLT_*`, `CUBE_Core`, `PANEL_*`, `TOWER_*` are separate nodes with origin at their
+  bottom-face centre; props are children of their platform, so lifting a node's
+  position.y lifts everything on it. Root node `AboutWorkspace`; front faces +Z in three.js
+- Metallic dark body reads flat black without an environment map — give the scene
+  `RoomEnvironment` (PMREM) and `NeutralToneMapping` (the Blender preview uses
+  Khronos PBR Neutral to match)
 
 ### Showcase Click Behavior
 - **Small cards (right panel)**: `onClick={() => handleSelect(idx)}` — switches displayed project only
