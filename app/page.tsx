@@ -12,12 +12,13 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 const MarqueeStrip = lazy(() => import('@/components/MarqueeStrip'));
 const DeviceShowcase = lazy(() => import('@/components/DeviceShowcase'));
 const AboutSection = lazy(() => import('@/components/AboutSection'));
+const ImpactsSection = lazy(() => import('@/components/ImpactsSection'));
 const TestimonialSection = lazy(() => import('@/components/TestimonialSection'));
 const ContactSection = lazy(() => import('@/components/ContactSection'));
 const Footer = lazy(() => import('@/components/Footer'));
 
 // Mounted in this order, one per idle slot; Footer (outside <main>) last.
-const BELOW_FOLD = [MarqueeStrip, DeviceShowcase, AboutSection, TestimonialSection, ContactSection];
+const BELOW_FOLD = [MarqueeStrip, DeviceShowcase, AboutSection, ImpactsSection, TestimonialSection, ContactSection];
 
 export default function Home() {
   // `reveal` starts the site fading in; `preloaderGone` removes the preloader
@@ -81,6 +82,7 @@ export default function Home() {
       () => import('@/components/device/DeviceCanvas'),   // heaviest, needed first
       () => import('@/components/DeviceShowcase'),
       () => import('@/components/AboutSection'),
+      () => import('@/components/ImpactsSection'),
       () => import('@/components/ContactSection'),
       () => import('@/components/TestimonialSection'),
       () => import('@/components/MarqueeStrip'),
