@@ -68,6 +68,9 @@ interface Frame { x: number; y: number; w: number; h: number }
    is skipped while the section is off screen. `warm` forces one draw. */
 const drawing = { onScreen: false, warm: 0 };
 
+/* Resolves once the bloom pass's shaders are compiled (see Bloom). */
+let bloomCompiled: Promise<unknown> = Promise.resolve();
+
 // Hovering anything that sits on a platform lifts that whole platform.
 function platformOf(obj: THREE.Object3D | null) {
   for (let o = obj; o; o = o.parent) if (isLiftable(o.name)) return o.name;
@@ -396,6 +399,30 @@ function Bloom() {
     composer.addPass(new UnrealBloomPass(new THREE.Vector2(256, 256), 0.6, 0.45, 0.9));
     composer.addPass(new OutputPass());
     composerRef.current = composer;
+
+    // Compile every shader the composer will use in parallel, off the main
+    // thread: the scene's materials as drawn INTO the composer's render
+    // target (three keys programs on where they draw, so compiling them for
+    // the screen, as Prewarm does, isn't the variant that's used), plus the
+    // passes' own materials. Left to the first draw, three linked them
+    // synchronously: a ~650ms freeze at page load.
+    const mats = new Set<THREE.Material>();
+    for (const pass of composer.passes) {
+      for (const v of Object.values(pass)) {
+        if (v instanceof THREE.Material) mats.add(v);
+        else if (Array.isArray(v)) v.forEach((m) => { if (m instanceof THREE.Material) mats.add(m); });
+      }
+    }
+    const quad = new THREE.PlaneGeometry(2, 2);
+    const warm = new THREE.Scene();
+    mats.forEach((m) => warm.add(new THREE.Mesh(quad, m)));
+    const cam = new THREE.OrthographicCamera();
+    const prev = gl.getRenderTarget();
+    gl.setRenderTarget(target);
+    const intoTarget = Promise.all([gl.compileAsync(scene, camera), gl.compileAsync(warm, cam)]);
+    gl.setRenderTarget(prev);
+    bloomCompiled = Promise.all([intoTarget, gl.compileAsync(warm, cam)]).catch(() => {});
+
     return () => { composer.dispose(); composerRef.current = null; };
   }, [get]);
   useEffect(() => {
@@ -433,7 +460,7 @@ function Prewarm() {
   useEffect(() => {
     let cancelled = false;
     let idleId: number | undefined;
-    gl.compileAsync(scene, camera).then(() => {
+    Promise.all([gl.compileAsync(scene, camera), bloomCompiled]).then(() => {
       if (cancelled) return;
       const run = () => { if (!cancelled) drawing.warm = 1; };
       idleId = typeof window.requestIdleCallback === 'function'
