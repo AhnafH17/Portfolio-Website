@@ -34,7 +34,7 @@ export type ProjectKey =
 export const projectData: Record<ProjectKey, Project> = {
   notion: {
     label: 'Project 01',
-    title: 'Misson Control',
+    title: 'Mission Control',
     link: null,
     image: 'images/projects/notion.png',
     imagePlaceholder: '',
@@ -330,12 +330,12 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          '<p>CPC Clinics is a Calgary-based clinical psychology practice. I was responsible for a complete website overhaul, from redesigning the front-end and rebuilding the content architecture to resolving a critical security breach and driving the SEO score above 90.</p>',
+          '<p>CPC Clinics is a Calgary-based clinical psychology practice. I was responsible for a complete website overhaul, from redesigning the front-end and rebuilding the content architecture to resolving a critical security breach and driving the SEO score to 95+.</p>',
       },
       {
         heading: 'Work Done',
         content:
-          '<ul><li>Rebuilt and improved the homepage structure, messaging flow, CTAs, and internal linking for better user conversion</li><li>Created and optimized <strong>20+ service and workshop pages</strong> across Counselling Services (Anxiety, PTSD, Couples, Sports Psychology, OCD, etc.), Assessments (ADHD, Psychoeducational, Forensic, Autism, etc.), and Workshops (Workplace, Athletes, Teachers)</li><li>Revamped the About Us section including Our Story, Our Team, Our Space, FAQs, Partner With Us, and Blog pages</li><li>Published <strong>11 SEO-optimized blog posts</strong> targeting Calgary-relevant mental health topics</li><li>Rebuilt the Contact Us page with improved inquiry flow and service selection</li><li>Aligned the entire booking journey end-to-end, from homepage to service pages to the "Book a Free Consultation" pathway</li></ul>',
+          '<ul><li>Rebuilt and improved the homepage structure, messaging flow, CTAs, and internal linking for better user conversion</li><li>Created and optimized <strong>40+ service and workshop pages</strong> across Counselling Services (Anxiety, PTSD, Couples, Sports Psychology, OCD, etc.), Assessments (ADHD, Psychoeducational, Forensic, Autism, etc.), and Workshops (Workplace, Athletes, Teachers)</li><li>Revamped the About Us section including Our Story, Our Team, Our Space, FAQs, Partner With Us, and Blog pages</li><li>Published <strong>11 SEO-optimized blog posts</strong> targeting Calgary-relevant mental health topics</li><li>Rebuilt the Contact Us page with improved inquiry flow and service selection</li><li>Aligned the entire booking journey end-to-end, from homepage to service pages to the "Book a Free Consultation" pathway</li></ul>',
       },
       {
         heading: 'Security Remediation',
@@ -351,10 +351,10 @@ export const projectData: Record<ProjectKey, Project> = {
         heading: 'Results',
         type: 'results',
         items: [
-          { big: '90+', label: 'SEO Score' },
+          { big: '95+', label: 'SEO Score' },
           { big: '1.23K', label: 'Organic Clicks (6mo)' },
           { big: '582K', label: 'Search Impressions' },
-          { big: '20+', label: 'Pages Created' },
+          { big: '40+', label: 'Pages Created' },
         ],
       },
       {

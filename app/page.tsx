@@ -6,6 +6,8 @@ import CanvasShowcase from '@/components/CanvasShowcase';
 import HeroSection from '@/components/HeroSection';
 import CustomCursor from '@/components/CustomCursor';
 import Preloader from '@/components/Preloader';
+import Footer from '@/components/Footer';
+import { homeGraph, jsonLd } from '@/lib/schema';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -15,7 +17,6 @@ const AboutSection = lazy(() => import('@/components/AboutSection'));
 const ImpactsSection = lazy(() => import('@/components/ImpactsSection'));
 const TestimonialSection = lazy(() => import('@/components/TestimonialSection'));
 const ContactSection = lazy(() => import('@/components/ContactSection'));
-const Footer = lazy(() => import('@/components/Footer'));
 
 // Mounted in this order, one per idle slot; Footer (outside <main>) last.
 const BELOW_FOLD = [MarqueeStrip, DeviceShowcase, AboutSection, ImpactsSection, TestimonialSection, ContactSection];
@@ -86,7 +87,6 @@ export default function Home() {
       () => import('@/components/ContactSection'),
       () => import('@/components/TestimonialSection'),
       () => import('@/components/MarqueeStrip'),
-      () => import('@/components/Footer'),
     ];
 
     const idle = (cb: () => void) =>
@@ -107,6 +107,7 @@ export default function Home() {
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(homeGraph()) }} />
       {!preloaderGone && (
         <Preloader
           onReveal={() => setReveal(true)}
@@ -132,11 +133,9 @@ export default function Home() {
             </Suspense>
           ))}
         </main>
-        {mounted > BELOW_FOLD.length && (
-          <Suspense fallback={null}>
-            <Footer />
-          </Suspense>
-        )}
+        {/* Not lazy: it carries the bio and case-study links the server HTML
+            needs (the sections above only arrive after mount). */}
+        <Footer />
       </div>
     </>
   );

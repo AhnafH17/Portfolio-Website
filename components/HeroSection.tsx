@@ -98,11 +98,11 @@ export default function HeroSection({ paused = false }: { paused?: boolean }) {
       <div className="hero-content">
         <div className="hero-text">
           <h1 className="hero-name">
-            <span className="hero-greeting-line">Hi, I&apos;m</span>
+            <span className="hero-greeting-line">Hi, I&apos;m</span>{' '}
             <span className="gold-glow">Ahnaf Hussain</span>
           </h1>
           <p className="hero-tagline">
-            Architecting high-performance SaaS frontends and interactive digital experiences. Leading the development team at AurixLab to bridge the gap between complex data and world-class UI.
+            Architecting high-performance SaaS frontends and interactive digital experiences. Leading the development team at AurixLab in Calgary to bridge the gap between complex data and world-class UI.
           </p>
           <a href="#about" className="hero-cta">
             Learn More{' '}

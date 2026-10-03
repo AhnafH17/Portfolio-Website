@@ -164,9 +164,10 @@ function computeSlotFlip(progress: number, slotIndex: number): number {
 function CardFace({ projKey, tiltY }: { projKey: ProjectKey; tiltY: number }) {
   const project = projectData[projKey];
   return (
-    <div
+    // A real link, so search engines can follow it to the case study.
+    <a
       className="cs-card"
-      onClick={() => { window.location.href = `/projects/${projKey}`; }}
+      href={`/projects/${projKey}`}
       style={{ '--tilt': `${tiltY}deg` } as React.CSSProperties}
     >
       <div className="cs-card-rim" />
@@ -194,7 +195,7 @@ function CardFace({ projKey, tiltY }: { projKey: ProjectKey; tiltY: number }) {
           </div>
         </div>
       </div>
-    </div>
+    </a>
   );
 }
 
