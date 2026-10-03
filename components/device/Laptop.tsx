@@ -1,22 +1,31 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
-import { useFrame } from '@react-three/fiber';
-import { RoundedBox } from '@react-three/drei';
+import { useRef, useMemo, useEffect } from 'react';
+import { useFrame, createPortal } from '@react-three/fiber';
+import { useGLTF, useTexture } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   createChromeSurface, createContentSurface, createLiveSurface,
   REGION, toPlane,
 } from './screenTexture';
-import { makeDeckTexture } from './deckTexture';
+import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
-const SILVER = '#c7ccd2';   // aluminium body
+/* The laptop is a Blender model (scripts/build-laptop.py →
+   public/models/laptop.glb); this file animates it and paints its screen.
+   Contract it relies on: `LID` has its origin on the hinge and rests standing
+   straight up (+X rotation closes it onto the keys); `SCREEN` is a 2.92 x 1.87
+   plane on the lid, 1.0 above the hinge; `SHADOW` is a ground plane for the
+   baked contact shadow (public/models/laptop-shadow.png). */
+
+const MODEL_URL = '/models/laptop.glb';
+const SHADOW_URL = '/models/laptop-shadow.png';
 const P = POSE.laptop;
 
-const HINGE_Z = -1.0;
-const BASE_TOP = 0.04; // half of base thickness (0.08)
+// The screen's centre and front face, in the lid's own space.
+const SCREEN_Y = 1.0;
+const SCREEN_Z = -0.006;
 
 // Open-laptop bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 3.35;
@@ -26,15 +35,36 @@ const Y_FACTOR = -0.82; // vertical centring as a fraction of scale
 
 export default function Laptop({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
-  const lid = useRef<THREE.Group>(null);
-  const screenMat = useRef<THREE.MeshStandardMaterial>(null);
+  const { scene } = useGLTF(MODEL_URL);
+  const shadowTex = useTexture(SHADOW_URL);
 
   const accent = useMemo(() => readAccent(), []);
   const chrome = useMemo(() => createChromeSurface('laptop'), []);
   const content = useMemo(() => createContentSurface('laptop'), []);
   const live = useMemo(() => createLiveSurface(), []);
-  const deckTex = useMemo(() => makeDeckTexture(), []);
-  const emissive = useMemo(() => new THREE.Color(accent.glow), [accent]);
+  // Only for the portal target below; the animation reaches the lid through
+  // `rig`, set up once the model is in (three objects are mutated per frame).
+  const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
+  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial } | null>(null);
+
+  useEffect(() => {
+    const lid = scene.getObjectByName('LID');
+    if (!lid) return;
+    const screen = makeScreenMaterial(chrome.texture);
+    const shadowMat = new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, toneMapped: false });
+    prepareModel(scene, {
+      screen,
+      accent: new THREE.Color(accent.glow),
+      // Matte keys and deck, satin metal (the old values for this look).
+      envIntensity: { MAT_Aluminium: 0.55, MAT_Keys: 0.12, MAT_Dark: 0.4, MAT_Bezel: 0.5, MAT_Rubber: 0.1 },
+    });
+    const shadow = scene.getObjectByName('SHADOW') as THREE.Mesh | undefined;
+    if (shadow) { shadow.material = shadowMat; shadow.renderOrder = -1; }
+    // The model rests open; the intro starts closed.
+    lid.rotation.x = P.lidClosed;
+    rig.current = { lid, screen };
+    return () => { rig.current = null; screen.dispose(); shadowMat.dispose(); };
+  }, [scene, chrome, shadowTex, accent]);
 
   // Where the editor and terminal sit on the screen, derived from the same
   // canvas rects the chrome is drawn against — so they line up exactly.
@@ -44,7 +74,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   useFrame((state, dtRaw) => {
     const dt = Math.min(dtRaw, 1 / 30);
     const p = progress.current;
-    if (!root.current || !lid.current) return;
+    const r = rig.current;
+    if (!root.current || !r) return;
     live.update(state.clock.elapsedTime);
 
     // Beat A — spin 180°: π (back) → 0 (front). Ends dead-on, facing forward.
@@ -75,90 +106,36 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     root.current.position.y += (targetPosY - root.current.position.y) * k;
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
     root.current.scale.setScalar(s);
-    lid.current.rotation.x += (lidAngle - lid.current.rotation.x) * k;
+    r.lid.rotation.x += (lidAngle - r.lid.rotation.x) * k;
 
-    if (screenMat.current) {
-      const target = 0.15 + wake * 1.0;
-      screenMat.current.emissiveIntensity += (target - screenMat.current.emissiveIntensity) * k;
-    }
+    const target = 0.15 + wake * 1.0;
+    r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     // Scroll the editor via texture offset (no redraw, no re-upload).
     content.render(read);
   });
 
-  // The editor, terminal and chrome share one emissive look; only the chrome
-  // plane carries the ref that the wake beat animates, and the other two track
-  // it through the same material settings.
-  const panel = {
-    emissive: '#ffffff' as const,
-    toneMapped: false as const,
-    roughness: 0.25,
-    metalness: 0,
-  };
-
   return (
     <group ref={root} rotation={[0, Math.PI, 0]} position={[0, P.posY, 0]} scale={P.introScale}>
-      {/* ── Base: thin + deep (modern laptop), with keyboard deck ── */}
-      <RoundedBox args={[3.06, 0.08, 2.0]} radius={0.035} smoothness={4}>
-        <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
-      </RoundedBox>
-      {/* Keyboard + trackpad deck — matte so the keys read clearly */}
-      <mesh position={[0, BASE_TOP + 0.002, 0.0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[2.92, 1.86]} />
-        <meshStandardMaterial map={deckTex} metalness={0.15} roughness={0.7} envMapIntensity={0.12} />
-      </mesh>
-
-      {/* ── Lid (hinged at back edge) ── */}
-      <group ref={lid} position={[0, BASE_TOP, HINGE_Z]} rotation={[P.lidClosed, 0, 0]}>
-        {/* radius must stay under half the depth or RoundedBox self-intersects */}
-        <RoundedBox args={[3.06, 2.0, 0.06]} radius={0.028} smoothness={4} position={[0, 1.0, 0]}>
-          <meshStandardMaterial color={SILVER} metalness={0.9} roughness={0.45} envMapIntensity={0.55} />
-        </RoundedBox>
-        {/* Outer-lid logo (the "back" you see at the start) */}
-        <mesh position={[0, 1.0, -0.045]}>
-          <circleGeometry args={[0.26, 48]} />
-          <meshStandardMaterial color={accent.glow} emissive={emissive} emissiveIntensity={0.5} metalness={0.3} roughness={0.4} />
-        </mesh>
-        {/* Thin black bezel */}
-        <mesh position={[0, 1.0, 0.043]}>
-          <planeGeometry args={[3.0, 1.95]} />
-          <meshStandardMaterial color="#070a0e" metalness={0.4} roughness={0.5} envMapIntensity={0.5} />
-        </mesh>
-        {/* Screen — three planes: static IDE chrome, the scrolling editor on
-            top of it, and the live terminal strip. Keeping the chrome on its
-            own plane is what lets the title bar, sidebar and status bar stay
-            put while the code scrolls. */}
-        <mesh position={[0, 1.0, 0.046]}>
-          <planeGeometry args={[2.92, 1.87]} />
-          <meshStandardMaterial
-            ref={screenMat}
-            map={chrome.texture}
-            emissiveMap={chrome.texture}
-            emissiveIntensity={0.15}
-            {...panel}
-          />
-        </mesh>
-        <mesh position={[editorRect.x, 1.0 + editorRect.y, 0.0475]}>
-          <planeGeometry args={[editorRect.w, editorRect.h]} />
-          <meshStandardMaterial
-            map={content.texture}
-            emissiveMap={content.texture}
-            emissiveIntensity={0.95}
-            {...panel}
-          />
-        </mesh>
-        <mesh position={[termRect.x, 1.0 + termRect.y, 0.0475]}>
-          <planeGeometry args={[termRect.w, termRect.h]} />
-          <meshStandardMaterial
-            map={live.texture}
-            emissiveMap={live.texture}
-            emissiveIntensity={0.95}
-            {...panel}
-          />
-        </mesh>
-      </group>
-
+      <primitive object={scene} />
+      {/* The scrolling editor and the live terminal sit just in front of the
+          model's screen, inside the lid so they open with it. The IDE chrome
+          (title bar, sidebar, status bar) is the screen mesh's own texture. */}
+      {lidNode && createPortal(
+        <>
+          <mesh position={[editorRect.x, SCREEN_Y + editorRect.y, SCREEN_Z + 0.0015]}>
+            <planeGeometry args={[editorRect.w, editorRect.h]} />
+            <meshStandardMaterial map={content.texture} emissiveMap={content.texture} emissiveIntensity={0.95} {...SCREEN_PANEL} />
+          </mesh>
+          <mesh position={[termRect.x, SCREEN_Y + termRect.y, SCREEN_Z + 0.0015]}>
+            <planeGeometry args={[termRect.w, termRect.h]} />
+            <meshStandardMaterial map={live.texture} emissiveMap={live.texture} emissiveIntensity={0.95} {...SCREEN_PANEL} />
+          </mesh>
+        </>,
+        lidNode,
+      )}
       <pointLight position={[0, 0.6, -0.2]} intensity={0.5} distance={4} color={accent.glow} />
     </group>
   );
 }
+

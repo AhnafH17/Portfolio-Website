@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useThree } from '@react-three/fiber';
-import { Environment, Lightformer, ContactShadows } from '@react-three/drei';
+import { Environment, Lightformer } from '@react-three/drei';
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import Laptop from './Laptop';
@@ -121,8 +121,6 @@ export default function DeviceCanvas({
     ? { position: [0, 0, 7.0] as [number, number, number], fov: 30 }
     : { position: [0, 0.25, 6.4] as [number, number, number], fov: 34 };
 
-  const groundY = isPhone ? -2.25 : -1.35;
-
   return (
     <Canvas
       // Pause the entire render loop when the hero is off-screen (no GPU work).
@@ -159,21 +157,9 @@ export default function DeviceCanvas({
         </Environment>
       )}
 
-      {/* Grounding shadow — DESKTOP ONLY. On mobile it's the biggest cost: a
-          dynamic ContactShadows re-renders the scene a second time every frame.
-          Dropping it on the phone path is the main mobile-smoothness win. */}
-      {!isPhone && (
-        <ContactShadows
-          position={[0, groundY, 0]}
-          opacity={0.55}
-          scale={11}
-          blur={2.6}
-          far={5}
-          resolution={256}
-          color="#000000"
-        />
-      )}
-
+      {/* No real-time ContactShadows any more: it rendered the whole scene a
+          second time every frame. The laptop model carries a baked contact
+          shadow (its SHADOW plane); the phone path never drew one. */}
       {kind === 'laptop' ? <Laptop progress={progress} /> : <Phone progress={progress} />}
       <Prewarm ready={envReady} />
     </Canvas>
