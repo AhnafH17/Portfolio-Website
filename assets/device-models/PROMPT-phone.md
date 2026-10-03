@@ -73,9 +73,13 @@ seams. Grey-scale, subtle.
 
 ## Process
 
+- **Start by saving whatever is open in Blender** (File > Save), then work in a
+  **separate Blender file**: `assets/device-models/devices.blend` (create it if
+  it doesn't exist, open it if it does). Never edit or overwrite the About
+  section's file or its `AboutWorkspace` scene, or any other existing `.blend`.
 - Write the build as a script, `scripts/build-phone.py`, run inside Blender,
-  so it can be re-run. It must work only in its own scene named `Phone`, and
-  **never touch other scenes** (`AboutWorkspace`, `Laptop`).
+  so it can be re-run. It must work only in its own scene named `Phone` inside
+  `devices.blend`, and never touch other scenes. Save `devices.blend` when done.
 - Export to `public/models/phone.glb`: glTF binary, +Y up, apply modifiers,
   materials export, no animations, no cameras or lights, no compression.
 - Verify, and report: bounding box of `BODY`, `SCREEN` size and UV range,
