@@ -1,15 +1,67 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SOCIAL } from '@/lib/site';
 
 /* Contact as a "transmission console": the form on the left, and on the
    right a panel of real details only (availability, the email address with a
    copy button, what I'm a good fit for, and social links once they exist in
-   lib/site.ts). The background is a static grid with one CSS signal wave;
-   the 220-particle canvas and the fake dashboard mockup it replaced both ran
-   every frame. The paper plane from the testimonials lands on "Send"
+   lib/site.ts), with a live signal scope that reacts to typing. Behind it:
+   a synthwave sun and an endless neon grid floor (CSS only), and a glitch
+   on "Let's build". The testimonials' transmission lands on the console
    (components/handoff/handoffs.ts). */
+
+/** Oscilloscope trace: an idle carrier that spikes as the visitor types and
+    when the transmission lands. Draws only while on screen. */
+function SignalScope({ energy }: { energy: React.RefObject<number> }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const c = ref.current;
+    const ctx = c?.getContext('2d');
+    if (!c || !ctx) return;
+    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let dpr = 1, w = 0, h = 0, amp = 0.15;
+    const size = () => { dpr = Math.min(2, window.devicePixelRatio || 1); w = c.offsetWidth; h = c.offsetHeight; c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); };
+    size();
+    const ro = new ResizeObserver(size); ro.observe(c);
+    let raf: number | null = null;
+    const draw = (time: number) => {
+      const t = time / 1000;
+      const landed = parseFloat(c.closest<HTMLElement>('.ct-console')?.style.getPropertyValue('--landed') || '0') || 0;
+      const target = 0.15 + Math.min(1, energy.current ?? 0) * 0.85 + landed;
+      amp += (target - amp) * 0.08;
+      if (energy.current) energy.current *= 0.96;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.strokeStyle = `rgba(${accent},0.18)`;
+      ctx.lineWidth = 1;
+      for (let x = 0; x <= w; x += w / 8) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+      ctx.beginPath(); ctx.moveTo(0, h / 2); ctx.lineTo(w, h / 2); ctx.stroke();
+      for (const [col, lw, ph] of [[accent, 2.2, 0], ['255,255,255', 1, 0.6]] as const) {
+        ctx.strokeStyle = `rgba(${col},${col === accent ? 0.95 : 0.55})`;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 2) {
+          const u = x / w;
+          const env = Math.sin(Math.PI * u);
+          const y = h / 2 + env * amp * (h * 0.42) *
+            (Math.sin(u * 22 + t * 6 + ph) * 0.6 + Math.sin(u * 57 - t * 9) * 0.3 * amp + Math.sin(u * 7 + t * 2) * 0.25);
+          if (x) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+        }
+        ctx.stroke();
+      }
+      raf = reduce ? null : requestAnimationFrame(draw);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && raf === null) raf = requestAnimationFrame(draw);
+      else if (!e.isIntersecting && raf !== null) { cancelAnimationFrame(raf); raf = null; }
+    });
+    io.observe(c);
+    return () => { io.disconnect(); ro.disconnect(); if (raf !== null) cancelAnimationFrame(raf); };
+  }, [energy]);
+  return <canvas ref={ref} className="ct-scope" aria-hidden="true" />;
+}
 
 const EMAIL = 'ahnafclash17@gmail.com';
 const FIT = ['WordPress & Shopify builds', 'Next.js web apps & dashboards', 'Technical SEO & site speed', 'Automation & AI tools'];
@@ -21,6 +73,9 @@ export default function ContactSection() {
   const formRef = useRef<HTMLFormElement>(null);
   const [state, setState] = useState<SendState>('idle');
   const [copied, setCopied] = useState(false);
+  // Typing feeds the signal scope.
+  const energy = useRef(0);
+  const onType = () => { energy.current = Math.min(1.4, energy.current + 0.35); };
   const socials = (Object.keys(SOCIAL) as (keyof typeof SOCIAL)[]).filter((k) => SOCIAL[k]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,21 +104,22 @@ export default function ContactSection() {
   return (
     <section id="contact" className="ct-section">
       <div className="ct-grid-bg" aria-hidden="true" />
-      <svg className="ct-wave" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
-        <path d="M0 60 C 100 20, 200 100, 300 60 S 500 20, 600 60 S 800 100, 900 60 S 1100 20, 1200 60" />
-      </svg>
+      <div className="ct-sun" aria-hidden="true" />
+      <div className="ct-floor" aria-hidden="true">
+        <div className="ct-floor-plane"><div className="ct-floor-grid" /></div>
+      </div>
 
       <div className="ct-wrap">
         <div className="ct-left reveal">
           <p className="section-label">Work With Us</p>
           <h2 className="ct-heading">
-            <span className="gold-glow">Let&apos;s build</span> your next<br />product together.
+            <span className="gold-glow ct-glitch" data-text="Let’s build">Let&apos;s build</span> your next<br />product together.
           </h2>
           <p className="ct-sub">
             Looking for a technical partner or a high-capacity development team? Whether you&apos;re a SaaS founder or a digital agency, let&apos;s discuss how my team at AurixLab can help you scale.
           </p>
 
-          <form ref={formRef} className="ct-form" onSubmit={handleSubmit} data-state={state}>
+          <form ref={formRef} className="ct-form" onSubmit={handleSubmit} onInput={onType} data-state={state}>
             <input type="hidden" name="access_key" value="eecb91c7-df3e-459b-b194-7972ccfd29ee" />
             <input type="hidden" name="subject" value="New Portfolio Contact Message" />
             <input type="hidden" name="from_name" value="Portfolio Website" />
@@ -104,8 +160,12 @@ export default function ContactSection() {
           <span className="ct-corner is-tl" aria-hidden="true" />
           <span className="ct-corner is-br" aria-hidden="true" />
           <div className="ct-console-head">
-            <span>Transmission</span>
+            <span className="ct-console-title">Transmission</span>
             <span className="ct-console-ch">CH-01</span>
+          </div>
+          <div className="ct-scope-wrap">
+            <SignalScope energy={energy} />
+            <span className="ct-incoming" aria-hidden="true">Incoming transmission</span>
           </div>
           <dl className="ct-console-list">
             <div>
