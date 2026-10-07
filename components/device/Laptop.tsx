@@ -8,7 +8,7 @@ import {
   createChromeSurface, createContentSurface, createLiveSurface,
   REGION, toPlane,
 } from './screenTexture';
-import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
+import { makeScreenMaterial, prepareModel, RETURN_KEY, screenTracker, SCREEN_PANEL } from './deviceModel';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -45,7 +45,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   // Only for the portal target below; the animation reaches the lid through
   // `rig`, set up once the model is in (three objects are mutated per frame).
   const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
-  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial } | null>(null);
+  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial; track: ReturnType<typeof screenTracker> } | null>(null);
 
   useEffect(() => {
     const lid = scene.getObjectByName('LID');
@@ -62,7 +62,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     if (shadow) { shadow.material = shadowMat; shadow.renderOrder = -1; }
     // The model rests open; the intro starts closed.
     lid.rotation.x = P.lidClosed;
-    rig.current = { lid, screen };
+    rig.current = { lid, screen, track: screenTracker(scene, RETURN_KEY) };
     return () => { rig.current = null; screen.dispose(); shadowMat.dispose(); };
   }, [scene, chrome, shadowTex, accent]);
 
@@ -113,6 +113,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
     // Scroll the editor via texture offset (no redraw, no re-upload).
     content.render(read);
+    // Where the screen is on the page, for the showcase's glass handoff.
+    r.track?.(state.camera, state.size.width, state.size.height, state.gl.domElement);
   });
 
   return (

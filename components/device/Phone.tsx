@@ -5,7 +5,7 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
-import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
+import { makeScreenMaterial, prepareModel, screenTracker, SCREEN_PANEL } from './deviceModel';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -39,7 +39,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
 
   // three objects are mutated every frame, so they live in a ref set up once
   // the model is in.
-  const rig = useRef<{ screen: THREE.MeshStandardMaterial } | null>(null);
+  const rig = useRef<{ screen: THREE.MeshStandardMaterial; track: ReturnType<typeof screenTracker> } | null>(null);
   useEffect(() => {
     const screen = makeScreenMaterial(chrome.texture);
     prepareModel(scene, {
@@ -49,7 +49,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       // behind the phone and read as solid colour while it turned).
       envIntensity: { MAT_Titanium: 0.8, MAT_BackGlass: 0.3, MAT_CameraPlate: 0.6, MAT_LensGlass: 1, MAT_Bezel: 0.5 },
     });
-    rig.current = { screen };
+    rig.current = { screen, track: screenTracker(scene) };
     return () => { rig.current = null; screen.dispose(); };
   }, [scene, chrome, accent]);
 
@@ -84,6 +84,8 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     content.render(read);
+    // Where the screen is on the page, for the showcase's glass handoff.
+    r.track?.(state.camera, state.size.width, state.size.height, state.gl.domElement);
   });
 
   return (

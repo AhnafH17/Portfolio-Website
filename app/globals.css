@@ -2047,6 +2047,18 @@ footer span{color:var(--accent-glow)}
   font-size:clamp(2.2rem, 5.2vw, 5.2rem); letter-spacing:0.01em; white-space:nowrap;
   text-shadow:0 0 34px rgba(var(--accent-rgb),0.28);
 }
+/* Liquid chrome over the first title, flooded in by the hero's handoff
+   (components/handoff/handoffs.ts): Y2K banded chrome clipped to the text. */
+.cs-kinetic-big[data-chrome]{ position:relative; }
+.cs-kinetic-big[data-chrome]::after{
+  content:attr(data-chrome); position:absolute; left:0; top:0; width:max-content;
+  color:transparent; text-shadow:none; pointer-events:none;
+  background:linear-gradient(180deg,#fff 0%,#e8ecf2 18%,#9aa2ae 36%,#2b2f36 47%,#0c0e12 50%,#5e6570 56%,#d8dce3 68%,rgba(var(--accent-rgb),1) 84%,#fff 100%);
+  background-size:100% 160%; background-position:0 var(--chrome-shift,0%);
+  -webkit-background-clip:text; background-clip:text;
+  clip-path:inset(var(--chrome-top,0%) calc(100% - var(--chrome-r,0px)) 0 var(--chrome-l,0px));
+  opacity:var(--chrome-a,0);
+}
 /* The outlined echo: huge, behind the panels, sliding at its own speed. */
 .cs-kinetic-track.is-echo{ top:auto; bottom:15vh; opacity:0.55; width:auto; }
 .cs-kinetic-track.is-echo .cs-kinetic-item{ flex:0 0 auto; width:max-content; min-width:100vw; padding:0 6vw 0 4vw; }
@@ -2268,6 +2280,41 @@ footer span{color:var(--accent-glow)}
 /* ══ Section handoffs overlay (components/handoff/) ══ */
 .handoff-layer{ position:fixed; inset:0; z-index:40; pointer-events:none; contain:strict; }
 .handoff-canvas{ position:absolute; inset:0; width:100%; height:100%; }
+/* Showcase -> Laptop: the AurixLab card as a pane of frosted glass. It is
+   mapped onto any quad with matrix3d (so it can land on the 3D screen);
+   --frost turns the solid card into glass, --flash is the landing. */
+.handoff-glass{
+  position:absolute; left:0; top:0; display:none; transform-origin:0 0;
+  border-radius:6px; overflow:hidden; will-change:transform,opacity;
+  box-shadow:0 24px 60px rgba(0,0,0,0.45), 0 0 46px rgba(var(--accent-rgb),calc(0.35 * var(--frost,0)));
+}
+.handoff-glass *{ pointer-events:none !important; }
+.handoff-glass-frost{
+  position:absolute; inset:0; opacity:var(--frost,0);
+  -webkit-backdrop-filter:blur(14px) saturate(1.5); backdrop-filter:blur(14px) saturate(1.5);
+  background:linear-gradient(135deg, rgba(255,255,255,0.24), rgba(255,255,255,0.05) 45%, rgba(var(--accent-rgb),0.16));
+}
+.handoff-glass-card{ position:absolute; inset:0; }
+.handoff-glass .cs-card{
+  height:100%; transition:none;
+  background:rgba(10,12,16,calc(1 - 0.85 * var(--frost,0)));
+  border-color:rgba(255,255,255,calc(0.12 + 0.3 * var(--frost,0)));
+}
+.handoff-glass .cs-card-media, .handoff-glass .cs-card-body{ opacity:calc(1 - 0.4 * var(--frost,0)); }
+.handoff-glass-sheen{
+  position:absolute; top:-20%; bottom:-20%; left:0; width:60%; opacity:var(--frost,0);
+  background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.32) 50%, transparent 70%);
+  transform:translateX(var(--sheen,0%));
+}
+.handoff-glass-flash{
+  position:absolute; inset:0; opacity:var(--flash,0);
+  background:linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.12) 40%, rgba(var(--accent-rgb),0.18));
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,0.8), inset 0 0 40px rgba(var(--accent-rgb),0.55);
+}
+@media (max-width:768px){
+  /* No live blur on phones: a stronger tint stands in for it. */
+  .handoff-glass-frost{ -webkit-backdrop-filter:none; backdrop-filter:none; background:linear-gradient(135deg, rgba(255,255,255,0.3), rgba(255,255,255,0.08) 45%, rgba(var(--accent-rgb),0.22)); }
+}
 /* Testimonials -> Contact: the card glitches away as the transmission
    leaves (--dissolve set on .ts-section by the handoff). */
 .ts-section .ts-stack-outer{ opacity:calc(1 - var(--dissolve, 0)); }

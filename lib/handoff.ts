@@ -1,6 +1,6 @@
 /* Section-to-section "handoffs": an object that leaves one section and
-   lands in the next as you scroll (the hero's rings becoming the showcase
-   horizon, a pixel sprite falling onto the laptop, ...). Driven by
+   lands in the next as you scroll (a chrome droplet falling from the hero
+   onto the showcase title, a clay key popping off the laptop, ...). Driven by
    components/handoff/HandoffLayer.tsx: one fixed overlay, one 2D canvas and
    one loop for all of them. Each handoff is a pure function of where its
    sections are on screen, so scrolling back up plays it in reverse.
@@ -93,4 +93,52 @@ export function seeded(seed: number) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/** A looping sprite sheet rendered in Blender (public/images/handoff/):
+    `frames` square cells, `cols` per row. Loads on first use. */
+export interface Sprite { img: HTMLImageElement; frames: number; cols: number; cell: number; ready: boolean; tinted: HTMLCanvasElement | null }
+const sprites = new Map<string, Sprite>();
+export function sprite(url: string, frames: number, cols: number): Sprite {
+  let s = sprites.get(url);
+  if (!s) {
+    const img = new Image();
+    img.decoding = 'async';
+    const made: Sprite = { img, frames, cols, cell: 0, ready: false, tinted: null };
+    img.onload = () => { made.cell = img.naturalWidth / cols; made.ready = true; };
+    img.src = url;
+    sprites.set(url, (s = made));
+  }
+  return s;
+}
+
+/** The sheet multiplied by the accent colour (for the matte clay), made once. */
+export function tintSprite(s: Sprite, rgb: string) {
+  if (!s.ready || s.tinted) return;
+  const c = document.createElement('canvas');
+  c.width = s.img.naturalWidth; c.height = s.img.naturalHeight;
+  const g = c.getContext('2d');
+  if (!g) return;
+  g.drawImage(s.img, 0, 0);
+  g.globalCompositeOperation = 'multiply';
+  g.fillStyle = `rgb(${rgb})`;
+  g.fillRect(0, 0, c.width, c.height);
+  g.globalCompositeOperation = 'destination-in';
+  g.drawImage(s.img, 0, 0);
+  s.tinted = c;
+}
+
+/** Draws frame `f` centred on (x, y), `size` px across, stretched by
+    (sx, sy) along an axis rotated by `rot`. */
+export function drawSprite(ctx: CanvasRenderingContext2D, s: Sprite, f: number, x: number, y: number, size: number, rot = 0, sx = 1, sy = 1, alpha = 1) {
+  if (!s.ready || alpha <= 0) return;
+  const i = ((Math.floor(f) % s.frames) + s.frames) % s.frames;
+  const src = s.tinted ?? s.img;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(x, y);
+  ctx.rotate(rot);
+  ctx.scale(sx, sy);
+  ctx.drawImage(src, (i % s.cols) * s.cell, Math.floor(i / s.cols) * s.cell, s.cell, s.cell, -size / 2, -size / 2, size, size);
+  ctx.restore();
 }

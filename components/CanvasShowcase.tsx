@@ -322,7 +322,8 @@ export default function CanvasShowcase() {
             <div key={i} className="cs-kinetic-item">
               <h2 className="cs-title">
                 <span className="cs-kinetic-pre">{cat.title}</span>
-                <span className="cs-kinetic-big">{cat.titleBold}</span>
+                {/* data-chrome: the chrome copy the hero's handoff floods in. */}
+                <span className="cs-kinetic-big" data-chrome={i === 0 ? cat.titleBold : undefined}>{cat.titleBold}</span>
               </h2>
             </div>
           ))}

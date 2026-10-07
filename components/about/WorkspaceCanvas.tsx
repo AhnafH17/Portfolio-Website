@@ -167,7 +167,7 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
       const target = baseY + drift + rise + (hovered.current === name ? LIFT : 0);
       node.position.y += (target - node.position.y) * k;
     });
-    if (model.accentMat) model.accentMat.emissiveIntensity = (2.2 + Math.sin(t * 1.6) * 0.35) * model.glow;
+    if (model.accentMat) model.accentMat.emissiveIntensity = (2.2 + Math.sin(t * 1.6) * 0.35) * model.glow * (1 + coreHandoff.pulse * 0.7);
 
     // Hand-off: while the Impacts section has the cube, hide it here and let
     // its platform go dark; otherwise publish where it is on screen, so the
@@ -175,7 +175,7 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     const core = model.core;
     if (!core) return;
     core.visible = !coreHandoff.detached;
-    if (coreLightRef.current) coreLightRef.current.intensity = coreHandoff.detached ? 0 : coreLightRef.current.userData.base;
+    if (coreLightRef.current) coreLightRef.current.intensity = coreHandoff.detached ? 0 : coreLightRef.current.userData.base * (1 + coreHandoff.pulse * 3);
     core.updateWorldMatrix(true, false);
     const c = core.localToWorld(tmp.a.set(0, CORE_EDGE / 2, 0));
     const top = core.localToWorld(tmp.b.set(0, CORE_EDGE, 0));
