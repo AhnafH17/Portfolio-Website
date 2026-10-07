@@ -59,14 +59,34 @@ export default function Home() {
       const id = setTimeout(() => ScrollTrigger.refresh(), 300);
       return () => clearTimeout(id);
     }
-    // Next section in the next idle slot, so each mount is its own short task.
+    // Next section in the next idle slot, so each mount is its own short
+    // task, and only while the visitor isn't scrolling: a mount is a
+    // 50-130ms task (much more on phones), and idle gaps between scroll
+    // frames used to land it mid-flight in the showcase. If they get close
+    // to the end of what's mounted, the next section goes in regardless.
     const next = () => setMounted((m) => m + 1);
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(next, { timeout: 500 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = window.setTimeout(next, 60);
-    return () => window.clearTimeout(id);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let idleId: number | undefined;
+    let lastScroll = 0;
+    const onScroll = () => { lastScroll = performance.now(); };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    const attempt = () => {
+      // "Close": the marker after the last mounted section is within two
+      // screens. (Not the document end: until these sections exist the page
+      // is short, so that was "close" from the first scroll.)
+      const marker = document.querySelector('[data-mount-marker]');
+      const nearEnd = !marker || marker.getBoundingClientRect().top < window.innerHeight * 2;
+      if (nearEnd) { next(); return; }
+      if (performance.now() - lastScroll < 300) { timer = setTimeout(attempt, 160); return; }
+      if (typeof window.requestIdleCallback === 'function') idleId = window.requestIdleCallback(next, { timeout: 400 });
+      else timer = setTimeout(next, 60);
+    };
+    attempt();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      clearTimeout(timer);
+      if (idleId !== undefined && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(idleId);
+    };
   }, [mounted]);
 
   /* Warm the heavy below-fold chunks while the preloader is still on screen.
@@ -80,7 +100,14 @@ export default function Home() {
   useEffect(() => {
     let cancelled = false;
     const jobs: (() => Promise<unknown>)[] = [
-      () => import('@/components/device/DeviceCanvas'),   // heaviest, needed first
+      // Heaviest, needed first, and then its model, fetched and parsed now
+      // rather than when the section mounts (that parse landed mid-scroll).
+      () => import('@/components/device/DeviceCanvas').then((m) => {
+        if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        m.preloadDeviceModel(window.matchMedia('(max-width: 768px)').matches ? 'phone' : 'laptop');
+      }),
+      // The About scene's module preloads its model when it loads.
+      () => import('@/components/about/WorkspaceCanvas'),
       () => import('@/components/DeviceShowcase'),
       () => import('@/components/AboutSection'),
       () => import('@/components/ImpactsSection'),
@@ -132,6 +159,7 @@ export default function Home() {
               <Section />
             </Suspense>
           ))}
+          <div data-mount-marker aria-hidden="true" />
         </main>
         {/* Not lazy: it carries the bio and case-study links the server HTML
             needs (the sections above only arrive after mount). */}

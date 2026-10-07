@@ -19,8 +19,8 @@ import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
    plane on the lid, 1.0 above the hinge; `SHADOW` is a ground plane for the
    baked contact shadow (public/models/laptop-shadow.png). */
 
-const MODEL_URL = '/models/laptop.glb';
-const SHADOW_URL = '/models/laptop-shadow.png';
+export const MODEL_URL = '/models/laptop.glb';
+export const SHADOW_URL = '/models/laptop-shadow.webp';
 const P = POSE.laptop;
 
 // The screen's centre and front face, in the lid's own space.

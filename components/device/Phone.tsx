@@ -16,7 +16,7 @@ import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
    bounding rectangle. The status bar, Dynamic Island and rounded corners are
    painted into the screen texture, not modelled. */
 
-const MODEL_URL = '/models/phone.glb';
+export const MODEL_URL = '/models/phone.glb';
 const P = POSE.phone;
 
 const SCREEN_Z = 0.086; // the model's screen surface

@@ -1,11 +1,11 @@
 'use client';
 
 import { Canvas, useThree } from '@react-three/fiber';
-import { Environment, Lightformer } from '@react-three/drei';
+import { Environment, Lightformer, useGLTF, useTexture } from '@react-three/drei';
 import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
-import Laptop from './Laptop';
-import Phone from './Phone';
+import Laptop, { MODEL_URL as LAPTOP_URL, SHADOW_URL } from './Laptop';
+import Phone, { MODEL_URL as PHONE_URL } from './Phone';
 import { readAccent } from '@/lib/accent';
 
 /* The render loop stays off until the section is on screen, which used to
@@ -102,6 +102,18 @@ function WarmPmrem({ cubeSize, onReady }: { cubeSize: number; onReady: () => voi
  * no external HDR fetch) gives the metal real reflections; ContactShadows grounds
  * the device. The `progress` ref is driven by ScrollTrigger in DeviceShowcase.
  */
+/** Fetch and parse the device's model ahead of time (the page calls this in
+    idle time while the hero is up), so the intro doesn't wait on it and the
+    parse doesn't land mid-scroll. Only the device this visitor will see. */
+export function preloadDeviceModel(kind: 'laptop' | 'phone') {
+  if (kind === 'laptop') {
+    useGLTF.preload(LAPTOP_URL);
+    useTexture.preload(SHADOW_URL);
+  } else {
+    useGLTF.preload(PHONE_URL);
+  }
+}
+
 export default function DeviceCanvas({
   kind,
   progress,

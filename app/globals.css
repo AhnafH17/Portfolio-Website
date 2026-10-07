@@ -1810,36 +1810,34 @@ footer span{color:var(--accent-glow)}
 }
 
 /* ══════════════════════════════════════════════════════════════
-   Canvas Showcase — scroll-pinned 3D project section
+   Showcase "Orbital HUD": pinned Selected Work scene
+   (components/CanvasShowcase.tsx)
    ══════════════════════════════════════════════════════════════ */
 .cs-section{
   position:relative; width:100%; height:100vh;
   background-color:var(--black-deep); overflow:hidden;
   padding:0;
+  --cs-gutter:220px;          /* left column, where the timeline sits */
+  --cs-hud-top:6rem;          /* clears the fixed navbar */
 }
 
-/* ── Deep-space backdrop layer (planets / nebula / asteroids / horizon) ── */
+/* ── Backdrop ── */
 .cs-bg{ position:absolute; inset:0; z-index:1; overflow:hidden; pointer-events:none; }
+/* Painted once (CanvasShowcase moves it for parallax). Taller than the
+   section by STAR_PARALLAX. */
+.cs-stars{ position:absolute; left:0; top:0; width:100%; height:112%; will-change:transform; }
 
-/* Planets: a tileable procedural surface (SVG feTurbulence, stitched so it
-   repeats seamlessly) drawn on a 200%-wide ::before that slides one planet
-   width per cycle inside the circular clip — reads as the planet slowly
-   rotating. It's a transform animation, so it stays on the compositor.
-   ::after lays spherical shading on top, lit from the side facing the
-   centre of the screen. */
+/* Planets: banded gradients (they used to be an SVG fractal-noise texture,
+   a slow raster the first time it painted) on a 300%-wide ::before that
+   slides for the idle spin; ::after adds the spherical shading. The
+   top-left one takes the visitor's accent colour. */
 .cs-planet{
   position:absolute; border-radius:50%; overflow:hidden; isolation:isolate;
-  /* JS scales it up with scroll progress (the planet "approaches"); its own
-     layer keeps that off the paint path despite the big box-shadow. */
   will-change:transform;
 }
-/* Three tiles wide: one tile of idle spin (the keyframes) plus up to a third
-   of a tile of scroll-driven spin (`translate`, set from JS via
-   --spin-shift) always leaves the circle fully covered. `translate` and
-   `transform` compose, so the two motions stack. */
 .cs-planet::before{
   content:''; position:absolute; top:0; left:0; width:300%; height:100%;
-  background-image:var(--planet-tex);
+  background:var(--planet-bands);
   background-size:33.3334% 100%; background-repeat:repeat-x;
   animation:cs-planet-spin var(--planet-spin) linear infinite;
   translate:calc(var(--spin-shift, 0%) * -1) 0;
@@ -1848,88 +1846,124 @@ footer span{color:var(--accent-glow)}
 .cs-planet::after{
   content:''; position:absolute; inset:0; border-radius:50%;
   background:radial-gradient(circle at var(--light-x) var(--light-y),
-    rgba(255,255,255,0.10) 0%,
-    transparent 16%,
-    rgba(0,0,0,0.55) 40%,
-    rgba(0,0,0,0.93) 62%);
+    rgba(255,255,255,0.10) 0%, transparent 16%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.93) 62%);
   box-shadow:inset 0 0 40px var(--planet-rim);
 }
-@keyframes cs-planet-spin{
-  from{ transform:translateX(0); }
-  to{ transform:translateX(-33.3333%); }
-}
+@keyframes cs-planet-spin{ from{ transform:translateX(0); } to{ transform:translateX(-33.3333%); } }
 .cs-planet-tl{
   top:-14vw; left:-10vw; width:32vw; height:32vw;
-  background:#06201e;
-  box-shadow:0 0 90px rgba(43,178,169,0.14);
+  background:#07090c;
+  box-shadow:0 0 70px rgba(var(--accent-rgb),0.14);
   --light-x:80%; --light-y:84%;
-  --planet-rim:rgba(90,210,195,0.22);
+  --planet-rim:rgba(var(--accent-rgb),0.28);
   --planet-spin:90s;
-  --planet-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' preserveAspectRatio='none'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.007 0.016' numOctaves='5' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.25 0 0 0 0  0.7 0 0 0 0.02  0.65 0 0 0 0.03  1.1 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --planet-bands:
+    radial-gradient(ellipse 30% 9% at 30% 38%, rgba(var(--accent-rgb),0.30), transparent 70%),
+    radial-gradient(ellipse 22% 7% at 72% 62%, rgba(var(--accent-rgb),0.22), transparent 70%),
+    repeating-linear-gradient(176deg,
+      rgba(var(--accent-rgb),0.20) 0 5%, rgba(var(--accent-rgb),0.06) 5% 11%,
+      rgba(255,255,255,0.05) 11% 13%, rgba(var(--accent-rgb),0.14) 13% 21%, transparent 21% 26%);
 }
 .cs-planet-tr{
   top:-16vw; right:-12vw; width:26vw; height:26vw;
-  background:#2a1606;
-  box-shadow:0 0 100px rgba(218,150,38,0.18);
+  background:#1d1308;
+  box-shadow:0 0 80px rgba(218,150,38,0.14);
   --light-x:20%; --light-y:84%;
   --planet-rim:rgba(255,190,100,0.25);
   --planet-spin:70s;
-  --planet-tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='512' height='512' preserveAspectRatio='none'%3E%3Cfilter id='n' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.002 0.03' numOctaves='3' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0.95 0 0 0 0.05  0.55 0 0 0 0.02  0.2 0 0 0 0  1.1 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --planet-bands:
+    radial-gradient(ellipse 14% 6% at 62% 46%, rgba(255,150,80,0.45), transparent 70%),
+    repeating-linear-gradient(180deg,
+      rgba(230,170,90,0.55) 0 4%, rgba(150,90,40,0.45) 4% 9%, rgba(240,200,130,0.35) 9% 12%,
+      rgba(110,62,26,0.5) 12% 18%, rgba(200,140,70,0.4) 18% 23%);
 }
-@media (prefers-reduced-motion:reduce){
-  .cs-planet::before{ animation:none; }
-}
+@media (prefers-reduced-motion:reduce){ .cs-planet::before{ animation:none; } }
 
+/* Soft colour wash behind the panels (no blur filter: the gradients are
+   already soft, and a filtered layer this size costs a full repaint). */
 .cs-nebula{
-  position:absolute; top:8%; left:50%; width:64vw; height:46vw; max-height:60vh;
+  position:absolute; top:6%; left:50%; width:72vw; height:52vw; max-height:66vh;
   transform:translateX(-50%);
   background:
-    radial-gradient(ellipse 40% 55% at 30% 40%, rgba(43,178,169,0.16), transparent 60%),
-    radial-gradient(ellipse 35% 50% at 68% 55%, rgba(218,150,38,0.14), transparent 60%),
-    radial-gradient(ellipse 30% 40% at 50% 30%, rgba(200,170,255,0.06), transparent 65%);
-  filter:blur(18px);
-  opacity:0.8;
+    radial-gradient(ellipse 45% 55% at 32% 42%, rgba(var(--accent-rgb),0.10), transparent 70%),
+    radial-gradient(ellipse 40% 50% at 68% 56%, rgba(218,150,38,0.07), transparent 70%);
 }
-
 .cs-asteroids{ position:absolute; inset:0; }
 .cs-asteroid{
   position:absolute; border-radius:42% 58% 60% 40% / 55% 45% 58% 42%;
   background:radial-gradient(circle at 35% 30%, rgba(80,70,60,0.9), rgba(6,5,4,0.98) 65%);
-  box-shadow:inset -6px -6px 14px rgba(0,0,0,0.6), 0 6px 18px rgba(0,0,0,0.5);
+  box-shadow:inset -6px -6px 14px rgba(0,0,0,0.6);
 }
-
 .cs-horizon{ position:absolute; left:0; right:0; bottom:-18vh; height:38vh; }
 .cs-horizon-curve{
   position:absolute; left:50%; bottom:0; width:150vw; height:60vh;
-  transform:translateX(-50%);
-  border-radius:50%;
+  transform:translateX(-50%); border-radius:50%;
   background:linear-gradient(to bottom, transparent 0%, rgba(4,10,9,0.7) 8%, var(--black-deep) 30%);
-  box-shadow:0 -2px 60px rgba(var(--accent-rgb),0.35), 0 -1px 0 rgba(var(--accent-rgb),0.55);
+  box-shadow:0 -2px 60px rgba(var(--accent-rgb),0.32), 0 -1px 0 rgba(var(--accent-rgb),0.55);
 }
 .cs-surface{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .cs-horizon-glow{
   position:absolute; left:50%; bottom:22vh; width:150vw; height:2px;
   transform:translateX(-50%);
   background:linear-gradient(to right, transparent 0%, rgba(var(--accent-rgb),0.75) 20%, rgba(var(--accent-rgb),0.95) 50%, rgba(var(--accent-rgb),0.75) 80%, transparent 100%);
-  box-shadow:0 0 24px 4px rgba(var(--accent-rgb),0.55);
+  box-shadow:0 0 24px 4px rgba(var(--accent-rgb),0.5);
 }
-.cs-horizon-lights{ position:absolute; left:0; right:0; bottom:20.5vh; height:4px; }
-.cs-city-light{
-  position:absolute; bottom:0; width:2px; height:2px; border-radius:50%;
-  background:rgba(255,232,180,0.6);
-  box-shadow:0 0 4px 1px rgba(255,220,140,0.5);
-  animation:cs-twinkle 3.2s ease-in-out infinite;
+
+/* ── HUD: hairline corner marks + mono microtype ── */
+.cs-hud{ position:absolute; inset:0; z-index:4; pointer-events:none; }
+.cs-hud-corner{
+  position:absolute; width:22px; height:22px;
+  border-color:rgba(var(--accent-rgb),0.6); border-style:solid; border-width:0;
 }
-.cs-city-light.is-bright{
-  width:3px; height:3px;
-  background:rgba(255,240,200,0.9);
-  box-shadow:0 0 8px 2px rgba(255,220,140,0.7);
+.cs-hud-corner.is-tl{ top:calc(var(--cs-hud-top) - 0.9rem); left:1.6rem; border-top-width:1px; border-left-width:1px; }
+.cs-hud-corner.is-tr{ top:calc(var(--cs-hud-top) - 0.9rem); right:1.6rem; border-top-width:1px; border-right-width:1px; }
+.cs-hud-corner.is-bl{ bottom:1.4rem; left:1.6rem; border-bottom-width:1px; border-left-width:1px; }
+.cs-hud-corner.is-br{ bottom:1.4rem; right:1.6rem; border-bottom-width:1px; border-right-width:1px; }
+.cs-hud-text{
+  position:absolute; font-family:'Chakra Petch', ui-monospace, monospace; font-weight:600;
+  font-size:0.66rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold-dim);
+  white-space:nowrap;
 }
-@keyframes cs-twinkle{ 0%,100%{ opacity:0.4; } 50%{ opacity:1; } }
+.cs-hud-strong{ color:var(--accent-glow); }
+.cs-hud-text.is-tl{ top:var(--cs-hud-top); left:2.6rem; }
+.cs-hud-text.is-tr{ top:var(--cs-hud-top); right:2.6rem; }
+.cs-hud-text.is-bl{ bottom:2.1rem; left:2.6rem; }
+.cs-hud-text.is-br{ bottom:2.1rem; right:2.6rem; }
+
+/* ── Kinetic title: a horizontal track of three full-width titles ── */
+.cs-kinetic{ position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden; }
+.cs-kinetic-track{
+  position:absolute; left:0; top:calc(var(--cs-hud-top) + 1.6rem);
+  display:flex; width:300vw; will-change:transform;
+}
+.cs-kinetic-item{ flex:0 0 100vw; padding-left:var(--cs-gutter); padding-right:2rem; }
+.cs-title{ margin:0; line-height:1; color:var(--gold-bright); }
+.cs-kinetic-pre{
+  display:block; margin-bottom:0.55rem;
+  font-family:'Chakra Petch', var(--font-body); font-weight:600; font-size:clamp(0.75rem, 1vw, 0.95rem);
+  letter-spacing:0.3em; text-transform:uppercase; color:var(--accent-glow);
+}
+.cs-kinetic-big{
+  display:block; font-family:var(--font-display); font-weight:400; text-transform:uppercase;
+  font-size:clamp(2.2rem, 5.2vw, 5.2rem); letter-spacing:0.01em; white-space:nowrap;
+  text-shadow:0 0 34px rgba(var(--accent-rgb),0.28);
+}
+/* The outlined echo: huge, behind the panels, sliding at its own speed. */
+.cs-kinetic-track.is-echo{ top:auto; bottom:15vh; opacity:0.55; width:auto; }
+.cs-kinetic-track.is-echo .cs-kinetic-item{ flex:0 0 auto; width:max-content; min-width:100vw; padding:0 6vw 0 4vw; }
+.cs-kinetic-track.is-echo .cs-kinetic-big{
+  font-size:clamp(4rem, 11vw, 11.5rem); color:transparent; text-shadow:none;
+  -webkit-text-stroke:1px rgba(var(--accent-rgb),0.55);
+}
+.cs-subtitles{ position:absolute; left:var(--cs-gutter); top:calc(var(--cs-hud-top) + 1.6rem + 0.95rem + clamp(2.2rem, 5.2vw, 5.2rem) + 1.3rem); right:2rem; }
+.cs-subtitle{
+  position:absolute; left:0; top:0; margin:0; max-width:34rem;
+  font-size:clamp(0.78rem, 1.05vw, 0.95rem); color:var(--gold-dim); line-height:1.5;
+}
 
 /* ── Left-side numbered timeline ── */
 .cs-timeline{
-  position:absolute; left:1.75rem; top:50%; transform:translateY(-38%);
+  position:absolute; left:1.75rem; top:50%; transform:translateY(-30%);
   z-index:5; display:flex; flex-direction:column; gap:2.1rem;
 }
 .cs-timeline-line{
@@ -1939,308 +1973,167 @@ footer span{color:var(--accent-glow)}
 .cs-timeline-item{ position:relative; display:flex; align-items:center; gap:0.9rem; }
 .cs-timeline-node{
   position:relative; z-index:1; flex:none;
-  width:26px; height:26px; border-radius:50%;
+  width:26px; height:26px; border-radius:2px;
   display:flex; align-items:center; justify-content:center;
-  font-family:var(--font-display); font-size:0.6rem; font-weight:700;
-  color:var(--gold-dim);
-  border:1px solid rgba(var(--accent-rgb),0.3);
-  background:rgba(6,8,10,0.6);
-  transition:all 0.35s ease;
+  font-family:'Chakra Petch', var(--font-body); font-size:0.62rem; font-weight:700;
+  color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.3);
+  background:rgba(6,8,10,0.6); transition:all 0.35s ease;
 }
 .cs-timeline-label{
-  font-size:0.68rem; font-weight:600; letter-spacing:0.01em;
-  color:var(--gold-dim); line-height:1.3; max-width:120px;
+  font-size:0.68rem; font-weight:600; color:var(--gold-dim); line-height:1.3; max-width:120px;
   transition:color 0.35s ease;
 }
-.cs-timeline-item.is-active .cs-timeline-node{
-  color:var(--black-deep);
-  background:var(--accent-glow);
-  border-color:var(--accent-glow);
-  box-shadow:0 0 16px 2px rgba(var(--accent-rgb),0.6);
+.cs-timeline-item[data-active="true"] .cs-timeline-node{
+  color:var(--black-deep); background:var(--accent-glow); border-color:var(--accent-glow);
+  box-shadow:0 0 14px 1px rgba(var(--accent-rgb),0.55);
 }
-.cs-timeline-item.is-active .cs-timeline-label{ color:var(--gold-bright); }
+.cs-timeline-item[data-active="true"] .cs-timeline-label{ color:var(--gold-bright); }
 
-/* ── Corner label (counter) ── */
-.cs-corner{
-  position:absolute; z-index:5;
-  font-size:0.7rem; letter-spacing:0.16em; text-transform:uppercase;
-  color:var(--gold-dim); font-weight:500;
-}
-.cs-corner-tl{
-  /* Sits below the fixed navbar's painted area (nav is z-index:1000 and
-     auto-shows on scroll-up) so it's never covered regardless of nav state. */
-  top:6.5rem; left:2.5rem;
-  font-family:var(--font-display); font-size:0.9rem; letter-spacing:0.05em;
-  text-shadow:0 1px 8px rgba(0,0,0,0.85);
-}
-.cs-counter-active{ color:var(--accent-glow); font-weight:700; }
-.cs-counter-sep{ margin:0 0.4rem; opacity:0.5; }
-
-/* ── Category heading stack ── */
-.cs-heading-stack{
-  position:absolute; top:0; left:0; width:100%; z-index:3;
-  pointer-events:none; text-align:center; padding-top:5.5vh;
-}
-.cs-heading{
-  /* Kept where the title sat when it had a label line above it, so it
-     stays clear of the navbar when that slides back in. */
-  position:absolute; top:calc(5.5vh + 1.6rem); left:0; width:100%; padding:0 1.5rem;
-  transition:opacity 0.7s cubic-bezier(0.22,1,0.36,1);
-}
-.cs-title{
-  font-family:var(--font-display); font-size:clamp(1.7rem, 3.6vw, 3.1rem);
-  font-weight:600; letter-spacing:-0.01em; color:var(--gold-bright);
-  margin:0 0 0.6rem 0; line-height:1.15;
-  text-shadow:0 0 32px rgba(var(--accent-rgb),0.35);
-}
-/* Syne is a variable font that widens dramatically at heavy weights, so a
-   bolder half reads as a different typeface — keep the whole title one weight. */
-.cs-title strong{ font-weight:inherit; white-space:nowrap; } /* never split "E-commerce" at its hyphen */
-.cs-subtitle{
-  font-size:clamp(0.75rem, 1.1vw, 0.9rem); color:var(--gold-dim);
-  max-width:500px; margin:0 auto; line-height:1.5;
-}
-.cs-title-divider{
-  width:44px; height:1.5px; margin:1.1rem auto 0;
-  background:linear-gradient(to right, transparent, var(--accent-glow), transparent);
-  opacity:0.7;
-}
-
-/* ── 3D card layer: 3 persistent slots that flip in place ── */
+/* ── Panels: three slots, each with all three categories stacked; later
+   faces wipe down over earlier ones (clip-path set from JS) ── */
 .cs-cards-layer{
-  position:absolute; top:0; left:0; width:100%; height:100%; z-index:2;
-  display:flex; align-items:center; justify-content:center;
-  gap:clamp(1rem, 2vw, 2rem);
-  pointer-events:none; perspective:1200px; padding-top:6vh;
-  /* Same gutter both sides so the row is centred under the title while
-     still clearing the timeline on the left. */
-  padding-left:220px; padding-right:220px;
+  position:absolute; inset:0; z-index:4; pointer-events:none;
+  display:flex; align-items:flex-end; justify-content:flex-start;
+  gap:clamp(1rem, 1.6vw, 1.6rem);
+  padding:0 2.6rem 13vh var(--cs-gutter);
 }
-/* Static off-center offset — deliberately not perfectly aligned/centered. */
 .cs-slot{
-  transform:translate(var(--ox,0px), var(--oy,0px)) rotate(var(--orz,0deg));
-  pointer-events:auto;
+  position:relative; flex:0 1 auto;
+  width:clamp(240px, calc((100vw - var(--cs-gutter) - 2.6rem - 3.2vw) / 3), 400px);
 }
-/* Gentle continuous float, isolated on its own element so it doesn't fight
-   the static offset above (both would otherwise write the same
-   `transform` property and clobber each other). */
-.cs-slot-float{
-  animation-name:cs-float; animation-timing-function:ease-in-out; animation-iteration-count:infinite;
+.cs-slot:nth-child(2){ transform:translateY(-4vh); }
+.cs-slot:nth-child(3){ transform:translateY(-8vh); }
+/* The three faces share one grid cell, so the slot is as tall as the
+   tallest and every face fills it. */
+.cs-slot{ display:grid; }
+.cs-face{ grid-area:1 / 1; min-width:0; }
+.cs-scan{ position:absolute; inset:0; z-index:5; pointer-events:none; opacity:0; will-change:transform; }
+.cs-scan::before{
+  content:''; position:absolute; left:-6px; right:-6px; top:-1px; height:2px;
+  background:var(--accent-glow);
+  box-shadow:0 0 12px 2px rgba(var(--accent-rgb),0.75), 0 0 2px #fff;
 }
-@keyframes cs-float{
-  0%,100%{ transform:translateY(0); }
-  50%{ transform:translateY(-12px); }
-}
-/* The flip itself — rotateY is eased and written per frame from JS (no CSS
-   transition, so the swap logic always knows the on-screen angle). */
-.cs-flip{
-  /* As wide as three cards can go between the two gutters. */
-  position:relative; width:clamp(260px, calc((100vw - 440px) / 3 - 1.4vw), 420px);
-  transform-style:preserve-3d;
-  will-change:transform;
-}
-.cs-face{ backface-visibility:hidden; -webkit-backface-visibility:hidden; }
-.cs-face-front{ position:relative; }
-.cs-face-back{ position:absolute; inset:0; transform:rotateY(180deg); }
 .cs-card{
-  --tilt:0deg;
-  display:block; color:inherit; text-decoration:none; /* it is an <a> */
-  width:100%; border-radius:12px; overflow:visible;
-  cursor:pointer; position:relative; transform-style:preserve-3d;
-  border:1.5px solid transparent; background-clip:padding-box; background-origin:border-box;
-  transform:perspective(800px) rotateY(var(--tilt));
-  transition:transform 0.4s ease;
+  display:flex; flex-direction:column; height:100%; color:inherit; text-decoration:none;
+  background:#0a0c10; border:1px solid rgba(var(--accent-rgb),0.28); border-radius:3px;
+  overflow:hidden; pointer-events:auto; position:relative;
+  transition:border-color 0.25s ease, transform 0.25s ease;
 }
-.cs-card:hover{ transform:perspective(800px) rotateY(var(--tilt)) translateY(-6px); }
-.cs-card-rim{
-  position:absolute; inset:-1.5px; border-radius:13px; z-index:0; pointer-events:none;
-  background:linear-gradient(135deg,
-    rgba(var(--accent-rgb),0.65) 0%,
-    rgba(var(--accent-rgb),0.15) 35%,
-    rgba(var(--accent-rgb),0.05) 60%,
-    rgba(var(--accent-rgb),0.5) 100%);
-  box-shadow:0 0 34px rgba(var(--accent-rgb),0.14);
+.cs-card::before{ /* accent hairline across the top */
+  content:''; position:absolute; left:0; top:0; height:2px; width:38%; z-index:2;
+  background:var(--accent-glow); box-shadow:0 0 10px rgba(var(--accent-rgb),0.7);
 }
-.cs-card-inner{ position:relative; z-index:1; background-color:var(--black-card); border-radius:11px; overflow:hidden; }
-
-/* ── 3D side "thickness" faces (visible edge of the tilted outer cards) ──
-   Note: a true rotateY(90deg) cube-face projects to a screen width of
-   thickness*sin(tiltAngle) — at our subtle 8deg card tilt that's under 2px
-   and invisible. So instead of chasing physically-"correct" (but invisible)
-   geometry, this draws a flat beveled strip at the card's edge: a
-   deliberately stylized bezel, same trick used by most CSS card-thickness
-   mockups, that reliably reads as depth regardless of tilt angle. */
-.cs-card-edge{
-  position:absolute; top:4px; bottom:4px; width:14px; z-index:2; pointer-events:none;
-  background:linear-gradient(to bottom,
-    rgba(255,255,255,0.22) 0%,
-    rgba(var(--accent-rgb),0.35) 8%,
-    rgba(14,11,7,0.95) 22%,
-    rgba(5,4,3,0.98) 70%,
-    rgba(var(--accent-rgb),0.4) 100%);
-  box-shadow:inset 0 0 8px rgba(0,0,0,0.7), 2px 4px 14px rgba(0,0,0,0.45);
-}
-.cs-card-edge-right{ left:100%; border-radius:0 7px 7px 0; }
-.cs-card-edge-left{ right:100%; border-radius:7px 0 0 7px; }
-.cs-card-media{ position:relative; width:100%; aspect-ratio:4/3; overflow:hidden; }
-.cs-card-img{ width:100%; height:100%; object-fit:cover; display:block; }
-.cs-card-media-fade{
-  position:absolute; bottom:0; left:0; right:0; height:40%;
-  background:linear-gradient(to top, var(--black-card), transparent);
-}
-.cs-card-body{ padding:0.9rem 1.1rem 1.1rem; }
-.cs-card-tags{ display:flex; flex-wrap:wrap; gap:0.4rem; margin-bottom:0.65rem; }
+.cs-card:hover{ border-color:rgba(var(--accent-rgb),0.7); transform:translateY(-4px); }
+.cs-card-media{ position:relative; width:100%; aspect-ratio:16/10; overflow:hidden; background:#0b0d11; }
+.cs-card-img{ object-fit:cover; }
+.cs-card-body{ padding:0.9rem 1.05rem 1.05rem; display:flex; flex-direction:column; flex:1 1 auto; }
+.cs-card-tags{ display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.6rem; }
 .cs-tag-pill{
-  font-size:0.56rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
-  padding:0.28rem 0.55rem; border-radius:20px; white-space:nowrap;
-  color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.35);
-  background:rgba(var(--accent-rgb),0.06);
+  font-family:'Chakra Petch', var(--font-body); font-size:0.56rem; font-weight:600; letter-spacing:0.12em;
+  text-transform:uppercase; padding:0.2rem 0.45rem; border-radius:2px; white-space:nowrap;
+  color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.3);
 }
 .cs-card-title{
-  font-family:var(--font-display); font-size:clamp(0.85rem, 1.1vw, 1.05rem); font-weight:600;
-  color:var(--gold-bright); margin:0 0 0.3rem 0; line-height:1.3;
+  font-family:var(--font-display); font-weight:400; text-transform:uppercase; letter-spacing:0.02em;
+  font-size:clamp(0.85rem, 1.05vw, 1.05rem); color:var(--gold-bright); margin:0 0 0.3rem; line-height:1.25;
 }
-.cs-card-desc{ font-size:clamp(0.65rem, 0.85vw, 0.78rem); color:var(--gold-dim); line-height:1.45; margin:0 0 0.7rem 0; }
+.cs-card-desc{ font-size:clamp(0.68rem, 0.82vw, 0.78rem); color:var(--gold-dim); line-height:1.45; margin:0 0 0.7rem; }
 .cs-card-cta{
-  display:flex; align-items:center; font-size:0.65rem; font-weight:600;
-  color:var(--accent-glow); letter-spacing:0.12em; text-transform:uppercase; font-family:var(--font-body);
+  margin-top:auto; display:flex; align-items:center; gap:0.45rem;
+  font-family:'Chakra Petch', var(--font-body); font-size:0.64rem; font-weight:700;
+  color:var(--accent-glow); letter-spacing:0.2em; text-transform:uppercase;
 }
-.cs-card-cta svg{ margin-left:0.4rem; width:12px; height:12px; }
+.cs-card-cta svg{ width:12px; height:12px; transition:transform 0.25s ease; }
+.cs-card:hover .cs-card-cta svg{ transform:translateX(4px); }
 
-/* ── Bottom-center: divider / progress / scroll cue ── */
+/* ── Bottom-centre: progress + scroll cue ── */
 .cs-bottom-center{
-  position:absolute; bottom:2.6vh; left:50%; transform:translateX(-50%);
-  z-index:5; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.85rem;
+  position:absolute; bottom:2.4vh; left:50%; transform:translateX(-50%);
+  z-index:5; text-align:center; display:flex; flex-direction:column; align-items:center; gap:0.75rem;
 }
 .cs-progress{ display:flex; gap:0.4rem; }
 .cs-progress-track{
-  width:44px; height:2px; border-radius:2px; overflow:hidden;
+  width:44px; height:2px; overflow:hidden;
   background:rgba(var(--accent-rgb),0.18); display:inline-block;
 }
 .cs-progress-fill{
   display:block; width:100%; height:100%; transform-origin:left center;
   background:var(--accent-glow); box-shadow:0 0 6px rgba(var(--accent-rgb),0.6);
-  transition:transform 0.1s linear;
 }
-.cs-scroll-cue{ font-size:0.6rem; letter-spacing:0.25em; text-transform:uppercase; color:var(--gold-dim); font-weight:500; }
+.cs-scroll-cue{
+  font-family:'Chakra Petch', var(--font-body); font-size:0.6rem; letter-spacing:0.3em;
+  text-transform:uppercase; color:var(--gold-dim); font-weight:600;
+}
 
 /* ── Responsive ── */
-/* Below this width the bigger cards and the timeline can't share a row. */
+/* No room for the timeline column: the grid starts at the left margin. */
 @media (max-width:1200px){
+  .cs-section{ --cs-gutter:2.6rem; }
   .cs-timeline{ display:none; }
-  .cs-cards-layer{ padding-left:20px; padding-right:20px; }
-  /* No timeline gutter here, so size the three cards to the full width
-     (the desktop formula assumes 220px gutters and overflowed on tablets). */
-  .cs-flip{ width:clamp(200px, calc((100vw - 64px - 4vw) / 3), 360px); }
 }
 @media (max-width:1024px){
-  .cs-nebula{ width:90vw; height:60vw; }
+  .cs-slot:nth-child(2){ transform:translateY(-2vh); }
+  .cs-slot:nth-child(3){ transform:translateY(-4vh); }
+  .cs-card-tags{ display:none; }
 }
-/* Phones: three side-by-side cards can't fit, so the same three slots stack
-   vertically as compact horizontal cards (image left, text right). Nothing
-   about the flip changes — each row still turns in place per category. */
+/* Phones: the three slots stack as compact rows (image left, text right),
+   laid out against the small viewport so the toolbars never cover them. */
 @media (max-width:768px){
-  .cs-planet-tl,.cs-planet-tr{ width:44vw; height:44vw; }
-  .cs-heading{ top:calc(4vh + 3.8rem); padding:0 1.25rem; }
-  .cs-title{ font-size:1.45rem; margin-bottom:0.45rem; }
-  .cs-subtitle{ font-size:0.76rem; max-width:330px; }
-  .cs-title-divider{ margin-top:0.8rem; }
-  /* Collides with the title at this width; the progress bar shows the same. */
-  .cs-corner-tl{ display:none; }
-
-  /* Layout is measured against the *small* viewport (svh) — 100vh on phones
-     includes the strip behind the browser toolbars, which would push the
-     bottom row and the progress bar under them.
-     --cs-top: where the heading block ends. --cs-bottom: progress-bar zone. */
-  .cs-section{ --cs-vh:100vh; --cs-top:calc(4vh + 3.8rem + 128px); --cs-bottom:calc(2.6vh + 3.6rem); }
+  .cs-section{
+    --cs-gutter:1.25rem; --cs-hud-top:4.6rem;
+    --cs-vh:100vh; --cs-top:calc(var(--cs-hud-top) + 7.4rem); --cs-bottom:calc(2.4vh + 3.4rem);
+  }
   @supports (height:100svh){ .cs-section{ --cs-vh:100svh; } }
-  .cs-bottom-center{ bottom:calc(100vh - var(--cs-vh) + 2.6vh); }
+  .cs-planet-tl,.cs-planet-tr{ width:44vw; height:44vw; }
+  .cs-hud-text.is-bl, .cs-hud-text.is-br, .cs-hud-corner.is-bl, .cs-hud-corner.is-br{ display:none; }
+  .cs-hud-text{ font-size:0.56rem; letter-spacing:0.22em; }
+  .cs-hud-text.is-tl, .cs-hud-text.is-tr{ top:calc(var(--cs-hud-top) - 0.2rem); }
+  .cs-hud-text.is-tl{ left:1.25rem; } .cs-hud-text.is-tr{ right:1.25rem; }
+  .cs-hud-corner.is-tl{ left:0.6rem; } .cs-hud-corner.is-tr{ right:0.6rem; }
+  .cs-kinetic-track{ top:calc(var(--cs-hud-top) + 1.4rem); }
+  .cs-kinetic-pre{ font-size:0.62rem; letter-spacing:0.24em; margin-bottom:0.35rem; }
+  .cs-kinetic-big{ font-size:clamp(1.5rem, 7.6vw, 2.4rem); }
+  .cs-kinetic-track.is-echo{ bottom:auto; top:calc(var(--cs-vh) * 0.42); opacity:0.32; }
+  .cs-kinetic-track.is-echo .cs-kinetic-big{ font-size:22vw; }
+  .cs-subtitles{ top:calc(var(--cs-hud-top) + 1.4rem + 0.95rem + clamp(1.5rem, 7.6vw, 2.4rem) + 0.7rem); right:1.25rem; }
+  .cs-subtitle{ font-size:0.74rem; max-width:none; }
+  .cs-bottom-center{ bottom:calc(100vh - var(--cs-vh) + 2.4vh); }
 
   .cs-cards-layer{
-    flex-direction:column; gap:10px; justify-content:center;
-    height:var(--cs-vh);
-    padding:var(--cs-top) 16px var(--cs-bottom);
+    flex-direction:column; align-items:stretch; justify-content:center; gap:10px;
+    height:var(--cs-vh); padding:var(--cs-top) 1.25rem var(--cs-bottom);
   }
-  .cs-slot{ width:min(100%, 440px); transform:translateX(calc(var(--ox, 0px) * 0.6)); }
-  .cs-slot-float{ animation-name:cs-float-sm; }
-  /* Every row the same fixed height — sized to split the free space three
-     ways — so front and back faces always match and the stack always fits. */
-  .cs-flip{
-    width:100%;
-    height:min(150px, calc((var(--cs-vh) - var(--cs-top) - var(--cs-bottom) - 44px) / 3));
+  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3){
+    width:100%; max-width:460px; margin:0 auto; transform:none;
+    height:min(132px, calc((var(--cs-vh) - var(--cs-top) - var(--cs-bottom) - 30px) / 3));
   }
-  .cs-face-front{ height:100%; }
-
-  .cs-card, .cs-card:hover{ transform:none; height:100%; }
-  .cs-card-edge{ display:none; }
-  .cs-card-inner{ display:grid; grid-template-columns:36% 1fr; height:100%; }
+  .cs-card{ display:grid; grid-template-columns:36% 1fr; }
+  .cs-card:hover{ transform:none; }
   .cs-card-media{ aspect-ratio:auto; height:100%; }
-  .cs-card-media-fade{
-    top:0; bottom:0; left:auto; right:0; width:45%; height:auto;
-    background:linear-gradient(to left, var(--black-card), transparent);
-  }
-  .cs-card-body{ padding:0.55rem 0.85rem; min-width:0; display:flex; flex-direction:column; justify-content:center; }
-  .cs-card-tags{ display:none; }
+  .cs-card-body{ padding:0.55rem 0.8rem; min-width:0; justify-content:center; }
   .cs-card-title{
-    font-size:0.9rem; margin-bottom:0.15rem;
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    font-size:0.82rem; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
   .cs-card-desc{
-    font-size:0.72rem; line-height:1.35; margin-bottom:0.4rem;
+    font-size:0.7rem; line-height:1.35; margin-bottom:0.35rem;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
   }
-  .cs-card-cta{ font-size:0.58rem; }
+  .cs-card-cta{ margin-top:0; font-size:0.56rem; }
 }
-/* Short phones (small iPhones / toolbars showing): drop the subtitle and
-   keep descriptions to one line so the three rows still fit. */
+/* Short phones: the subtitle goes and descriptions keep to one line. */
 @media (max-width:768px) and (max-height:620px){
-  .cs-subtitle{ display:none; }
-  .cs-section{ --cs-top:calc(4vh + 3.8rem + 90px); }
+  .cs-subtitles{ display:none; }
+  .cs-section{ --cs-top:calc(var(--cs-hud-top) + 5.4rem); }
   .cs-card-desc{ -webkit-line-clamp:1; }
 }
-/* Phones held sideways (and any very short window): too short to stack
-   rows, so back to three across — each card just image, title and CTA,
-   sized to the height that's actually free. Comes last so it overrides the
-   stacked phone layout above. */
+/* Phones held sideways: three across, image and title only. */
 @media (max-height:500px) and (orientation:landscape){
-  .cs-timeline, .cs-corner-tl, .cs-subtitle{ display:none; }
-  .cs-heading{ top:calc(2vh + 3.8rem); }
-  .cs-title{ font-size:1.2rem; margin-bottom:0; }
-  .cs-title-divider{ margin-top:0.4rem; }
-
-  .cs-section{ --cs-vh:100vh; --cs-top:calc(2vh + 3.8rem + 44px); --cs-bottom:calc(2.6vh + 3.4rem); }
-  @supports (height:100svh){ .cs-section{ --cs-vh:100svh; } }
-  .cs-bottom-center{ bottom:calc(100vh - var(--cs-vh) + 2.6vh); }
-
-  .cs-cards-layer{
-    flex-direction:row; gap:12px; justify-content:center; align-items:center;
-    height:var(--cs-vh); padding:var(--cs-top) 16px var(--cs-bottom);
-  }
-  .cs-slot{ width:auto; transform:none; }
-  .cs-slot-float{ animation-name:cs-float-sm; }
-  .cs-flip{
-    width:min(260px, calc((100vw - 56px) / 3));
-    height:calc(var(--cs-vh) - var(--cs-top) - var(--cs-bottom) - 12px);
-  }
-  .cs-face-front{ height:100%; }
-  .cs-card, .cs-card:hover{ transform:none; height:100%; }
-  .cs-card-edge, .cs-card-tags, .cs-card-desc{ display:none; }
-  .cs-card-inner{ display:flex; flex-direction:column; height:100%; }
-  .cs-card-media{ aspect-ratio:auto; flex:1 1 auto; min-height:0; height:auto; }
-  .cs-card-media-fade{
-    top:auto; bottom:0; left:0; right:0; width:auto; height:40%;
-    background:linear-gradient(to top, var(--black-card), transparent);
-  }
-  .cs-card-body{ display:block; flex:0 0 auto; padding:0.4rem 0.7rem 0.55rem; }
-  .cs-card-title{
-    font-size:0.8rem; margin-bottom:0.2rem;
-    display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .cs-card-cta{ font-size:0.55rem; }
-}
-@keyframes cs-float-sm{
-  0%,100%{ transform:translateY(0); }
-  50%{ transform:translateY(-5px); }
+  .cs-timeline, .cs-subtitles, .cs-kinetic-track.is-echo, .cs-hud-text.is-bl, .cs-hud-text.is-br{ display:none; }
+  .cs-section{ --cs-gutter:1.25rem; --cs-hud-top:3.6rem; }
+  .cs-kinetic-big{ font-size:1.4rem; }
+  .cs-cards-layer{ align-items:flex-end; padding:0 1.25rem 3.6rem; }
+  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3){ transform:none; width:min(250px, calc((100vw - 56px) / 3)); }
+  .cs-card-tags, .cs-card-desc{ display:none; }
 }
 
 /* ══ Impacts: pinned scene — title rises, stars fly out, each reveals a result ══ */

@@ -1,15 +1,20 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
-import dynamic from 'next/dynamic';
+import { useRef, useEffect } from 'react';
+import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
-import PlanetSurface from './canvas-showcase/PlanetSurface';
+import PlanetSurface, { ShowcaseStars, STAR_PARALLAX } from './canvas-showcase/PlanetSurface';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const SpaceCanvas = dynamic(() => import('./canvas-showcase/SpaceCanvas'), { ssr: false });
+/* "Orbital HUD": the pinned Selected Work scene. A flight over the night
+   side of a planet (one 2D canvas: stars, perspective grid, city lights),
+   framed by hairline HUD marks. One giant category title rides a horizontal
+   track (Swiss kinetic type) and three flat project panels change category
+   with a shutter wipe. Every per-frame change is written to the DOM through
+   refs, never React state, so scrolling never re-renders the section. */
 
 interface CategoryGroup {
   title: string;
@@ -20,19 +25,19 @@ interface CategoryGroup {
 
 const CATEGORIES: CategoryGroup[] = [
   {
-    title: 'Software & ',
+    title: 'Software &',
     titleBold: 'AI Engineering',
     subtitle: 'Building intelligent systems, tools and platforms that solve real problems.',
     projects: ['notion', 'scripting', 'data'],
   },
   {
-    title: 'Web Development & ',
+    title: 'Web Development &',
     titleBold: 'E-commerce',
     subtitle: 'Crafting high-performance websites and digital storefronts from scratch.',
     projects: ['leadcraft', 'bp', 'resizer'],
   },
   {
-    title: 'SEO, Security & ',
+    title: 'SEO, Security &',
     titleBold: 'Web Presence',
     subtitle: 'Securing, optimizing and scaling digital presence for real-world results.',
     projects: ['cpc', 'revive', 'aurix'],
@@ -47,7 +52,7 @@ const TIMELINE_ITEMS = [
   { num: '04', label: "What's Next" },
 ];
 
-/* Short descriptions for each project (one-liner for the card) */
+/* Short descriptions for each project (one-liner for the panel) */
 const SHORT_DESC: Record<ProjectKey, string> = {
   notion: 'A full-stack internal project and task management system.',
   scripting: 'A creative operations engine built for short-form content.',
@@ -65,135 +70,67 @@ const TAGS: Record<ProjectKey, string[]> = Object.fromEntries(
   stripMeta.map((m) => [m.key, m.tags])
 ) as Record<ProjectKey, string[]>;
 
-/* Per-card 3D tilt: left card tilts left, center is flat, right tilts right */
-const CARD_TILTS = [-8, 0, 8];
-
-/* Each of the 3 persistent card slots sits slightly off the perfectly
-   centered row (fixed, non-random offsets — no Math.random() at render, so
-   there's no hydration mismatch) and floats gently on its own cycle so the
-   layout doesn't read as static/rigid. */
-const SLOT_LAYOUT = [
-  { x: -10, y: 26, rotZ: -2.2, dur: 6.4, delay: -0.8 },
-  { x: 2, y: -22, rotZ: 1.6, dur: 7.2, delay: -3.1 },
-  { x: 8, y: 16, rotZ: -1.2, dur: 6.8, delay: -1.9 },
+/* Fixed (non-random) asteroid silhouettes along the bottom edge. */
+const ASTEROIDS = [
+  { left: '4%', bottom: '-4%', size: 110, rotate: -12, opacity: 0.9 },
+  { left: '19%', bottom: '-8%', size: 150, rotate: 8, opacity: 0.95 },
+  { left: '30%', bottom: '10%', size: 30, rotate: -20, opacity: 0.6 },
+  { left: '80%', bottom: '-10%', size: 160, rotate: -6, opacity: 0.95 },
+  { left: '90%', bottom: '4%', size: 60, rotate: 22, opacity: 0.8 },
 ];
 
-/* Scroll-driven planet motion across the whole pin: extra spin (as a % of
-   the 3-tile texture strip — 12% is ~a third of a turn) and growth. */
+/* Scroll-driven planet motion across the pin: extra spin and growth. */
 const PLANET_SCROLL_SPIN = [12, 9];
 const PLANET_SCROLL_GROW = 0.08;
 
-/* Fixed (non-random) asteroid silhouettes scattered along the bottom edge —
-   hardcoded so there's no hydration mismatch between server and client. */
-const ASTEROIDS = [
-  { left: '4%', bottom: '-4%', size: 110, rotate: -12, opacity: 0.9 },
-  { left: '11%', bottom: '6%', size: 46, rotate: 30, opacity: 0.75 },
-  { left: '19%', bottom: '-8%', size: 150, rotate: 8, opacity: 0.95 },
-  { left: '30%', bottom: '10%', size: 30, rotate: -20, opacity: 0.6 },
-  { left: '68%', bottom: '8%', size: 34, rotate: 15, opacity: 0.65 },
-  { left: '80%', bottom: '-10%', size: 160, rotate: -6, opacity: 0.95 },
-  { left: '90%', bottom: '4%', size: 60, rotate: 22, opacity: 0.8 },
-  { left: '96%', bottom: '-6%', size: 90, rotate: -18, opacity: 0.85 },
-];
-
-/* Fixed "city light" dots along the horizon glow */
-const CITY_LIGHTS = [6, 14, 21, 27, 33, 40, 47, 53, 60, 67, 73, 79, 86, 93].map((left, i) => ({
-  left: `${left}%`,
-  delay: (i % 5) * 0.4,
-  bright: i % 3 === 0,
-}));
-
 /* ── Scroll timing ──
-   The pin lasts PIN_LENGTH of the viewport height. Progress (0-1) is split
-   at BOUNDARIES rather than into equal thirds: the first category is kept
-   short so the first flip starts after ~3 wheel notches instead of ~8.
-   At a 900px viewport: ~300px before flip 1, ~250px per flip, ~300px
-   resting on category 2, ~430px on category 3 before the pin releases. */
+   The pin lasts PIN_LENGTH of the viewport height. Progress (0-1) changes
+   category at BOUNDARIES; the first category is kept short so the first
+   change starts after ~3 wheel notches. Each change plays over ±HALF of
+   progress around its boundary, staggered per panel. */
 const PIN_LENGTH = '+=170%';
 const BOUNDARIES = [0.28, 0.64];
 const STOPS = [0, BOUNDARIES[0], BOUNDARIES[1], 1];
-const FLIP_HALF_WIDTH = 0.08;
-const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+const HALF = 0.08;
+const SLOT_STAGGER = 0.022;
 
-/* ── Persistent card-slot flip geometry ──
-   There are exactly 3 slots (one per project-per-category) and 3
-   categories, so this uses a fixed 2-face flip-card scheme rather than a
-   generic N-face carousel:
-     - faceA starts showing category 0's project, flips to reveal faceB
-       (category 1) at the first boundary, then — while faceA is safely
-       hidden behind the card — faceA's own content is swapped to
-       category 2 so the second flip (back to faceA) reveals it.
-     - faceB only ever shows category 1, so it never needs to change.
-   This generalizes to any odd/even category count only in the "3
-   categories, 2 faces" case; with only 3 categories here that's exactly
-   what's needed, so it's hardcoded rather than built as a general system. */
-const SLOT_STAGGER = 0.015;
+const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 const smoothstep = (t: number) => t * t * (3 - 2 * t);
 
-/* Time constant for easing the displayed flip angle toward the scroll-driven
-   target. Done in JS rather than a CSS transition so we always know the
-   angle actually on screen — the face-content swap must key off that, not
-   off the scroll target, or a fast scroll swaps content on a face that's
-   still visibly facing the viewer. */
-const FLIP_EASE_TAU = 0.2;
+/** 0 → 1 as the change across boundary `b` plays (shifted per slot). */
+const wipe = (p: number, b: number, shift = 0) => smoothstep(clamp01((p - (b - HALF + shift)) / (2 * HALF)));
 
-function computeSlotFlip(progress: number, slotIndex: number): number {
-  const shift = slotIndex * SLOT_STAGGER;
-  const b0 = BOUNDARIES[0] + shift;
-  const b1 = BOUNDARIES[1] + shift;
-  const hw = FLIP_HALF_WIDTH;
-
-  let rotateY: number;
-  if (progress <= b0 - hw) {
-    rotateY = 0;
-  } else if (progress < b0 + hw) {
-    rotateY = 180 * smoothstep(Math.min(1, Math.max(0, (progress - (b0 - hw)) / (2 * hw))));
-  } else if (progress <= b1 - hw) {
-    rotateY = 180;
-  } else if (progress < b1 + hw) {
-    rotateY = 180 + 180 * smoothstep(Math.min(1, Math.max(0, (progress - (b1 - hw)) / (2 * hw))));
-  } else {
-    rotateY = 360;
-  }
-
-  return rotateY;
-}
-
-/* One face's worth of card content (used for both faceA and faceB of each
-   flip slot) — pulled out since it's now rendered twice per slot. */
-function CardFace({ projKey, tiltY }: { projKey: ProjectKey; tiltY: number }) {
+function ProjectPanel({ projKey, eager }: { projKey: ProjectKey; eager: boolean }) {
   const project = projectData[projKey];
   return (
     // A real link, so search engines can follow it to the case study.
-    <a
-      className="cs-card"
-      href={`/projects/${projKey}`}
-      style={{ '--tilt': `${tiltY}deg` } as React.CSSProperties}
-    >
-      <div className="cs-card-rim" />
-      {tiltY < 0 && <div className="cs-card-edge cs-card-edge-right" />}
-      {tiltY > 0 && <div className="cs-card-edge cs-card-edge-left" />}
-      <div className="cs-card-inner">
-        <div className="cs-card-media">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`/${project.image}`} alt={project.title} className="cs-card-img" />
-          <div className="cs-card-media-fade" />
+    <a className="cs-card" href={`/projects/${projKey}`}>
+      <div className="cs-card-media">
+        <Image
+          src={`/${project.image}`}
+          alt={project.title}
+          fill
+          sizes="(max-width: 768px) 40vw, 380px"
+          className="cs-card-img"
+          // All nine sit in the same three spots, so they're needed together:
+          // load them as the section approaches, not mid-wipe.
+          loading={eager ? 'eager' : 'lazy'}
+        />
+      </div>
+      <div className="cs-card-body">
+        <div className="cs-card-tags">
+          {(TAGS[projKey] ?? []).map((tag) => (
+            <span key={tag} className="cs-tag-pill">{tag}</span>
+          ))}
         </div>
-        <div className="cs-card-body">
-          <div className="cs-card-tags">
-            {(TAGS[projKey] ?? []).map((tag) => (
-              <span key={tag} className="cs-tag-pill">{tag}</span>
-            ))}
-          </div>
-          <h3 className="cs-card-title">{project.title}</h3>
-          <p className="cs-card-desc">{SHORT_DESC[projKey]}</p>
-          <div className="cs-card-cta">
-            VIEW PROJECT
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </div>
-        </div>
+        <h3 className="cs-card-title">{project.title}</h3>
+        <p className="cs-card-desc">{SHORT_DESC[projKey]}</p>
+        <span className="cs-card-cta">
+          View project
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          </svg>
+        </span>
       </div>
     </a>
   );
@@ -201,155 +138,131 @@ function CardFace({ projKey, tiltY }: { projKey: ProjectKey; tiltY: number }) {
 
 export default function CanvasShowcase() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const headingRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const flipRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const echoRef = useRef<HTMLDivElement>(null);
+  const subtitleRefs = useRef<Array<HTMLParagraphElement | null>>([]);
+  const faceRefs = useRef<Array<Array<HTMLDivElement | null>>>([[], [], []]);
+  const scanRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const progressFillRefs = useRef<Array<HTMLSpanElement | null>>([]);
-  const lastCategoryRef = useRef(0);
-  const lastTimelineRef = useRef(0);
-  const slotSwappedRef = useRef([false, false, false]);
-  const targetAnglesRef = useRef([0, 0, 0]);
-  const shownAnglesRef = useRef([0, 0, 0]);
-  const flipRafRef = useRef<number | null>(null);
-  const surfaceProgressRef = useRef(0);
+  const timelineRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const counterRef = useRef<HTMLSpanElement>(null);
+  const flightRef = useRef<HTMLSpanElement>(null);
   const planetRefs = useRef<Array<HTMLDivElement | null>>([]);
-
-  const [activeCategory, setActiveCategory] = useState(0);
-  const [activeTimelineIndex, setActiveTimelineIndex] = useState(0);
-  // faceA's current content per slot — starts as category 0's projects,
-  // swaps (per-slot) to category 2's projects once that slot's first flip
-  // has carried it safely out of view. faceB never changes (always cat 1).
-  const [faceAKeys, setFaceAKeys] = useState<ProjectKey[]>(CATEGORIES[0].projects);
-
-  /* Imperative per-frame update — writes directly to the DOM via refs
-     instead of going through React state/render, so scrubbing the
-     ScrollTrigger doesn't re-render the whole tree (headings, 9 cards,
-     backdrop) 60x/sec. */
-  const applyProgress = useCallback((progress: number) => {
-    surfaceProgressRef.current = progress;
-
-    // Planets turn a little further and swell slightly as you fly on — they
-    // scale about their own (off-screen) centres, so they grow toward the
-    // middle of the view.
-    planetRefs.current.forEach((el, i) => {
-      if (!el) return;
-      el.style.setProperty('--spin-shift', `${progress * PLANET_SCROLL_SPIN[i]}%`);
-      el.style.transform = `scale(${1 + progress * PLANET_SCROLL_GROW})`;
-    });
-
-    // Headings hand off across the same windows the cards flip in: the
-    // outgoing title fades over the first half of the flip, the incoming one
-    // over the second half, so the two never overlap. The first title is
-    // there from the start and the last one stays up as the pin releases.
-    CATEGORIES.forEach((_, i) => {
-      let opacity = 1;
-      if (i > 0) opacity = clamp01((progress - BOUNDARIES[i - 1]) / FLIP_HALF_WIDTH);
-      if (i < CATEGORIES.length - 1) opacity = Math.min(opacity, clamp01((BOUNDARIES[i] - progress) / FLIP_HALF_WIDTH));
-
-      const headEl = headingRefs.current[i];
-      if (headEl) headEl.style.opacity = String(opacity);
-
-      const fillEl = progressFillRefs.current[i];
-      if (fillEl) fillEl.style.transform = `scaleX(${clamp01((progress - STOPS[i]) / (STOPS[i + 1] - STOPS[i]))})`;
-    });
-
-    // The 3 persistent card slots only get a new target angle here; the
-    // eased rotation and face-content swap happen in runFlipLoop.
-    for (let slot = 0; slot < 3; slot++) {
-      targetAnglesRef.current[slot] = computeSlotFlip(progress, slot);
-    }
-    if (flipRafRef.current === null) {
-      let last = performance.now();
-      const tick = (now: number) => {
-        const dt = Math.min(0.1, (now - last) / 1000);
-        last = now;
-        const k = 1 - Math.exp(-dt / FLIP_EASE_TAU);
-        let settled = true;
-
-        for (let slot = 0; slot < 3; slot++) {
-          const target = targetAnglesRef.current[slot];
-          let shown = shownAnglesRef.current[slot];
-          shown += (target - shown) * k;
-          if (Math.abs(target - shown) < 0.05) shown = target;
-          else settled = false;
-          shownAnglesRef.current[slot] = shown;
-
-          const flipEl = flipRefs.current[slot];
-          if (flipEl) flipEl.style.transform = `rotateY(${shown}deg)`;
-
-          // faceA is fully back-facing at 180deg: below that it will next be
-          // seen showing category 0, above it showing category 2. Swapping
-          // at the displayed 180 means the change is never on screen.
-          const faceAShowsThird = shown > 180;
-          if (faceAShowsThird !== slotSwappedRef.current[slot]) {
-            slotSwappedRef.current[slot] = faceAShowsThird;
-            setFaceAKeys((prev) => {
-              const next = [...prev];
-              next[slot] = faceAShowsThird ? CATEGORIES[2].projects[slot] : CATEGORIES[0].projects[slot];
-              return next;
-            });
-          }
-        }
-
-        flipRafRef.current = settled ? null : requestAnimationFrame(tick);
-      };
-      flipRafRef.current = requestAnimationFrame(tick);
-    }
-
-    const catIndex = progress < BOUNDARIES[0] ? 0 : progress < BOUNDARIES[1] ? 1 : 2;
-    if (catIndex !== lastCategoryRef.current) {
-      lastCategoryRef.current = catIndex;
-      setActiveCategory(catIndex);
-    }
-
-    const timelineIdx = progress > 0.995 ? 3 : catIndex;
-    if (timelineIdx !== lastTimelineRef.current) {
-      lastTimelineRef.current = timelineIdx;
-      setActiveTimelineIndex(timelineIdx);
-    }
-  }, []);
+  const surfaceProgressRef = useRef(0);
+  const starsRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const section = containerRef.current;
+    if (!section) return;
+    let lastCat = -1;
+    let lastTimeline = -1;
+    let lastFlight = -1;
 
-    // Paint the correct initial (progress = 0) state immediately, since
-    // ScrollTrigger's onUpdate only fires on subsequent scroll changes.
-    applyProgress(0);
+    const apply = (p: number) => {
+      surfaceProgressRef.current = p;
+      // The starfield (painted once) rises slowly as you fly on.
+      if (starsRef.current) starsRef.current.style.transform = `translate3d(0,${-p * STAR_PARALLAX * 100 / (1 + STAR_PARALLAX)}%,0)`;
+
+      planetRefs.current.forEach((el, i) => {
+        if (!el) return;
+        el.style.setProperty('--spin-shift', `${p * PLANET_SCROLL_SPIN[i]}%`);
+        el.style.transform = `scale(${1 + p * PLANET_SCROLL_GROW})`;
+      });
+
+      // Kinetic title: the track slides one title per category change and
+      // keeps drifting a little in between; the outlined echo lags behind.
+      const pos = wipe(p, BOUNDARIES[0]) + wipe(p, BOUNDARIES[1]);
+      const drift = (p - (pos / 2)) * 6;
+      if (trackRef.current) trackRef.current.style.transform = `translate3d(${-pos * 100 - drift}vw,0,0)`;
+      // The echo words are wider than the screen and differ in width, so the
+      // track moves between their real offsets.
+      const echo = echoRef.current;
+      if (echo) {
+        const items = echo.children as HTMLCollectionOf<HTMLElement>;
+        const i0 = Math.min(1, Math.floor(pos));
+        const at = items[i0].offsetLeft + (items[i0 + 1].offsetLeft - items[i0].offsetLeft) * (pos - i0);
+        echo.style.transform = `translate3d(${-at + drift * 0.016 * window.innerWidth}px,0,0)`;
+      }
+
+      CATEGORIES.forEach((_, i) => {
+        // Subtitles cross over the same windows as the titles.
+        let o = 1;
+        if (i > 0) o = clamp01((p - BOUNDARIES[i - 1]) / HALF);
+        if (i < CATEGORIES.length - 1) o = Math.min(o, clamp01((BOUNDARIES[i] - p) / HALF));
+        const sub = subtitleRefs.current[i];
+        if (sub) sub.style.opacity = String(o);
+        const fill = progressFillRefs.current[i];
+        if (fill) fill.style.transform = `scaleX(${clamp01((p - STOPS[i]) / (STOPS[i + 1] - STOPS[i]))})`;
+      });
+
+      // Panels: each later category's face wipes down over the one before,
+      // with a scan line riding the edge of the wipe.
+      for (let slot = 0; slot < 3; slot++) {
+        const shift = slot * SLOT_STAGGER;
+        const w = [1, wipe(p, BOUNDARIES[0], shift), wipe(p, BOUNDARIES[1], shift)];
+        let top = 0;
+        for (let f = 0; f < 3; f++) if (w[f] > 0.5) top = f;
+        for (let f = 0; f < 3; f++) {
+          const face = faceRefs.current[slot][f];
+          if (!face) continue;
+          // Not yet wiped in, or fully covered by a later face: hidden, so
+          // nothing of it shows through and it can't take clicks.
+          const covered = w.some((x, g) => g > f && x >= 1);
+          face.style.visibility = w[f] <= 0 || covered ? 'hidden' : 'visible';
+          face.style.clipPath = w[f] >= 1 ? 'none' : `inset(0 0 ${(1 - w[f]) * 100}% 0)`;
+          face.style.pointerEvents = f === top ? 'auto' : 'none';
+          face.dataset.top = String(f === top);
+        }
+        const moving = [w[1], w[2]].find((x) => x > 0 && x < 1);
+        const scan = scanRefs.current[slot];
+        if (scan) {
+          scan.style.opacity = moving === undefined ? '0' : '1';
+          if (moving !== undefined) scan.style.transform = `translateY(${moving * 100}%)`;
+        }
+      }
+
+      const cat = p < BOUNDARIES[0] ? 0 : p < BOUNDARIES[1] ? 1 : 2;
+      if (cat !== lastCat) {
+        lastCat = cat;
+        if (counterRef.current) counterRef.current.textContent = String(cat + 1).padStart(2, '0');
+      }
+      const tl = p > 0.995 ? 3 : cat;
+      if (tl !== lastTimeline) {
+        lastTimeline = tl;
+        timelineRefs.current.forEach((el, i) => { if (el) el.dataset.active = String(i === tl); });
+      }
+      const flight = Math.round(p * 100);
+      if (flight !== lastFlight && flightRef.current) {
+        lastFlight = flight;
+        flightRef.current.textContent = String(flight).padStart(3, '0');
+      }
+    };
+
+    // Paint progress 0 now: ScrollTrigger only reports later changes.
+    apply(0);
 
     const ctx = gsap.context(() => {
       ScrollTrigger.create({
-        trigger: containerRef.current,
+        trigger: section,
         start: 'top top',
         end: PIN_LENGTH,
         pin: true,
-        // Kept tight to the actual scroll position — the eased flip comes
-        // from the JS easing loop, and stacking a laggy scrub on top of it
-        // felt floaty.
+        anticipatePin: 1,
         scrub: 0.15,
-        onUpdate: (self) => applyProgress(self.progress),
-        onRefresh: (self) => applyProgress(self.progress),
+        onUpdate: (self) => apply(self.progress),
+        onRefresh: (self) => apply(self.progress),
       });
-    }, containerRef);
+    }, section);
 
-    return () => {
-      ctx.revert();
-      if (flipRafRef.current !== null) {
-        cancelAnimationFrame(flipRafRef.current);
-        flipRafRef.current = null;
-      }
-    };
-  }, [applyProgress]);
+    return () => ctx.revert();
+  }, []);
 
   return (
-    <section
-      ref={containerRef}
-      className="cs-section"
-      style={{ fontFamily: 'var(--font-body)' }}
-    >
-      {/* Starfield */}
-      <SpaceCanvas />
-
-      {/* ── CSS-only deep space backdrop: planets, nebula, asteroids, horizon ── */}
+    <section ref={containerRef} className="cs-section" style={{ fontFamily: 'var(--font-body)' }}>
+      {/* ── Backdrop: two gradient planets, horizon, and one canvas for the
+          stars, the grid and the city lights ── */}
       <div className="cs-bg" aria-hidden="true">
+        <ShowcaseStars starsRef={starsRef} />
         <div className="cs-planet cs-planet-tl" ref={(el) => { planetRefs.current[0] = el; }} />
         <div className="cs-planet cs-planet-tr" ref={(el) => { planetRefs.current[1] = el; }} />
         <div className="cs-nebula" />
@@ -358,31 +271,62 @@ export default function CanvasShowcase() {
             <span
               key={i}
               className="cs-asteroid"
-              style={{
-                left: a.left,
-                bottom: a.bottom,
-                width: a.size,
-                height: a.size,
-                transform: `rotate(${a.rotate}deg)`,
-                opacity: a.opacity,
-              }}
+              style={{ left: a.left, bottom: a.bottom, width: a.size, height: a.size, transform: `rotate(${a.rotate}deg)`, opacity: a.opacity }}
             />
           ))}
         </div>
         <div className="cs-horizon">
           <div className="cs-horizon-curve" />
           <div className="cs-horizon-glow" />
-          <div className="cs-horizon-lights">
-            {CITY_LIGHTS.map((l, i) => (
-              <span
-                key={i}
-                className={`cs-city-light${l.bright ? ' is-bright' : ''}`}
-                style={{ left: l.left, animationDelay: `${l.delay}s` }}
-              />
-            ))}
-          </div>
         </div>
         <PlanetSurface progressRef={surfaceProgressRef} />
+      </div>
+
+      {/* ── HUD: hairline corner marks and microtype ── */}
+      <div className="cs-hud" aria-hidden="true">
+        <span className="cs-hud-corner is-tl" />
+        <span className="cs-hud-corner is-tr" />
+        <span className="cs-hud-corner is-bl" />
+        <span className="cs-hud-corner is-br" />
+        <span className="cs-hud-text is-tl">Selected work</span>
+        <span className="cs-hud-text is-tr">
+          Sector <span ref={counterRef} className="cs-hud-strong">01</span> / 03
+        </span>
+        <span className="cs-hud-text is-bl">
+          Flight <span ref={flightRef} className="cs-hud-strong">000</span>%
+        </span>
+        <span className="cs-hud-text is-br">3 projects / sector</span>
+      </div>
+
+      {/* ── Kinetic title: three titles on one horizontal track ── */}
+      <div className="cs-kinetic">
+        <div ref={echoRef} className="cs-kinetic-track is-echo" aria-hidden="true">
+          {CATEGORIES.map((cat, i) => (
+            <span key={i} className="cs-kinetic-item"><span className="cs-kinetic-big">{cat.titleBold}</span></span>
+          ))}
+        </div>
+        <div ref={trackRef} className="cs-kinetic-track">
+          {CATEGORIES.map((cat, i) => (
+            <div key={i} className="cs-kinetic-item">
+              <h2 className="cs-title">
+                <span className="cs-kinetic-pre">{cat.title}</span>
+                <span className="cs-kinetic-big">{cat.titleBold}</span>
+              </h2>
+            </div>
+          ))}
+        </div>
+        <div className="cs-subtitles">
+          {CATEGORIES.map((cat, i) => (
+            <p
+              key={i}
+              ref={(el) => { subtitleRefs.current[i] = el; }}
+              className="cs-subtitle"
+              style={{ opacity: i === 0 ? 1 : 0 }}
+            >
+              {cat.subtitle}
+            </p>
+          ))}
+        </div>
       </div>
 
       {/* ── Left-side numbered timeline ── */}
@@ -391,7 +335,9 @@ export default function CanvasShowcase() {
         {TIMELINE_ITEMS.map((item, idx) => (
           <div
             key={item.num}
-            className={`cs-timeline-item${activeTimelineIndex === idx ? ' is-active' : ''}`}
+            ref={(el) => { timelineRefs.current[idx] = el; }}
+            className="cs-timeline-item"
+            data-active={idx === 0 ? 'true' : 'false'}
           >
             <span className="cs-timeline-node">{item.num}</span>
             <span className="cs-timeline-label">{item.label}</span>
@@ -399,70 +345,25 @@ export default function CanvasShowcase() {
         ))}
       </div>
 
-      {/* ── Top-left counter ── */}
-      <div className="cs-corner cs-corner-tl">
-        <span className="cs-counter-active">
-          {String(activeCategory + 1).padStart(2, '0')}
-        </span>
-        <span className="cs-counter-sep">/</span>
-        <span className="cs-counter-total">
-          {String(CATEGORIES.length).padStart(2, '0')}
-        </span>
-      </div>
-
-      {/* ── Category titles ── */}
-      <div className="cs-heading-stack">
-        {CATEGORIES.map((cat, idx) => (
-          <div
-            key={idx}
-            ref={(el) => { headingRefs.current[idx] = el; }}
-            className="cs-heading"
-            style={{ opacity: idx === 0 ? 1 : 0 }}
-          >
-            <h2 className="cs-title">
-              {cat.title}
-              <strong>{cat.titleBold}</strong>
-            </h2>
-            <p className="cs-subtitle">{cat.subtitle}</p>
-            <div className="cs-title-divider" />
+      {/* ── 3 panel slots; each holds all three categories' projects stacked,
+          and the later ones wipe down over the earlier ── */}
+      <div className="cs-cards-layer">
+        {[0, 1, 2].map((slot) => (
+          <div key={slot} className="cs-slot" data-slot={slot}>
+            {CATEGORIES.map((cat, f) => (
+              <div
+                key={f}
+                ref={(el) => { faceRefs.current[slot][f] = el; }}
+                className="cs-face"
+                data-top={f === 0 ? 'true' : 'false'}
+                style={f > 0 ? { clipPath: 'inset(0 0 100% 0)', pointerEvents: 'none', visibility: 'hidden' } : undefined}
+              >
+                <ProjectPanel projKey={cat.projects[slot]} eager={f === 0} />
+              </div>
+            ))}
+            <span ref={(el) => { scanRefs.current[slot] = el; }} className="cs-scan" aria-hidden="true" />
           </div>
         ))}
-      </div>
-
-      {/* ── 3 persistent card slots — each flips in place to reveal the
-          next category's project, rather than a new set of cards
-          animating in per category. Off-centered + gently floating. ── */}
-      <div className="cs-cards-layer">
-        {SLOT_LAYOUT.map((layout, slot) => {
-          const tiltY = CARD_TILTS[slot] ?? 0;
-          const frontKey = faceAKeys[slot];
-          const backKey = CATEGORIES[1].projects[slot];
-          return (
-            <div
-              key={slot}
-              className="cs-slot"
-              style={{
-                '--ox': `${layout.x}px`,
-                '--oy': `${layout.y}px`,
-                '--orz': `${layout.rotZ}deg`,
-              } as React.CSSProperties}
-            >
-              <div
-                className="cs-slot-float"
-                style={{ animationDuration: `${layout.dur}s`, animationDelay: `${layout.delay}s` }}
-              >
-                <div className="cs-flip" ref={(el) => { flipRefs.current[slot] = el; }}>
-                  <div className="cs-face cs-face-front">
-                    <CardFace projKey={frontKey} tiltY={tiltY} />
-                  </div>
-                  <div className="cs-face cs-face-back">
-                    <CardFace projKey={backKey} tiltY={tiltY} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
       </div>
 
       {/* ── Bottom-center: progress + scroll cue ── */}
@@ -478,8 +379,7 @@ export default function CanvasShowcase() {
             </span>
           ))}
         </div>
-
-        <div className="cs-scroll-cue">SCROLL TO EXPLORE</div>
+        <div className="cs-scroll-cue">Scroll to explore</div>
       </div>
     </section>
   );

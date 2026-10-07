@@ -16,13 +16,9 @@ function detectMode(): Mode {
   // Respect reduced-motion + missing WebGL → static fallback
   if (typeof window === 'undefined') return null;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  let webgl = false;
-  try {
-    const c = document.createElement('canvas');
-    webgl = !!(c.getContext('webgl2') || c.getContext('webgl'));
-  } catch {
-    webgl = false;
-  }
+  // Feature check only: actually creating a context to test cost a whole
+  // WebGL context (and its GPU set-up) just to throw it away.
+  const webgl = 'WebGL2RenderingContext' in window || 'WebGLRenderingContext' in window;
   if (reduced || !webgl) return 'fallback';
   return window.matchMedia('(max-width: 768px)').matches ? 'phone' : 'laptop';
 }
