@@ -35,7 +35,9 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `public/images/hero/` | Hero portraits (one per palette) + the 4 floating UI cards |
 | `public/images/projects/` | Project thumbnails, each named after its key in `lib/projects.ts` |
 | `assets/hero-portrait-master.png` | Ungraded hero source — input to `scripts/regrade-hero.py`, never served |
+| `public/models/*.glb` | Compressed (meshopt + WebP) by `scripts/optimize-models.mjs` from the Blender exports in `assets/models-src/`; re-run it after re-exporting |
 | `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
+| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop); 3D scenes publish screen anchors via `publishAnchor` |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
 
 ## Architecture Decisions

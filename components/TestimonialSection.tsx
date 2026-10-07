@@ -157,6 +157,15 @@ function GlobeViz() {
         globeInstance.controls().autoRotate = true;
         globeInstance.controls().autoRotateSpeed = 0.9;
         globeInstance.controls().enableZoom = false;
+        // On touch screens the drag-to-rotate controls swallowed every swipe
+        // that started on the globe (they set touch-action:none), so the
+        // page couldn't be scrolled past it. There the globe only spins on
+        // its own and vertical swipes scroll the page.
+        if (window.matchMedia('(pointer: coarse)').matches) {
+          globeInstance.controls().enabled = false;
+          const canvas = container.querySelector('canvas');
+          if (canvas) canvas.style.touchAction = 'pan-y';
+        }
         setTimeout(() => {
           globeInstance.scene().children.forEach((obj: any) => {
             if (obj.type?.includes('Light')) obj.intensity *= 2.2;

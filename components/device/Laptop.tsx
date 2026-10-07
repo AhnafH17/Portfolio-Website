@@ -9,6 +9,8 @@ import {
   REGION, toPlane,
 } from './screenTexture';
 import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
+import { publishAnchor } from '../handoff/publishAnchor';
+import { getAnchor } from '@/lib/handoff';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -45,7 +47,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   // Only for the portal target below; the animation reaches the lid through
   // `rig`, set up once the model is in (three objects are mutated per frame).
   const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
-  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial } | null>(null);
+  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial; setGlow: (v: number) => void } | null>(null);
 
   useEffect(() => {
     const lid = scene.getObjectByName('LID');
@@ -62,7 +64,12 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     if (shadow) { shadow.material = shadowMat; shadow.renderOrder = -1; }
     // The model rests open; the intro starts closed.
     lid.rotation.x = P.lidClosed;
-    rig.current = { lid, screen };
+    const accentMats: THREE.MeshStandardMaterial[] = [];
+    scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      if (m?.name === 'MAT_Accent' && !accentMats.includes(m)) accentMats.push(m);
+    });
+    rig.current = { lid, screen, setGlow: (v) => { for (const m of accentMats) m.emissiveIntensity = v; } };
     return () => { rig.current = null; screen.dispose(); shadowMat.dispose(); };
   }, [scene, chrome, shadowTex, accent]);
 
@@ -113,6 +120,14 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
     // Scroll the editor via texture offset (no redraw, no re-upload).
     content.render(read);
+
+    // Section handoffs: where the lid emblem and the screen are on screen
+    // (lib/handoff.ts), and the emblem flares when the pixel sprite lands.
+    const { size, gl, camera } = state;
+    publishAnchor('device-emblem', r.lid, [0, SCREEN_Y, -0.085], 0.52, camera, gl.domElement, size.width, size.height);
+    publishAnchor('device-screen', r.lid, [0, SCREEN_Y, SCREEN_Z], 2.92, camera, gl.domElement, size.width, size.height);
+    const pulse = getAnchor('device-emblem').pulse;
+    r.setGlow(1.6 + pulse * 5);
   });
 
   return (

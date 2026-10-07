@@ -7,6 +7,7 @@ import HeroSection from '@/components/HeroSection';
 import CustomCursor from '@/components/CustomCursor';
 import Preloader from '@/components/Preloader';
 import Footer from '@/components/Footer';
+import HandoffLayer from '@/components/handoff/HandoffLayer';
 import { homeGraph, jsonLd } from '@/lib/schema';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -164,6 +165,7 @@ export default function Home() {
         {/* Not lazy: it carries the bio and case-study links the server HTML
             needs (the sections above only arrive after mount). */}
         <Footer />
+        {reveal && <HandoffLayer />}
       </div>
     </>
   );
