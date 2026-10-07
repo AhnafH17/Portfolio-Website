@@ -85,6 +85,20 @@ export const projectSeo: Record<ProjectKey, ProjectSeo> = {
     client: AURIXLAB,
     viaAurixLab: true,
   },
+  dashboard: {
+    title: 'Client Reporting Dashboard: Next.js, Supabase & Google APIs',
+    description: 'Case study: the multi-client reporting dashboard Ahnaf Hussain built for AurixLab, syncing Search Console, Instagram and Mailchimp every 30 minutes at $0/month.',
+    workType: 'WebApplication',
+    client: AURIXLAB,
+    viaAurixLab: true,
+  },
+  urbandecant: {
+    title: 'Urbandecant: Perfume Decant Store on Next.js & Medusa',
+    description: 'Urbandecant case study: a live perfume decant store for Bangladesh by Ahnaf Hussain, with a 3D bottle hero, Medusa v2 backend and Cash on Delivery or bKash checkout.',
+    workType: 'WebSite',
+    client: { name: 'Urbandecant', url: 'https://urbandecant.vercel.app' },
+    viaAurixLab: false,
+  },
   resizer: {
     title: 'Image Resizer Studio: Free Private Image Compressor',
     description: 'A free batch image resizer and compressor that runs entirely in your browser, so images never leave your device. Built and launched by Ahnaf Hussain.',

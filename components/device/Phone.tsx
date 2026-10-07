@@ -6,8 +6,6 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
 import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
-import { publishAnchor } from '../handoff/publishAnchor';
-import { getAnchor } from '@/lib/handoff';
 import { readAccent } from '@/lib/accent';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -41,7 +39,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
 
   // three objects are mutated every frame, so they live in a ref set up once
   // the model is in.
-  const rig = useRef<{ screen: THREE.MeshStandardMaterial; body: THREE.Object3D; setGlow: (v: number) => void } | null>(null);
+  const rig = useRef<{ screen: THREE.MeshStandardMaterial } | null>(null);
   useEffect(() => {
     const screen = makeScreenMaterial(chrome.texture);
     prepareModel(scene, {
@@ -51,12 +49,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       // behind the phone and read as solid colour while it turned).
       envIntensity: { MAT_Titanium: 0.8, MAT_BackGlass: 0.3, MAT_CameraPlate: 0.6, MAT_LensGlass: 1, MAT_Bezel: 0.5 },
     });
-    const accentMats: THREE.MeshStandardMaterial[] = [];
-    scene.traverse((o) => {
-      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-      if (m?.name === 'MAT_Accent' && !accentMats.includes(m)) accentMats.push(m);
-    });
-    rig.current = { screen, body: scene, setGlow: (v) => { for (const m of accentMats) m.emissiveIntensity = v; } };
+    rig.current = { screen };
     return () => { rig.current = null; screen.dispose(); };
   }, [scene, chrome, accent]);
 
@@ -91,14 +84,6 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     content.render(read);
-
-    // Section handoffs: the emblem on the back (where the pixel sprite
-    // lands, and it flares when it does) and the screen.
-    const { size, gl, camera } = state;
-    publishAnchor('device-emblem', r.body, [0, -0.3, -0.09], 0.4, camera, gl.domElement, size.width, size.height);
-    publishAnchor('device-screen', r.body, [0, 0, SCREEN_Z], 1.42, camera, gl.domElement, size.width, size.height);
-    const pulse = getAnchor('device-emblem').pulse;
-    r.setGlow(1.6 + pulse * 5);
   });
 
   return (

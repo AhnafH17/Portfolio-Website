@@ -2020,10 +2020,12 @@ footer span{color:var(--accent-glow)}
 }
 .cs-slot{
   position:relative; flex:0 1 auto;
-  width:clamp(240px, calc((100vw - var(--cs-gutter) - 2.6rem - 3.2vw) / 3), 400px);
+  /* Four across (the biggest category); the row steps up like stairs. */
+  width:clamp(200px, calc((100vw - var(--cs-gutter) - 2.6rem - 4.8vw) / 4), 460px);
 }
-.cs-slot:nth-child(2){ transform:translateY(-4vh); }
-.cs-slot:nth-child(3){ transform:translateY(-8vh); }
+.cs-slot:nth-child(2){ transform:translateY(-3vh); }
+.cs-slot:nth-child(3){ transform:translateY(-6vh); }
+.cs-slot:nth-child(4){ transform:translateY(-9vh); }
 /* The three faces share one grid cell, so the slot is as tall as the
    tallest and every face fills it. */
 .cs-slot{ display:grid; }
@@ -2086,6 +2088,33 @@ footer span{color:var(--accent-glow)}
   text-transform:uppercase; color:var(--gold-dim); font-weight:600;
 }
 
+/* ── Large screens (2K and up): scale the whole scene up so it fills the
+   view instead of sitting small with a gap between title and panels. ── */
+@media (min-width:1800px){
+  .cs-section{ --cs-gutter:clamp(260px, 13vw, 340px); --cs-hud-top:7.4rem; }
+  .cs-hud-text{ font-size:0.8rem; }
+  .cs-hud-corner{ width:28px; height:28px; }
+  .cs-kinetic-pre{ font-size:clamp(0.95rem, 0.7vw, 1.25rem); }
+  .cs-kinetic-big{ font-size:clamp(5.2rem, 5.6vw, 9.5rem); }
+  .cs-subtitles{ top:calc(var(--cs-hud-top) + 1.6rem + 1.4rem + clamp(5.2rem, 5.6vw, 9.5rem) + 1.6rem); }
+  .cs-subtitle{ font-size:clamp(1rem, 0.75vw, 1.3rem); max-width:44rem; }
+  .cs-kinetic-track.is-echo .cs-kinetic-big{ font-size:clamp(11.5rem, 12vw, 20rem); }
+  .cs-timeline{ left:2.6rem; gap:2.8rem; }
+  .cs-timeline-node{ width:34px; height:34px; font-size:0.78rem; }
+  .cs-timeline-line{ left:17px; top:17px; bottom:17px; }
+  .cs-timeline-label{ font-size:0.86rem; max-width:160px; }
+  .cs-cards-layer{ gap:clamp(1.6rem, 1.4vw, 2.6rem); padding-bottom:11vh; }
+  .cs-slot{ width:clamp(360px, calc((100vw - var(--cs-gutter) - 4rem - 4.2vw) / 4), 620px); }
+  .cs-card-body{ padding:1.25rem 1.4rem 1.4rem; }
+  .cs-tag-pill{ font-size:0.7rem; padding:0.28rem 0.6rem; }
+  .cs-card-title{ font-size:clamp(1.15rem, 0.95vw, 1.6rem); }
+  .cs-card-desc{ font-size:clamp(0.9rem, 0.7vw, 1.15rem); }
+  .cs-card-cta{ font-size:0.8rem; }
+  .cs-card-cta svg{ width:15px; height:15px; }
+  .cs-progress-track{ width:64px; height:3px; }
+  .cs-scroll-cue{ font-size:0.75rem; }
+}
+
 /* ── Responsive ── */
 /* No room for the timeline column: the grid starts at the left margin. */
 @media (max-width:1200px){
@@ -2093,8 +2122,9 @@ footer span{color:var(--accent-glow)}
   .cs-timeline{ display:none; }
 }
 @media (max-width:1024px){
-  .cs-slot:nth-child(2){ transform:translateY(-2vh); }
-  .cs-slot:nth-child(3){ transform:translateY(-4vh); }
+  .cs-slot:nth-child(2){ transform:translateY(-1.5vh); }
+  .cs-slot:nth-child(3){ transform:translateY(-3vh); }
+  .cs-slot:nth-child(4){ transform:translateY(-4.5vh); }
   .cs-card-tags{ display:none; }
 }
 /* Phones: the three slots stack as compact rows (image left, text right),
@@ -2124,9 +2154,9 @@ footer span{color:var(--accent-glow)}
     flex-direction:column; align-items:stretch; justify-content:center; gap:10px;
     height:var(--cs-vh); padding:var(--cs-top) 1.25rem var(--cs-bottom);
   }
-  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3){
+  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3), .cs-slot:nth-child(4){
     width:100%; max-width:460px; margin:0 auto; transform:none;
-    height:min(132px, calc((var(--cs-vh) - var(--cs-top) - var(--cs-bottom) - 30px) / 3));
+    height:min(118px, calc((var(--cs-vh) - var(--cs-top) - var(--cs-bottom) - 40px) / 4));
   }
   .cs-card{ display:grid; grid-template-columns:36% 1fr; }
   .cs-card:hover{ transform:none; }
@@ -2153,27 +2183,13 @@ footer span{color:var(--accent-glow)}
   .cs-section{ --cs-gutter:1.25rem; --cs-hud-top:3.6rem; }
   .cs-kinetic-big{ font-size:1.4rem; }
   .cs-cards-layer{ align-items:flex-end; padding:0 1.25rem 3.6rem; }
-  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3){ transform:none; width:min(250px, calc((100vw - 56px) / 3)); }
+  .cs-slot, .cs-slot:nth-child(2), .cs-slot:nth-child(3), .cs-slot:nth-child(4){ transform:none; width:min(220px, calc((100vw - 64px) / 4)); }
   .cs-card-tags, .cs-card-desc{ display:none; }
 }
 
 /* ══ Section handoffs overlay (components/handoff/) ══ */
 .handoff-layer{ position:fixed; inset:0; z-index:40; pointer-events:none; contain:strict; }
 .handoff-canvas{ position:absolute; inset:0; width:100%; height:100%; }
-/* 3. Laptop -> About: an isometric tile with a lit "screen" top. */
-.handoff-iso{ position:absolute; left:0; top:0; display:none; perspective:1400px; will-change:transform, opacity; }
-.iso-slab{ position:absolute; left:0; top:0; transform-style:preserve-3d; }
-.iso-slab i{ position:absolute; display:block; }
-.iso-top{
-  inset:0; border:1px solid rgba(var(--accent-rgb),0.9);
-  background:
-    repeating-linear-gradient(to bottom, transparent 0 9%, rgba(var(--accent-rgb),0.55) 9% 12%, transparent 12% 18%),
-    linear-gradient(135deg, #10141c, #0a0d12);
-  background-size:62% 100%, 100% 100%; background-repeat:no-repeat; background-position:14% 18%, 0 0;
-  box-shadow:0 0 18px rgba(var(--accent-rgb),0.55), inset 0 0 12px rgba(var(--accent-rgb),0.35);
-}
-.iso-front{ left:0; right:0; bottom:0; height:14px; transform-origin:bottom; transform:rotateX(-90deg); background:linear-gradient(#2a2f38, #12151b); }
-.iso-side{ top:0; bottom:0; right:0; width:14px; transform-origin:right; transform:rotateY(90deg); background:linear-gradient(90deg, #1b1f27, #0c0e12); }
 /* 5. Testimonials -> Contact: torn paper scrap folding into a plane.
    Risograph dots on warm paper, accent tape. */
 .handoff-paper{

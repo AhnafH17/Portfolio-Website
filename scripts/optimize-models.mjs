@@ -13,6 +13,10 @@ const MODELS = ['laptop', 'phone', 'about-workspace'];
 const KEEP_STRUCTURE = [
   '--join', 'false', '--flatten', 'false', '--instance', 'false',
   '--palette', 'false', '--simplify', 'false', '--weld', 'false',
+  // The SCREEN meshes' UVs look unused in the file (their placeholder
+  // material has no texture) but the site paints the live screen through
+  // them; pruning them left the screen texture unmapped.
+  '--prune-attributes', 'false',
 ];
 
 for (const name of MODELS) {

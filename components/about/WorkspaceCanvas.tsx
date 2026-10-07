@@ -10,7 +10,6 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { readAccent } from '@/lib/accent';
 import { coreHandoff } from '@/lib/coreHandoff';
-import { publishAnchor } from '../handoff/publishAnchor';
 
 /* The About section's workspace scene (public/models/about-workspace.glb,
    built in Blender), framed like the reference design: a close perspective
@@ -88,7 +87,6 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
   const modelRef = useRef<{
     platforms: Map<string, { node: THREE.Object3D; baseY: number; phase: number }>;
     core: THREE.Object3D | null;
-    desk: THREE.Object3D | null;
     glow: number;
     accentMat: THREE.MeshStandardMaterial | null;
   } | null>(null);
@@ -126,7 +124,6 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     modelRef.current = {
       platforms,
       core: scene.getObjectByName('CUBE_Core') ?? null,
-      desk: scene.getObjectByName('PLT_Desk') ?? null,
       accentMat: accentMat as THREE.MeshStandardMaterial | null,
       glow: glowScale(accent.glow),
     };
@@ -193,9 +190,6 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     coreHandoff.edge = (worldEdge * H) / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2) * depth);
     coreHandoff.yaw = (rootRef.current?.rotation.y ?? BASE_YAW) - BASE_YAW;
     coreHandoff.ready = true;
-    // Where the laptop's tile lands (section handoff, lib/handoff.ts): the
-    // desk top, in front of the monitor.
-    if (model.desk) publishAnchor('about-desk', model.desk, [0, 0.3, 0.35], 0.7, state.camera, state.gl.domElement, W, H);
   });
 
   useEffect(() => () => {

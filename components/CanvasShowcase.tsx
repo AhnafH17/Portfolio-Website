@@ -28,13 +28,13 @@ const CATEGORIES: CategoryGroup[] = [
     title: 'Software &',
     titleBold: 'AI Engineering',
     subtitle: 'Building intelligent systems, tools and platforms that solve real problems.',
-    projects: ['notion', 'scripting', 'data'],
+    projects: ['notion', 'dashboard', 'scripting', 'data'],
   },
   {
     title: 'Web Development &',
     titleBold: 'E-commerce',
     subtitle: 'Crafting high-performance websites and digital storefronts from scratch.',
-    projects: ['leadcraft', 'bp', 'resizer'],
+    projects: ['urbandecant', 'bp', 'leadcraft', 'resizer'],
   },
   {
     title: 'SEO, Security &',
@@ -63,7 +63,13 @@ const SHORT_DESC: Record<ProjectKey, string> = {
   cpc: 'Complete website overhaul, security remediation and SEO push.',
   revive: 'Premium program pages for mental wellness and brain stimulation.',
   aurix: 'Comprehensive SEO overhaul with schema markup and Core Web Vitals.',
+  dashboard: 'Live monthly growth reports for agency clients, synced every 30 min.',
+  urbandecant: 'A live perfume store with a 3D bottle hero and local payments.',
 };
+
+/* As many panel slots as the biggest category has projects; a category
+   with fewer leaves its extra slots empty (they wipe away instead). */
+const SLOTS = Math.max(...CATEGORIES.map((c) => c.projects.length));
 
 /* Real per-project stack tags, pulled from lib/projects.ts stripMeta */
 const TAGS: Record<ProjectKey, string[]> = Object.fromEntries(
@@ -141,7 +147,7 @@ export default function CanvasShowcase() {
   const trackRef = useRef<HTMLDivElement>(null);
   const echoRef = useRef<HTMLDivElement>(null);
   const subtitleRefs = useRef<Array<HTMLParagraphElement | null>>([]);
-  const faceRefs = useRef<Array<Array<HTMLDivElement | null>>>([[], [], []]);
+  const faceRefs = useRef<Array<Array<HTMLDivElement | null>>>(Array.from({ length: SLOTS }, () => []));
   const scanRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const progressFillRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const timelineRefs = useRef<Array<HTMLDivElement | null>>([]);
@@ -196,21 +202,27 @@ export default function CanvasShowcase() {
       });
 
       // Panels: each later category's face wipes down over the one before,
-      // with a scan line riding the edge of the wipe.
-      for (let slot = 0; slot < 3; slot++) {
+      // with a scan line riding the edge of the wipe. A slot the next
+      // category doesn't fill is wiped away by the same line instead.
+      for (let slot = 0; slot < SLOTS; slot++) {
         const shift = slot * SLOT_STAGGER;
         const w = [1, wipe(p, BOUNDARIES[0], shift), wipe(p, BOUNDARIES[1], shift)];
+        const has = CATEGORIES.map((c) => !!c.projects[slot]);
         let top = 0;
         for (let f = 0; f < 3; f++) if (w[f] > 0.5) top = f;
         for (let f = 0; f < 3; f++) {
           const face = faceRefs.current[slot][f];
-          if (!face) continue;
+          if (!face || !has[f]) continue;
           // Not yet wiped in, or fully covered by a later face: hidden, so
           // nothing of it shows through and it can't take clicks.
           const covered = w.some((x, g) => g > f && x >= 1);
-          face.style.visibility = w[f] <= 0 || covered ? 'hidden' : 'visible';
-          face.style.clipPath = w[f] >= 1 ? 'none' : `inset(0 0 ${(1 - w[f]) * 100}% 0)`;
-          face.style.pointerEvents = f === top ? 'auto' : 'none';
+          // The next category leaves this slot empty: its wipe erases this
+          // face from the top instead of covering it.
+          const erase = f < 2 && !has[f + 1] ? w[f + 1] : 0;
+          face.style.visibility = w[f] <= 0 || covered || erase >= 1 ? 'hidden' : 'visible';
+          const bottom = w[f] >= 1 ? 0 : (1 - w[f]) * 100;
+          face.style.clipPath = bottom === 0 && erase === 0 ? 'none' : `inset(${erase * 100}% 0 ${bottom}% 0)`;
+          face.style.pointerEvents = f === top && erase < 0.5 ? 'auto' : 'none';
           face.dataset.top = String(f === top);
         }
         const moving = [w[1], w[2]].find((x) => x > 0 && x < 1);
@@ -295,7 +307,7 @@ export default function CanvasShowcase() {
         <span className="cs-hud-text is-bl">
           Flight <span ref={flightRef} className="cs-hud-strong">000</span>%
         </span>
-        <span className="cs-hud-text is-br">3 projects / sector</span>
+        <span className="cs-hud-text is-br">{CATEGORIES.reduce((n, c) => n + c.projects.length, 0)} projects / 3 sectors</span>
       </div>
 
       {/* ── Kinetic title: three titles on one horizontal track ── */}
@@ -345,12 +357,12 @@ export default function CanvasShowcase() {
         ))}
       </div>
 
-      {/* ── 3 panel slots; each holds all three categories' projects stacked,
-          and the later ones wipe down over the earlier ── */}
+      {/* ── Panel slots; each holds every category's project for that spot,
+          stacked, and the later ones wipe down over the earlier ── */}
       <div className="cs-cards-layer">
-        {[0, 1, 2].map((slot) => (
+        {Array.from({ length: SLOTS }, (_, slot) => (
           <div key={slot} className="cs-slot" data-slot={slot}>
-            {CATEGORIES.map((cat, f) => (
+            {CATEGORIES.map((cat, f) => cat.projects[slot] && (
               <div
                 key={f}
                 ref={(el) => { faceRefs.current[slot][f] = el; }}

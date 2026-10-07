@@ -29,7 +29,9 @@ export type ProjectKey =
   | 'cpc'
   | 'bp'
   | 'aurix'
-  | 'resizer';
+  | 'resizer'
+  | 'dashboard'
+  | 'urbandecant';
 
 export const projectData: Record<ProjectKey, Project> = {
   notion: {
@@ -503,7 +505,92 @@ export const projectData: Record<ProjectKey, Project> = {
       },
     ],
   },
+
+  dashboard: {
+    label: 'Project 10',
+    title: 'Client Reporting Dashboard',
+    link: null,
+    image: 'images/projects/dashboard.webp',
+    imagePlaceholder: '',
+    sections: [
+      {
+        heading: 'Overview',
+        content:
+          '<p>AurixLab used to report results to clients as monthly PDFs and screenshots. I designed and built a private, multi-client dashboard that replaces them: each client signs in and sees a plain-English monthly report of their Google Search, Instagram and Mailchimp results, this month against last month, alongside the work the agency delivered. It runs for <strong>CPC Clinics</strong> and <strong>Merch Express</strong>.</p>',
+      },
+      {
+        heading: 'What It Does',
+        content:
+          '<ul><li><strong>Monthly report:</strong> opens with the verdict (headline, lead and key figures), then a page per channel with the depth</li><li><strong>Google Search Console:</strong> clicks, impressions, rankings, top queries and pages</li><li><strong>Instagram:</strong> reach, views, followers, best posts and Reels retention</li><li><strong>Mailchimp:</strong> campaigns against industry benchmarks, audience growth, new contacts by source</li><li><strong>Admin area:</strong> staff connect data sources, write the monthly commentary and watch integration health</li><li>Plain language for non-marketers: every metric is explained where it appears, and every chart has a table view</li></ul>',
+      },
+      {
+        heading: 'Architecture',
+        content:
+          '<ul><li><strong>Sync engine:</strong> a Postgres <code>pg_cron</code> schedule calls the app every 30 minutes; a job queue with retries, backoff and idempotent upserts pulls from each provider through typed adapters</li><li><strong>Multi-tenant by design:</strong> every client table carries a client id and Row Level Security, enforced again in a data-access layer and proven by pgTAP tests</li><li><strong>Secrets never reach the browser:</strong> third-party APIs are called only from server code, account credentials are encrypted with AES-256-GCM in a schema that is not exposed, and CI scans the client bundle for leaks</li><li><strong>Sign-in:</strong> clients use one-time email codes; staff need password plus TOTP multi-factor for anything privileged</li></ul>',
+      },
+      {
+        heading: 'Stack &amp; Cost',
+        content:
+          '<p>Next.js 16 on <strong>Vercel Hobby</strong>, <strong>Supabase Free</strong> (Postgres 17, Auth, Storage, pg_cron) with nightly encrypted backups, and <strong>Resend</strong> for email. Scheduling lives in the database because Hobby cron only runs daily. Total running cost: <strong>$0 a month</strong>.</p>',
+      },
+      {
+        heading: 'Results',
+        type: 'results',
+        items: [
+          { big: '3', label: 'Live data sources' },
+          { big: '30 min', label: 'Sync interval' },
+          { big: '0', label: 'Manual PDF reports' },
+          { big: '$0', label: 'Monthly running cost' },
+        ],
+      },
+      {
+        heading: 'Technologies',
+        type: 'tech',
+        tags: ['Next.js 16', 'TypeScript', 'Supabase', 'PostgreSQL RLS', 'pg_cron', 'Search Console API', 'Meta Graph API', 'Mailchimp API', 'Resend', 'Vitest', 'Playwright'],
+      },
+    ],
+  },
+  urbandecant: {
+    label: 'Project 11',
+    title: 'Urbandecant',
+    link: 'https://urbandecant.vercel.app',
+    image: 'images/projects/urbandecant.webp',
+    imagePlaceholder: '',
+    sections: [
+      {
+        heading: 'Overview',
+        content:
+          '<p>Urbandecant is a premium perfume decant store for the Bangladesh market: small vials split from full bottles, priced in BDT. I built the whole thing, a dark-and-gold luxury storefront in Next.js on top of a self-hosted <strong>Medusa v2</strong> commerce backend. It is live and takes real orders.</p>',
+      },
+      {
+        heading: 'Storefront',
+        content:
+          '<ul><li><strong>3D hero:</strong> an interactive perfume bottle (React Three Fiber, meshopt-compressed models) loaded during the intro, with a random bottle per visit</li><li><strong>Decant sizes as variants:</strong> pill buttons with instant price updates, plus a 6ml package builder (3 or 5 scents, 5% off)</li><li><strong>Fragrance Finder:</strong> mood-based matching managed per product from the admin</li><li><strong>Cart drawer</strong> instead of a cart page, live search, and collection pages the shop owner manages</li></ul>',
+      },
+      {
+        heading: 'Checkout &amp; Operations',
+        content:
+          '<ul><li><strong>Local payments:</strong> Cash on Delivery and manual bKash / Nagad with sender number and transaction ID</li><li><strong>Bangladesh shipping:</strong> division selector with Dhaka-city vs outside-Dhaka delivery rates</li><li><strong>Backend:</strong> Medusa 2 with PostgreSQL on Render; product images on Cloudinary through a custom file-provider module I wrote, so they survive server restarts</li><li>A written guide so the owner runs orders, products, promotions and the homepage from the Medusa admin</li></ul>',
+      },
+      {
+        heading: 'Results',
+        type: 'results',
+        items: [
+          { big: 'Live', label: 'Taking real orders' },
+          { big: '2', label: 'Local payment methods' },
+          { big: '3D', label: 'Interactive bottle hero' },
+          { big: '1', label: 'Developer, end to end' },
+        ],
+      },
+      {
+        heading: 'Technologies',
+        type: 'tech',
+        tags: ['Next.js 15', 'Medusa v2', 'PostgreSQL', 'TypeScript', 'React Three Fiber', 'Zustand', 'GSAP', 'Framer Motion', 'Cloudinary', 'Render', 'Vercel'],
+      },
+    ],
+  },
 };
+
 
 export const stripOrder: ProjectKey[] = [
   'notion',
@@ -533,4 +620,6 @@ export const stripMeta: StripMeta[] = [
   { key: 'bp',       num: '07', tags: ['Shopify', 'API', 'Liquid'] },
   { key: 'aurix',    num: '08', tags: ['SEO', 'Schema', 'Core Web Vitals'] },
   { key: 'resizer',  num: '09', tags: ['HTML5', 'Canvas', 'Netlify'] },
+  { key: 'dashboard', num: '10', tags: ['Next.js', 'Supabase', 'APIs'] },
+  { key: 'urbandecant', num: '11', tags: ['Medusa', 'Next.js', 'Three.js'] },
 ];
