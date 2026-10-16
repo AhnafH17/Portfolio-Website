@@ -58,15 +58,16 @@ export function prepareModel(
   });
 }
 
-/** The laptop's Return key centre, in model space, and the key pitch
-    (scripts/build-laptop.py: KB_ROWS row 3's last key, U = 0.165; Blender's
-    (x, y, z) is three's (x, z, -y)). */
+/** The laptop's Return key (node KEY_Return): its top centre in model space
+    and its width (scripts/build-laptop.py: KB_ROWS row 3's last key, 1.75 U
+    less the gap; Blender's (x, y, z) is three's (x, z, -y)). */
 export const RETURN_KEY = new THREE.Vector3(1.052, 0.0435, -0.3025);
-const KEY_PITCH = 0.165;
+const KEY_WIDTH = 0.265;
 
 /**
  * Follows the model's SCREEN on the page: returns a per-frame function that
- * projects the screen's four corners and publishes them (lib/deviceScreen.ts).
+ * projects the screen's four corners (and the Return key, if given) and
+ * publishes them (lib/deviceScreen.ts).
  * After compression SCREEN may be a node holding an unnamed mesh, so the
  * mesh is found either way.
  */
@@ -106,12 +107,12 @@ export function screenTracker(scene: THREE.Object3D, keyPoint?: THREE.Vector3) {
     q[0] = top[0][0]; q[1] = top[0][1]; q[2] = top[1][0]; q[3] = top[1][1];
     q[4] = bot[1][0]; q[5] = bot[1][1]; q[6] = bot[0][0]; q[7] = bot[0][1];
     if (keyPoint) {
-      // One key pitch across, to size the popped key from.
+      // Its centre, and its width on screen, to size the flying key from.
       scene.updateWorldMatrix(true, false);
-      v.copy(keyPoint).applyMatrix4(scene.matrixWorld).project(camera);
-      v2.copy(keyPoint).setX(keyPoint.x + KEY_PITCH).applyMatrix4(scene.matrixWorld).project(camera);
-      deviceScreen.key[0] = ((v.x + 1) / 2) * width;
-      deviceScreen.key[1] = ((1 - v.y) / 2) * height;
+      v.copy(keyPoint).setX(keyPoint.x - KEY_WIDTH / 2).applyMatrix4(scene.matrixWorld).project(camera);
+      v2.copy(keyPoint).setX(keyPoint.x + KEY_WIDTH / 2).applyMatrix4(scene.matrixWorld).project(camera);
+      deviceScreen.key[0] = ((v.x + v2.x) / 2 + 1) / 2 * width;
+      deviceScreen.key[1] = ((1 - (v.y + v2.y) / 2) / 2) * height;
       deviceScreen.key[2] = Math.abs(v2.x - v.x) / 2 * width;
     }
     deviceScreen.canvas = canvas;

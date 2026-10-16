@@ -57,7 +57,6 @@ SCREEN_Y = LID_Y0 - 0.016   # screen plane, 0.016 in front of the lid
 BEZEL_Y0 = 0.008            # bezel glass front, just behind the screen
 SCREEN_W, SCREEN_H = 2.92, 1.87
 BEZEL_W, BEZEL_H = 3.00, 1.95
-LOGO_R = 0.26
 
 U = 0.165                   # key pitch
 KEY_GAP = 0.024
@@ -377,24 +376,40 @@ def build_base(mats, coll, root):
     return base
 
 
+RETURN_KEY = (3, len(KB_ROWS[3]) - 1)    # row, index: the home row's last key
+
+
 def build_keys(mats, coll, root):
+    """KEYS, plus the Return key as its own node, KEY_Return (origin at its
+    centre, on the well floor): the site lifts it out of the keyboard."""
     bm = bmesh.new()
+    ret = None
     for r, row in enumerate(KB_ROWS):
         yc = KB_TOP - (r + 0.5) * U
         x = KB_X0
-        for wu in row:
+        for i, wu in enumerate(row):
             if wu == "updown":                          # half-height up / down arrows
                 for y0, y1 in ((yc, yc + U / 2), (yc - U / 2, yc)):
                     key_cap(bm, x + KEY_GAP / 2, x + U - KEY_GAP / 2,
                             y0 + KEY_GAP / 4, y1 - KEY_GAP / 4)
                 x += U
                 continue
-            key_cap(bm, x + KEY_GAP / 2, x + wu * U - KEY_GAP / 2,
-                    yc - U / 2 + KEY_GAP / 2, yc + U / 2 - KEY_GAP / 2)
+            x0, x1 = x + KEY_GAP / 2, x + wu * U - KEY_GAP / 2
+            y0, y1 = yc - U / 2 + KEY_GAP / 2, yc + U / 2 - KEY_GAP / 2
+            if (r, i) == RETURN_KEY:
+                cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+                ret = bmesh.new()
+                key_cap(ret, x0 - cx, x1 - cx, y0 - cy, y1 - cy)
+                bmesh.ops.translate(ret, vec=(0, 0, -WELL_Z), verts=ret.verts)
+                ret_at = (cx, cy, WELL_Z)
+            else:
+                key_cap(bm, x0, x1, y0, y1)
             x += wu * U
     keys = mesh_object("KEYS", bm, mats, coll, root)
     finish_shading(keys)
-    return keys
+    key_ret = mesh_object("KEY_Return", ret, mats, coll, root, ret_at)
+    finish_shading(key_ret)
+    return keys, key_ret
 
 
 def key_cap(bm, x0, x1, y0, y1):
@@ -452,8 +467,8 @@ def build_lid(mats, coll, root):
         loop[uv].uv = co
     mesh_object("SCREEN", bm, mats, coll, lid, (0, SCREEN_Y, LID_H / 2))
 
-    # LOGO: the round emblem on the back of the lid -- a raised ring with the
-    # name inside it, all MAT_Accent. Built flat (reading +X, up +Y, facing +Z),
+    # LOGO: the Apple logo on the back of the lid, MAT_Accent (it glows in the
+    # visitor's palette colour). Built flat (reading +X, up +Y, facing +Z),
     # then turned so it reads correctly from behind the open lid and from
     # behind the closed one: reading -> -X, up -> +Z (lid space), face -> +Y.
     bm = logo_mesh()
@@ -465,53 +480,71 @@ def build_lid(mats, coll, root):
     return lid
 
 
-LOGO_TEXT = "Ahnaf"
-LOGO_FONT = os.path.join(REPO, "public", "fonts", "GreaterTheory.otf")   # the site's hero-name face
-LOGO_RING = 0.03            # ring width
+LOGO_HEIGHT = 0.46          # the logo's height on the lid
 LOGO_H = 0.0025             # how far the emblem stands proud of the lid
+
+# The Apple logo outline (the standard 814 x 1000 artwork, y down): the body
+# with its bite, then the leaf. Each is a closed run of cubic beziers.
+APPLE_BODY = [
+    (788.1, 340.9), [(782.3, 345.4), (679.9, 403.1), (679.9, 531.4)],
+    [(679.9, 679.8), (810.2, 732.3), (814.1, 733.6)],
+    [(813.5, 736.8), (793.4, 805.5), (745.4, 875.5)],
+    [(702.6, 937.1), (657.9, 998.6), (589.9, 998.6)],
+    [(521.9, 998.6), (504.4, 959.1), (425.9, 959.1)],
+    [(349.4, 959.1), (322.2, 999.9), (260.0, 999.9)],
+    [(197.8, 999.9), (154.4, 942.9), (104.5, 872.9)],
+    [(46.7, 790.7), (0.0, 663.0), (0.0, 541.8)],
+    [(0.0, 347.4), (126.4, 244.3), (250.8, 244.3)],
+    [(316.9, 244.3), (372.0, 287.7), (413.5, 287.7)],
+    [(453.0, 287.7), (514.6, 241.7), (589.8, 241.7)],
+    [(618.3, 241.7), (720.7, 244.3), (788.1, 340.9)],
+]
+APPLE_LEAF = [
+    (554.1, 159.4), [(585.2, 122.5), (607.2, 71.3), (607.2, 20.1)],
+    [(607.2, 13.0), (606.6, 5.8), (605.3, 0.0)],
+    [(554.7, 1.9), (494.5, 33.7), (458.2, 75.8)],
+    [(429.7, 108.2), (403.1, 159.4), (403.1, 211.3)],
+    [(403.1, 219.1), (404.4, 226.9), (405.0, 229.4)],
+    [(408.2, 230.0), (413.4, 230.7), (418.6, 230.7)],
+    [(464.0, 230.7), (521.1, 200.3), (554.1, 159.4)],
+]
+
+
+def _outline(path, steps=14):
+    """Sample a bezier run into points in lid units, centred, y up."""
+    k = LOGO_HEIGHT / 1000.0
+    pts, p0 = [], path[0]
+    for c1, c2, p3 in path[1:]:
+        for j in range(steps):
+            t = j / steps
+            u = 1 - t
+            x = u ** 3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * p3[0]
+            y = u ** 3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * p3[1]
+            pts.append(((x - 407.0) * k, (500.0 - y) * k))
+        p0 = p3
+    return pts
 
 
 def logo_mesh():
+    """The two shapes, filled and extruded LOGO_H up from z = 0."""
     bm = bmesh.new()
-    segs, ro, ri = 72, LOGO_R, LOGO_R - LOGO_RING
-    ring = []
-    for i in range(segs):
-        a = 2 * math.pi * i / segs
-        c, s = math.cos(a), math.sin(a)
-        ring.append([bm.verts.new((r * c, r * s, z)) for r, z in
-                     ((ro, 0.0), (ro, LOGO_H), (ri, LOGO_H), (ri, 0.0))])
-    for i in range(segs):
-        a, b = ring[i], ring[(i + 1) % segs]
-        bm.faces.new((a[0], b[0], b[1], a[1]))           # outer wall
-        bm.faces.new((a[2], a[1], b[1], b[2]))           # top
-        bm.faces.new((b[3], a[3], a[2], b[2]))           # inner wall
-    bevel(bm, [e for e in bm.edges if all(abs(v.co.z - LOGO_H) < 1e-7 for v in e.verts)
-               and e.calc_length() > 1e-6 and len(e.link_faces) == 2], 0.0012, 1)
-
-    # the name, extruded to the ring's height, centred in the ring
-    font = bpy.data.fonts.load(LOGO_FONT, check_existing=True)
-    cu = bpy.data.curves.new("_logo_txt", "FONT")
-    cu.body, cu.font, cu.size = LOGO_TEXT, font, 0.13
-    cu.resolution_u, cu.extrude, cu.space_character = 5, LOGO_H / 2, 1.05
-    ob = bpy.data.objects.new("_logo_txt", cu)
-    bpy.data.collections[COLL].objects.link(ob)
-    dg = bpy.context.evaluated_depsgraph_get()
-    dg.update()
-    me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg))
-    bpy.data.objects.remove(ob, do_unlink=True)
-    bpy.data.curves.remove(cu)
-    t = bmesh.new()
-    t.from_mesh(me)
-    bpy.data.meshes.remove(me)
-    t.normal_update()
-    bmesh.ops.delete(t, geom=[f for f in t.faces if f.normal.z < -0.99], context="FACES_ONLY")
-    lo = Vector((min(v.co.x for v in t.verts), min(v.co.y for v in t.verts), min(v.co.z for v in t.verts)))
-    hi = Vector((max(v.co.x for v in t.verts), max(v.co.y for v in t.verts)))
-    fit = min(1.0, 2 * (ri - 0.045) / (hi.x - lo.x))     # keep clear of the ring
-    bmesh.ops.translate(t, vec=(-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z), verts=t.verts)
-    bmesh.ops.scale(t, vec=(fit, fit, 1.0), verts=t.verts)
-    merge(bm, t)
-    t.free()
+    for path in (APPLE_BODY, APPLE_LEAF):
+        t = bmesh.new()
+        vs = [t.verts.new((x, y, 0.0)) for x, y in _outline(path)]
+        es = [t.edges.new((vs[i], vs[(i + 1) % len(vs)])) for i in range(len(vs))]
+        bmesh.ops.triangle_fill(t, use_beauty=True, use_dissolve=True, edges=es, normal=(0, 0, 1))
+        for f in t.faces:
+            if f.normal.z < 0:
+                f.normal_flip()
+        ext = bmesh.ops.extrude_face_region(t, geom=list(t.faces))
+        top = [v for v in ext["geom"] if isinstance(v, bmesh.types.BMVert)]
+        bmesh.ops.translate(t, vec=(0, 0, LOGO_H), verts=top)
+        t.normal_update()
+        bmesh.ops.recalc_face_normals(t, faces=t.faces)
+        # The underside sits on the lid and is never seen.
+        bmesh.ops.delete(t, geom=[f for f in t.faces if f.normal.z < -0.99], context="FACES_ONLY")
+        merge(bm, t)
+        t.free()
     for f in bm.faces:
         f.material_index = ACCENT
     return bm
@@ -623,10 +656,10 @@ def build():
     root.empty_display_size = 0.4
     coll.objects.link(root)
     base = build_base(mats, coll, root)
-    keys = build_keys(mats, coll, root)
+    keys, key_ret = build_keys(mats, coll, root)
     lid = build_lid(mats, coll, root)
     build_shadow(coll, root)
-    unwrap_atlas([base, keys, lid])
+    unwrap_atlas([base, keys, key_ret, lid])
 
     ao = bpy.data.images.get("LaptopAO")
     if ao is None:
@@ -672,7 +705,7 @@ def bake(samples=96):
     import numpy as np
     guard()
     sc = get_scene()
-    objs = {n: bpy.data.objects[n] for n in ("BASE", "KEYS", "LID", "SHADOW")}
+    objs = {n: bpy.data.objects[n] for n in ("BASE", "KEYS", "KEY_Return", "LID", "SHADOW")}
     objs["LID"].rotation_euler = (0, 0, 0)
     mats = [bpy.data.materials[n] for n in MAT_NAMES]
 
@@ -686,7 +719,7 @@ def bake(samples=96):
     tmp.image = dummy
     nt.nodes.active = tmp
     objs["SHADOW"].hide_render = True
-    _bake(sc, [objs["BASE"], objs["KEYS"], objs["LID"]], img, 0.22, samples)
+    _bake(sc, [objs["BASE"], objs["KEYS"], objs["KEY_Return"], objs["LID"]], img, 0.22, samples)
     nt.nodes.remove(tmp)
     bpy.data.images.remove(dummy)
 
@@ -823,7 +856,7 @@ def verify():
                               if ob not in nodes or ob.type in ("CAMERA", "LIGHT")]
 
     lid_parts = ["LID", "BEZEL", "SCREEN", "LOGO"]
-    base_parts = ["BASE", "KEYS"]
+    base_parts = ["BASE", "KEYS", "KEY_Return"]
     for label, angle in (("open", 0), ("closed", 90)):
         lid.rotation_euler = (math.radians(angle), 0, 0)
         dg.update()

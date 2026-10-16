@@ -37,9 +37,10 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `assets/hero-portrait-master.png` | Ungraded hero source — input to `scripts/regrade-hero.py`, never served |
 | `public/models/*.glb` | Compressed (meshopt + WebP) by `scripts/optimize-models.mjs` from the Blender exports in `assets/models-src/`; re-run it after re-exporting |
 | `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
-| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): hero→showcase chrome drop, showcase→laptop glass pane, laptop→About clay key, Impacts→Testimonials particles, Testimonials→Contact glitch |
-| `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key; About core cube) for handoffs to land on |
-| `public/images/handoff/*.webp` | Blender-rendered sprite loops (24 frames, 6×4): `chrome-drop`, `clay-key` (grayscale, tinted to the accent at runtime). Source scenes: `assets/handoff-sprites.blend` (HO_Chrome, HO_Clay) |
+| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact glitch |
+| `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key position; About core cube) for handoffs to land on |
+| `public/images/handoff/*.webp` | The flying Return key: 48 Blender-rendered frames (8×6) of one smooth turn, `return-key` (the keycap) + `return-key-glyph` (white ↵, tinted to the accent at runtime). Source scene: `assets/handoff-sprites.blend` (HO_Key) |
+| `scripts/build-laptop.py` | Laptop model: Apple logo on the lid (`LOGO`, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
 
 ## Architecture Decisions

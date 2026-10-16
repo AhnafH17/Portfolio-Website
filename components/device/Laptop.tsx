@@ -10,6 +10,7 @@ import {
 } from './screenTexture';
 import { makeScreenMaterial, prepareModel, RETURN_KEY, screenTracker, SCREEN_PANEL } from './deviceModel';
 import { readAccent } from '@/lib/accent';
+import { deviceScreen } from '@/lib/deviceScreen';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 /* The laptop is a Blender model (scripts/build-laptop.py →
@@ -45,7 +46,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   // Only for the portal target below; the animation reaches the lid through
   // `rig`, set up once the model is in (three objects are mutated per frame).
   const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
-  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial; track: ReturnType<typeof screenTracker> } | null>(null);
+  const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial; track: ReturnType<typeof screenTracker>; returnKey: THREE.Object3D | null } | null>(null);
 
   useEffect(() => {
     const lid = scene.getObjectByName('LID');
@@ -62,7 +63,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     if (shadow) { shadow.material = shadowMat; shadow.renderOrder = -1; }
     // The model rests open; the intro starts closed.
     lid.rotation.x = P.lidClosed;
-    rig.current = { lid, screen, track: screenTracker(scene, RETURN_KEY) };
+    rig.current = { lid, screen, track: screenTracker(scene, RETURN_KEY), returnKey: scene.getObjectByName('KEY_Return') ?? null };
     return () => { rig.current = null; screen.dispose(); shadowMat.dispose(); };
   }, [scene, chrome, shadowTex, accent]);
 
@@ -113,8 +114,10 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
     // Scroll the editor via texture offset (no redraw, no re-upload).
     content.render(read);
-    // Where the screen is on the page, for the showcase's glass handoff.
+    // Where the screen and Return key are on the page, for the handoff into
+    // About, which lifts the key out (so the keyboard shows its empty slot).
     r.track?.(state.camera, state.size.width, state.size.height, state.gl.domElement);
+    if (r.returnKey) r.returnKey.visible = !deviceScreen.keyOut;
   });
 
   return (

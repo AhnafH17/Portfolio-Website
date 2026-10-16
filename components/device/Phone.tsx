@@ -84,7 +84,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     content.render(read);
-    // Where the screen is on the page, for the showcase's glass handoff.
+    // Where the screen is on the page, for the handoff into About.
     r.track?.(state.camera, state.size.width, state.size.height, state.gl.domElement);
   });
 

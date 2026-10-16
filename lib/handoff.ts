@@ -1,6 +1,6 @@
 /* Section-to-section "handoffs": an object that leaves one section and
-   lands in the next as you scroll (a chrome droplet falling from the hero
-   onto the showcase title, a clay key popping off the laptop, ...). Driven by
+   lands in the next as you scroll (the laptop's Return key flying into the
+   About island, the Impacts stars becoming the globe, ...). Driven by
    components/handoff/HandoffLayer.tsx: one fixed overlay, one 2D canvas and
    one loop for all of them. Each handoff is a pure function of where its
    sections are on screen, so scrolling back up plays it in reverse.
@@ -74,6 +74,7 @@ export interface Handoff<S = unknown> {
 export const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
 export const smooth = (t: number) => t * t * (3 - 2 * t);
 export const easeInOut = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+export const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 export const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 export const bell = (t: number) => Math.sin(Math.PI * clamp01(t));
 
