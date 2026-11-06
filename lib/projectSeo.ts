@@ -27,7 +27,7 @@ export interface ProjectSeo {
 
 const AURIXLAB: Client = { name: 'AurixLab', url: 'https://www.aurixlab.com' };
 const CPC: Client = { name: 'CPC Clinics', url: 'https://cpcclinics.ca', type: 'MedicalOrganization' };
-const MERCH: Client = { name: 'Merch Express', alternateName: 'Budget Promotion', url: 'https://budgetpromotion.ca' };
+const MERCH: Client = { name: 'Merch Express', alternateName: 'Budget Promotion', url: 'https://merchexpresscanada.ca' };
 
 export const projectSeo: Record<ProjectKey, ProjectSeo> = {
   notion: {

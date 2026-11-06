@@ -62,7 +62,7 @@ export const projectData: Record<ProjectKey, Project> = {
           '<ul><li><strong>Argon2id on Vercel serverless:</strong> Native bindings failed on Vercel\'s Linux runtime — diagnosed from build logs and migrated to bcrypt without resetting any existing user passwords</li><li><strong>Prisma + Supabase connection pooling:</strong> Configured correct PgBouncer transaction pooler (port 6543) for runtime queries and direct connection (port 5432) for migrations — avoiding "too many connections" on serverless</li><li><strong>Multi-assignee without schema migration risk:</strong> Used a JSON array assigneeIds field alongside the existing assigneeId to add multi-assignee support without touching existing task data</li><li><strong>Optimistic concurrency:</strong> Every task and project carries a version integer; mismatched versions return a 409 Conflict with the current server state and a diff-friendly message so clients can merge rather than overwrite</li><li><strong>Active task count fix:</strong> Dashboard was hardcoding status !== "Done" — fixed to use the last item in each project\'s custom statuses array as the completion status, supporting custom workflows</li></ul>',
       },
       {
-        heading: 'Stack &amp; Deployment',
+        heading: 'Stack & Deployment',
         content:
           '<p>Deployed on <strong>Vercel</strong> (free Hobby tier) with a <strong>Supabase</strong> free PostgreSQL database. Zero monthly cost, runs 24/7, no server maintenance. CI/CD via GitHub — every push to main triggers an automatic Vercel redeploy. Vercel Cron handles the weekly digest scheduling natively.</p>',
       },
@@ -378,7 +378,7 @@ export const projectData: Record<ProjectKey, Project> = {
   bp: {
     label: 'Project 07',
     title: 'Merch Express',
-    link: 'https://budgetpromotion.ca/',
+    link: 'https://merchexpresscanada.ca/',
     image: 'images/projects/bp.webp',
     imagePlaceholder: '',
     sections: [
@@ -529,7 +529,7 @@ export const projectData: Record<ProjectKey, Project> = {
           '<ul><li><strong>Sync engine:</strong> a Postgres <code>pg_cron</code> schedule calls the app every 30 minutes; a job queue with retries, backoff and idempotent upserts pulls from each provider through typed adapters</li><li><strong>Multi-tenant by design:</strong> every client table carries a client id and Row Level Security, enforced again in a data-access layer and proven by pgTAP tests</li><li><strong>Secrets never reach the browser:</strong> third-party APIs are called only from server code, account credentials are encrypted with AES-256-GCM in a schema that is not exposed, and CI scans the client bundle for leaks</li><li><strong>Sign-in:</strong> clients use one-time email codes; staff need password plus TOTP multi-factor for anything privileged</li></ul>',
       },
       {
-        heading: 'Stack &amp; Cost',
+        heading: 'Stack & Cost',
         content:
           '<p>Next.js 16 on <strong>Vercel Hobby</strong>, <strong>Supabase Free</strong> (Postgres 17, Auth, Storage, pg_cron) with nightly encrypted backups, and <strong>Resend</strong> for email. Scheduling lives in the database because Hobby cron only runs daily. Total running cost: <strong>$0 a month</strong>.</p>',
       },
@@ -568,7 +568,7 @@ export const projectData: Record<ProjectKey, Project> = {
           '<ul><li><strong>3D hero:</strong> an interactive perfume bottle (React Three Fiber, meshopt-compressed models) loaded during the intro, with a random bottle per visit</li><li><strong>Decant sizes as variants:</strong> pill buttons with instant price updates, plus a 6ml package builder (3 or 5 scents, 5% off)</li><li><strong>Fragrance Finder:</strong> mood-based matching managed per product from the admin</li><li><strong>Cart drawer</strong> instead of a cart page, live search, and collection pages the shop owner manages</li></ul>',
       },
       {
-        heading: 'Checkout &amp; Operations',
+        heading: 'Checkout & Operations',
         content:
           '<ul><li><strong>Local payments:</strong> Cash on Delivery and manual bKash / Nagad with sender number and transaction ID</li><li><strong>Bangladesh shipping:</strong> division selector with Dhaka-city vs outside-Dhaka delivery rates</li><li><strong>Backend:</strong> Medusa 2 with PostgreSQL on Render; product images on Cloudinary through a custom file-provider module I wrote, so they survive server restarts</li><li>A written guide so the owner runs orders, products, promotions and the homepage from the Medusa admin</li></ul>',
       },

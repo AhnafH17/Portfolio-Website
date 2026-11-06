@@ -71,7 +71,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
   const resultsSection = project.sections.find((s) => s.type === 'results');
   const techSection = project.sections.find((s) => s.type === 'tech');
   const contentSections = project.sections.filter((s) => s.type !== 'results' && s.type !== 'tech');
-  // The flagship projects tell the story first; the existing write-up moves
+  // Case studies tell the story first; the existing write-up moves
   // into "Technical detail" below it.
   const cs = meta ? CASE_STUDIES[meta.key] : undefined;
   const nextKey = cs && meta ? CASE_STUDY_ORDER[(CASE_STUDY_ORDER.indexOf(meta.key) + 1) % CASE_STUDY_ORDER.length] : null;
@@ -92,7 +92,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
       <div className="proj-hero">
         {project.image ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={`/${project.image}`} alt={project.title} className="proj-hero-img" />
+          <img src={`/${project.image}`} alt={cs?.heroAlt ?? project.title} className="proj-hero-img" />
         ) : (
           <div className="proj-hero-empty">
             <svg viewBox="0 0 120 80" fill="none" width="120" opacity={0.08}>
@@ -219,7 +219,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={`https://cdn.simpleicons.org/${slug}/${iconColor}`}
-                        alt=""
+                        alt={`${tag} logo`}
                         width={18}
                         height={18}
                         aria-hidden="true"
