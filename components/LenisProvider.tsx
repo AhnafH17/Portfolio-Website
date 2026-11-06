@@ -11,11 +11,14 @@ declare global {
 
 export default function LenisProvider() {
   useEffect(() => {
+    // Reduced motion: keep the instance (the site scrolls through it) but
+    // let the wheel scroll natively, without the eased glide.
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
-      smoothWheel: true,
+      smoothWheel: !reduce,
     });
 
     window.__lenis = lenis;

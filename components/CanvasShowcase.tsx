@@ -2,6 +2,7 @@
 
 import { useRef, useEffect } from 'react';
 import Image from 'next/image';
+import { PROJECT_BLUR } from '@/lib/projectBlur';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
@@ -106,21 +107,26 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
 /** 0 → 1 as the change across boundary `b` plays (shifted per slot). */
 const wipe = (p: number, b: number, shift = 0) => smoothstep(clamp01((p - (b - HALF + shift)) / (2 * HALF)));
 
-function ProjectPanel({ projKey, eager }: { projKey: ProjectKey; eager: boolean }) {
+function ProjectPanel({ projKey }: { projKey: ProjectKey }) {
   const project = projectData[projKey];
   return (
     // A real link, so search engines can follow it to the case study.
     <a className="cs-card" href={`/projects/${projKey}`}>
-      <div className="cs-card-media">
+      {/* Never an empty box: a blurred preview of the image (inlined, so
+          it's there on first paint) shows until the image itself is in,
+          over a designed backdrop with the project's name. */}
+      <div className="cs-card-media" data-label={project.title}>
         <Image
           src={`/${project.image}`}
           alt={project.title}
           fill
           sizes="(max-width: 768px) 40vw, 380px"
           className="cs-card-img"
-          // All nine sit in the same three spots, so they're needed together:
-          // load them as the section approaches, not mid-wipe.
-          loading={eager ? 'eager' : 'lazy'}
+          // Every category's panels share the same few spots and appear
+          // mid-scroll, so all of them load with the page, not on approach.
+          loading="eager"
+          placeholder={PROJECT_BLUR[projKey] ? 'blur' : 'empty'}
+          blurDataURL={PROJECT_BLUR[projKey]}
         />
       </div>
       <div className="cs-card-body">
@@ -370,7 +376,7 @@ export default function CanvasShowcase() {
                 data-top={f === 0 ? 'true' : 'false'}
                 style={f > 0 ? { clipPath: 'inset(0 0 100% 0)', pointerEvents: 'none', visibility: 'hidden' } : undefined}
               >
-                <ProjectPanel projKey={cat.projects[slot]} eager={f === 0} />
+                <ProjectPanel projKey={cat.projects[slot]} />
               </div>
             ))}
             <span ref={(el) => { scanRefs.current[slot] = el; }} className="cs-scan" aria-hidden="true" />

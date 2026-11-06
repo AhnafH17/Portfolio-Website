@@ -38,7 +38,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 01',
     title: 'Mission Control',
     link: null,
-    image: 'images/projects/notion.png',
+    image: 'images/projects/notion.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -101,7 +101,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 02',
     title: 'Scripting Engine',
     link: 'https://scripting-engine.vercel.app',
-    image: 'images/projects/scripting.png',
+    image: 'images/projects/scripting.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -165,7 +165,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 03',
     title: 'CPC Revive',
     link: 'https://cpcclinics.ca/revive/',
-    image: 'images/projects/revive.png',
+    image: 'images/projects/revive.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -218,7 +218,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 04',
     title: 'LeadCraft IT Solutions',
     link: 'https://www.leadcraftit.com/',
-    image: 'images/projects/leadcraft.png',
+    image: 'images/projects/leadcraft.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -277,7 +277,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 05',
     title: 'Customer Segmentation Engine',
     link: null,
-    image: 'images/projects/data.jpeg',
+    image: 'images/projects/data.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -326,7 +326,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 06',
     title: 'CPC Clinics',
     link: 'https://cpcclinics.ca/',
-    image: 'images/projects/cpc.png',
+    image: 'images/projects/cpc.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -379,7 +379,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 07',
     title: 'Merch Express',
     link: 'https://budgetpromotion.ca/',
-    image: 'images/projects/bp.png',
+    image: 'images/projects/bp.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -433,7 +433,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 08',
     title: 'AurixLab SEO Optimization',
     link: 'https://www.aurixlab.com/',
-    image: 'images/projects/aurix.png',
+    image: 'images/projects/aurix.webp',
     imagePlaceholder: '',
     sections: [
       {
@@ -480,7 +480,7 @@ export const projectData: Record<ProjectKey, Project> = {
     label: 'Project 09',
     title: 'Image Resizer Studio',
     link: 'https://ahnaf-image-resizer.netlify.app/',
-    image: 'images/projects/resizer.png',
+    image: 'images/projects/resizer.webp',
     imagePlaceholder: '',
     sections: [
       {

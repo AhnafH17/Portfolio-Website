@@ -467,8 +467,9 @@ def build_lid(mats, coll, root):
         loop[uv].uv = co
     mesh_object("SCREEN", bm, mats, coll, lid, (0, SCREEN_Y, LID_H / 2))
 
-    # LOGO: the Apple logo on the back of the lid, MAT_Accent (it glows in the
-    # visitor's palette colour). Built flat (reading +X, up +Y, facing +Z),
+    # LOGO: the AH monogram (the navbar's mark) on the back of the lid,
+    # MAT_Accent (it glows in the visitor's palette colour). Built flat
+    # (reading +X, up +Y, facing +Z),
     # then turned so it reads correctly from behind the open lid and from
     # behind the closed one: reading -> -X, up -> +Z (lid space), face -> +Y.
     bm = logo_mesh()
@@ -480,71 +481,38 @@ def build_lid(mats, coll, root):
     return lid
 
 
-LOGO_HEIGHT = 0.46          # the logo's height on the lid
+LOGO_TEXT = "AH"
+# The navbar draws the mark in Georgia Bold (components/Navbar.tsx); the same
+# face here, so the lid matches it.
+LOGO_FONT = "C:/Windows/Fonts/georgiab.ttf"
+LOGO_HEIGHT = 0.30          # cap height of the monogram on the lid
 LOGO_H = 0.0025             # how far the emblem stands proud of the lid
-
-# The Apple logo outline (the standard 814 x 1000 artwork, y down): the body
-# with its bite, then the leaf. Each is a closed run of cubic beziers.
-APPLE_BODY = [
-    (788.1, 340.9), [(782.3, 345.4), (679.9, 403.1), (679.9, 531.4)],
-    [(679.9, 679.8), (810.2, 732.3), (814.1, 733.6)],
-    [(813.5, 736.8), (793.4, 805.5), (745.4, 875.5)],
-    [(702.6, 937.1), (657.9, 998.6), (589.9, 998.6)],
-    [(521.9, 998.6), (504.4, 959.1), (425.9, 959.1)],
-    [(349.4, 959.1), (322.2, 999.9), (260.0, 999.9)],
-    [(197.8, 999.9), (154.4, 942.9), (104.5, 872.9)],
-    [(46.7, 790.7), (0.0, 663.0), (0.0, 541.8)],
-    [(0.0, 347.4), (126.4, 244.3), (250.8, 244.3)],
-    [(316.9, 244.3), (372.0, 287.7), (413.5, 287.7)],
-    [(453.0, 287.7), (514.6, 241.7), (589.8, 241.7)],
-    [(618.3, 241.7), (720.7, 244.3), (788.1, 340.9)],
-]
-APPLE_LEAF = [
-    (554.1, 159.4), [(585.2, 122.5), (607.2, 71.3), (607.2, 20.1)],
-    [(607.2, 13.0), (606.6, 5.8), (605.3, 0.0)],
-    [(554.7, 1.9), (494.5, 33.7), (458.2, 75.8)],
-    [(429.7, 108.2), (403.1, 159.4), (403.1, 211.3)],
-    [(403.1, 219.1), (404.4, 226.9), (405.0, 229.4)],
-    [(408.2, 230.0), (413.4, 230.7), (418.6, 230.7)],
-    [(464.0, 230.7), (521.1, 200.3), (554.1, 159.4)],
-]
-
-
-def _outline(path, steps=14):
-    """Sample a bezier run into points in lid units, centred, y up."""
-    k = LOGO_HEIGHT / 1000.0
-    pts, p0 = [], path[0]
-    for c1, c2, p3 in path[1:]:
-        for j in range(steps):
-            t = j / steps
-            u = 1 - t
-            x = u ** 3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * p3[0]
-            y = u ** 3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * p3[1]
-            pts.append(((x - 407.0) * k, (500.0 - y) * k))
-        p0 = p3
-    return pts
 
 
 def logo_mesh():
-    """The two shapes, filled and extruded LOGO_H up from z = 0."""
+    """The monogram, extruded LOGO_H up from z = 0 and centred."""
+    font = bpy.data.fonts.load(LOGO_FONT, check_existing=True)
+    cu = bpy.data.curves.new("_logo_txt", "FONT")
+    cu.body, cu.font, cu.size = LOGO_TEXT, font, 1.0
+    cu.resolution_u, cu.extrude, cu.space_character = 6, LOGO_H / 2, 0.96
+    ob = bpy.data.objects.new("_logo_txt", cu)
+    bpy.data.collections[COLL].objects.link(ob)
+    dg = bpy.context.evaluated_depsgraph_get()
+    dg.update()
+    me = bpy.data.meshes.new_from_object(ob.evaluated_get(dg))
+    bpy.data.objects.remove(ob, do_unlink=True)
+    bpy.data.curves.remove(cu)
     bm = bmesh.new()
-    for path in (APPLE_BODY, APPLE_LEAF):
-        t = bmesh.new()
-        vs = [t.verts.new((x, y, 0.0)) for x, y in _outline(path)]
-        es = [t.edges.new((vs[i], vs[(i + 1) % len(vs)])) for i in range(len(vs))]
-        bmesh.ops.triangle_fill(t, use_beauty=True, use_dissolve=True, edges=es, normal=(0, 0, 1))
-        for f in t.faces:
-            if f.normal.z < 0:
-                f.normal_flip()
-        ext = bmesh.ops.extrude_face_region(t, geom=list(t.faces))
-        top = [v for v in ext["geom"] if isinstance(v, bmesh.types.BMVert)]
-        bmesh.ops.translate(t, vec=(0, 0, LOGO_H), verts=top)
-        t.normal_update()
-        bmesh.ops.recalc_face_normals(t, faces=t.faces)
-        # The underside sits on the lid and is never seen.
-        bmesh.ops.delete(t, geom=[f for f in t.faces if f.normal.z < -0.99], context="FACES_ONLY")
-        merge(bm, t)
-        t.free()
+    bm.from_mesh(me)
+    bpy.data.meshes.remove(me)
+    bm.normal_update()
+    # The underside sits on the lid and is never seen.
+    bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.normal.z < -0.99], context="FACES_ONLY")
+    lo = Vector((min(v.co.x for v in bm.verts), min(v.co.y for v in bm.verts), min(v.co.z for v in bm.verts)))
+    hi = Vector((max(v.co.x for v in bm.verts), max(v.co.y for v in bm.verts)))
+    k = LOGO_HEIGHT / (hi.y - lo.y)
+    bmesh.ops.translate(bm, vec=(-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z), verts=bm.verts)
+    bmesh.ops.scale(bm, vec=(k, k, 1.0), verts=bm.verts)
     for f in bm.faces:
         f.material_index = ACCENT
     return bm

@@ -61,6 +61,8 @@ export default function TestimonialSection() {
   }, [paginate]);
 
   useEffect(() => {
+    // No auto-advance for anyone who prefers reduced motion.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     timerRef.current = setTimeout(() => paginate(1), 4500);
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
   }, [current, paginate]);

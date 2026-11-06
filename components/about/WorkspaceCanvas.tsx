@@ -137,6 +137,7 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const coreLightRef = useRef<THREE.PointLight>(null);
   const tmp = useMemo(() => ({ a: new THREE.Vector3(), b: new THREE.Vector3() }), []);
+  const reduceMotion = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
   const hoverTick = useRef(0);
   const setHover = (name: string | null) => {
     if (hovered.current === name) return;
@@ -146,7 +147,8 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
 
   useFrame((state, dt) => {
     if (!drawing.onScreen) return;
-    const t = state.clock.elapsedTime;
+    // Reduced motion: the island holds still (no sway, bob, drift or pulse).
+    const t = reduceMotion ? 0 : state.clock.elapsedTime;
     if (!pointerInside.current) setHover(null);
     else if ((hoverTick.current = (hoverTick.current + 1) % 2) === 0) {
       raycaster.setFromCamera(state.pointer, state.camera);
