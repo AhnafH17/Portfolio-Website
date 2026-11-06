@@ -25,7 +25,8 @@ const SAFETY_MS = 9000;
    public/images/preloader/, cut from assets/preloader/hands-*.png) reach out
    of the bars, grip their edges, and pull them apart onto the hero.
 
-   The art is one 1672 x 941 frame per pose (open, gripping), split at row
+   The art is one 1672 x 941 frame per pose (open, half-closed, gripping;
+   the half-closed one was re-aligned to the same bar edges), split at row
    SPLIT into a top half (bar + top hand) and a bottom half; the bars' edges
    sit at rows TOP_EDGE and BOT_EDGE. The frame is scaled to fill the width
    (or, on tall phones, 60% of the height) and centred on the slit. */
@@ -38,6 +39,8 @@ const SLIT_MID = (TOP_EDGE + BOT_EDGE) / 2;
 const ART = {
   openTop: '/images/preloader/open-top.webp',
   openBottom: '/images/preloader/open-bottom.webp',
+  midTop: '/images/preloader/mid-top.webp',
+  midBottom: '/images/preloader/mid-bottom.webp',
   gripTop: '/images/preloader/grip-top.webp',
   gripBottom: '/images/preloader/grip-bottom.webp',
 };
@@ -130,9 +133,11 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.55, ease: 'power2.out' }, 0);
     tl.fromTo(q(top, '.pl-open'), { y: -46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
     tl.fromTo(q(bot, '.pl-open'), { y: 46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
-    // Grip: the fingers close on the edges.
-    tl.set([q(top, '.pl-grip'), q(bot, '.pl-grip')], { opacity: 1 }, 0.95);
-    tl.set([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, 0.99);
+    // Grip: the fingers close on the edges, through the half-closed pose.
+    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 1 }, 0.88);
+    tl.set([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, 0.9);
+    tl.set([q(top, '.pl-grip'), q(bot, '.pl-grip')], { opacity: 1 }, 0.98);
+    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 0 }, 1.0);
     tl.to(rootRef.current, { '--rim': 1, duration: 0.08, yoyo: true, repeat: 1 }, 0.95);
     // A beat of strain: the bars give a little, toward each other, shaking.
     tl.to(top, { y: 7, duration: 0.18, ease: 'power2.out' }, 1.0);
@@ -181,12 +186,16 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pl-art pl-open" src={ART.openTop} alt="" decoding="async" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-mid" src={ART.midTop} alt="" decoding="async" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pl-art pl-grip" src={ART.gripTop} alt="" decoding="async" />
       </div>
       <div ref={botRef} className="pl-half pl-bottom" aria-hidden="true">
         <div className="pl-bar" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pl-art pl-open" src={ART.openBottom} alt="" decoding="async" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-mid" src={ART.midBottom} alt="" decoding="async" />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className="pl-art pl-grip" src={ART.gripBottom} alt="" decoding="async" />
       </div>
