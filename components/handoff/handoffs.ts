@@ -251,12 +251,10 @@ const impactsToTestimonials: Handoff<StreamState> = {
   },
 };
 
-/* ── Testimonials → Contact: glitch transmission. The active testimonial
-   card glitches apart into scanline slices (offset light and accent
-   copies), the slices collapse into a data packet that streaks down to the
-   contact console, and a scan frame sweeps the console as it lands. ── */
-const SLICES = 14;
-const GLITCH = (() => { const r = seeded(0x611c4); return Array.from({ length: SLICES }, () => [r() - 0.5, r(), r()] as const); })();
+/* ── Testimonials → Contact: transmission. The active testimonial card
+   switches off like a CRT (squashes to a glowing line, then a point), the
+   point streaks down as a data packet to the contact console (on phones,
+   the contact heading), and a scan frame sweeps it as it lands. ── */
 const BITS = (() => { const r = seeded(0xb175); return Array.from({ length: 26 }, () => [r(), r() - 0.5, 0.5 + r()] as const); })();
 interface TxState {
   card: DOMRect; con: DOMRect; split: number; travel: number; land: number; alpha: number;
@@ -298,25 +296,36 @@ const testimonialsToContact: Handoff<TxState> = {
     s.console.style.setProperty('--landed', bell(s.land).toFixed(3));
     s.console.dataset.incoming = String(s.land > 0 && s.land < 1);
     ctx.globalAlpha = s.alpha;
-    // A: the card glitching apart and collapsing to a line.
+    // A: the card switches off like an old CRT: it squashes vertically into
+    // a glowing line, the line shrinks to a bright point, and that point
+    // is the packet that leaves. (It used to split into offset glitch
+    // slices, which read as a rendering bug when frozen in a screenshot.)
     if (s.split > 0 && s.travel < 0.35) {
       const k = 1 - clamp01(s.travel / 0.35);
-      const h = s.card.height / SLICES;
-      for (let i = 0; i < SLICES; i++) {
-        const [jx, ja, jw] = GLITCH[i];
-        const y0 = s.card.top + i * h;
-        const y = lerp(y0, s.sy - h / 2, s.split);           // slices slide to the centre line
-        const hh = Math.max(1, h * (1 - s.split * 0.85));
-        const off = jx * 90 * Math.sin(Math.PI * s.split) * (0.4 + ja);
-        const w = s.card.width * lerp(1, 0.35 + jw * 0.4, s.split);
-        const x = s.sx - w / 2 + off;
-        ctx.fillStyle = `rgba(10,12,16,${0.85 * k})`;
-        ctx.fillRect(x, y, w, hh);
-        ctx.fillStyle = `rgba(${accent},${0.55 * k})`;
-        ctx.fillRect(x - 3, y, w, Math.max(1, hh * 0.18));
-        ctx.fillStyle = `rgba(255,255,255,${0.35 * k})`;
-        ctx.fillRect(x + 3, y + hh - Math.max(1, hh * 0.12), w, Math.max(1, hh * 0.12));
-      }
+      const squash = clamp01(s.split / 0.75), shrink = clamp01((s.split - 0.75) / 0.25);
+      const e = squash * squash;
+      const h = Math.max(2, lerp(s.card.height, 2, e));
+      const w = Math.max(6, lerp(s.card.width, 6, shrink * shrink));
+      const x = s.sx - w / 2, y = s.sy - h / 2;
+      const cover = Math.min(1, s.split * 5) * k;
+      // the screen going dark, edged in the accent
+      ctx.fillStyle = `rgba(10,12,16,${0.92 * cover})`;
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = `rgba(${accent},${0.55 * cover})`;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, w - 1, h - 1);
+      // the bright line across its middle, gathering everything
+      ctx.globalCompositeOperation = 'lighter';
+      const line = Math.max(1.5, h * 0.08);
+      const g = ctx.createLinearGradient(x, 0, x + w, 0);
+      g.addColorStop(0, `rgba(${accent},0)`);
+      g.addColorStop(0.5, `rgba(255,255,255,${0.9 * e * k})`);
+      g.addColorStop(1, `rgba(${accent},0)`);
+      ctx.fillStyle = g;
+      ctx.fillRect(x, s.sy - line / 2, w, line);
+      ctx.fillStyle = `rgba(${accent},${0.35 * e * k})`;
+      ctx.fillRect(x, s.sy - line * 3, w, line * 6);
+      ctx.globalCompositeOperation = 'source-over';
     }
     // B: the data packet streaking down to the console, with a split trail.
     if (s.travel > 0 && s.travel < 1) {

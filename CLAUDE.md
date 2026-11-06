@@ -37,7 +37,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `assets/hero-portrait-master.png` / `hero-portrait-cutout.png` | Hero source photo and its background-removed cut-out (rembg, birefnet-portrait); the served files are encoded from the cut-out with sharp |
 | `public/models/*.glb` | Compressed (meshopt + WebP) by `scripts/optimize-models.mjs` from the Blender exports in `assets/models-src/`; re-run it after re-exporting |
 | `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
-| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact glitch |
+| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact CRT switch-off + transmission |
 | `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key position; About core cube) for handoffs to land on |
 | `public/images/handoff/*.webp` | The flying Return key: 48 Blender-rendered frames (8×6) of one smooth turn, `return-key` (the keycap) + `return-key-glyph` (white ↵, tinted to the accent at runtime). Source scene: `assets/handoff-sprites.blend` (HO_Key) |
 | `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |

@@ -39,7 +39,11 @@ export default function HeroSection({ paused = false }: { paused?: boolean }) {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     // 1. Everything around the portrait.
     tl.fromTo(q('.hx-streak'), { opacity: 0 }, { opacity: 1, duration: 1.2, stagger: 0.12, ease: 'power2.out' }, 0);
-    tl.fromTo(q('.hx-roles'), { opacity: 0, y: 10, letterSpacing: '0.7em' }, { opacity: 1, y: 0, letterSpacing: '0.42em', duration: 0.9 }, 0.05);
+    // The tracking settles to whatever the stylesheet sets (tighter on
+    // phones), from 1.6x that.
+    const roles = root.querySelector<HTMLElement>('.hx-roles');
+    const track = roles ? parseFloat(getComputedStyle(roles).letterSpacing) || 0 : 0;
+    tl.fromTo(roles, { opacity: 0, y: 10, letterSpacing: `${track * 1.6}px` }, { opacity: 1, y: 0, letterSpacing: `${track}px`, duration: 0.9, clearProps: 'letterSpacing' }, 0.05);
     tl.fromTo(q('.hx-rule'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'power3.inOut' }, 0.1);
     tl.fromTo(q('.hx-cred'), { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.8 }, 0.22);
     tl.fromTo(q('.hx-orbit'), { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.1);

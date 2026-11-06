@@ -137,7 +137,7 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .nav-links a.active{color:var(--accent-glow)}
 .nav-links a.active::after{width:100%}
 
-.menu-toggle{display:none;flex-direction:column;gap:5px;cursor:pointer;z-index:1001;background:none;border:none;padding:4px}
+.menu-toggle{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;cursor:pointer;z-index:1001;background:none;border:none;padding:4px;min-width:44px;min-height:44px}
 .menu-toggle span{width:28px;height:2px;background:var(--gold);transition:all .3s;display:block}
 .menu-toggle.active span:nth-child(1){transform:rotate(45deg) translate(5px,5px)}
 .menu-toggle.active span:nth-child(2){opacity:0}
@@ -510,12 +510,14 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .hx-cta:hover{ background:rgba(var(--accent-rgb),0.16); gap:1.3em; box-shadow:0 0 30px rgba(var(--accent-rgb),0.55), inset 0 0 22px rgba(var(--accent-rgb),0.2); }
 
 @media (max-width:768px){
-  .hx-roles{ top:12vh; gap:.7em; letter-spacing:.24em; font-size:.6rem; }
+  .hx-roles{ top:12vh; gap:.55em; letter-spacing:.16em; font-size:.58rem; }
   .hx-cred{ top:calc(12vh + 2.2em); font-size:.68rem; letter-spacing:.04em; }
   .hx-rule{ display:none; }
-  .hx-name{ top:33vh; font-size:min(15.5vw, 14vh); }
-  .hx-orbit-wrap{ width:120vw; top:55%; }
-  .hx-photo-wrap{ height:min(64vh, 640px); bottom:-4vh; }
+  /* On a phone the head would sit in the middle of HUSSAIN ("HUS_AIN"), so
+     the name sits above the portrait here instead of behind it. */
+  .hx-name{ top:24vh; font-size:min(15.5vw, 14vh); }
+  .hx-orbit-wrap{ width:120vw; top:57%; }
+  .hx-photo-wrap{ height:min(62vh, 640px); bottom:-4vh; }
   .hx-cta{ bottom:5.5vh; padding:1em 2.2em; letter-spacing:.24em; font-size:.72rem; }
 }
 
@@ -890,6 +892,14 @@ footer span{color:var(--accent-glow)}
 .footer-work a{color:var(--gold-dim);text-decoration:none;transition:color .2s}
 .footer-work a:hover{color:var(--gold-bright)}
 @media(max-width:700px){.footer-about{grid-template-columns:1fr;gap:1.5rem}.footer-work ul{grid-template-columns:1fr}}
+ /* Phones: every link and button is at least a 44px tap target. Inline links
+    in running text get invisible padding (the text doesn't move). */
+@media (max-width:768px){
+  .footer-work ul{gap:0 1.5rem}
+  .footer-work a{display:inline-flex;align-items:center;min-height:44px}
+  .footer-bio a,.ct-email a{padding:1em 0;margin:-1em 0}
+  .ct-copy{display:inline-flex;align-items:center;min-height:44px;padding:0 .9rem}
+}
 .footer-back-top{width:44px;height:44px;border:1px solid rgba(var(--accent-rgb),0.18);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation;transition:all .3s;background:none;flex-shrink:0}
 .footer-back-top:hover{background:var(--accent-glow);border-color:var(--accent-glow)}
 .footer-back-top:hover svg{stroke:var(--black-deep)}
@@ -1447,19 +1457,20 @@ footer span{color:var(--accent-glow)}
 }
 .ts-dots{
   display:flex;
-  gap:8px;
   align-items:center;
+  margin-left:-17px;            /* the first dot still lines up with the card */
 }
+/* Each dot is a 44px tap target; the dot itself is drawn in the middle. */
 .ts-dot{
-  width:6px;height:6px;
-  border-radius:50%;
-  background:rgba(var(--accent-rgb),0.2);
-  border:none;
-  cursor:pointer;
-  padding:0;
+  position:relative; width:44px; height:44px;
+  background:none; border:none; cursor:pointer; padding:0;
+}
+.ts-dot::before{
+  content:''; position:absolute; left:50%; top:50%; width:6px; height:6px; margin:-3px 0 0 -3px;
+  border-radius:50%; background:rgba(var(--accent-rgb),0.35);
   transition:background 0.3s, transform 0.3s;
 }
-.ts-dot.active{
+.ts-dot.active::before{
   background:var(--accent-glow);
   transform:scale(1.5);
   box-shadow:0 0 6px rgba(var(--accent-rgb),0.5);
@@ -1469,7 +1480,7 @@ footer span{color:var(--accent-glow)}
   gap:8px;
 }
 .ts-arrow{
-  width:38px;height:38px;
+  width:44px;height:44px;
   border-radius:50%;
   border:1px solid rgba(var(--accent-rgb),0.2);
   background:rgba(var(--accent-rgb),0.04);
