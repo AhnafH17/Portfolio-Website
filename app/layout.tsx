@@ -58,12 +58,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Pick a random color palette before first paint (no flash). The
+        {/* Pick the color palette before first paint (no flash): random per
+            visit, unless locked with ?theme=red|teal|amber|purple (kept for
+            the session, so case-study pages match; ?theme=random clears it). The
             hero portrait is one cut-out for every palette, a high-priority
             <img> in the server HTML, so it needs no preload of its own. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);}catch(e){}})();`,
+            __html: `(function(){var p=['crimson','teal','amber','purple'],d=document.documentElement,c;try{var a={red:'crimson',crimson:'crimson',teal:'teal',green:'teal',amber:'amber',gold:'amber',purple:'purple',magenta:'purple'};var q=(new URLSearchParams(location.search).get('theme')||'').toLowerCase();if(q==='random')sessionStorage.removeItem('theme');else if(a[q]){c=a[q];sessionStorage.setItem('theme',c);}if(!c){var s=sessionStorage.getItem('theme');if(p.indexOf(s)>=0)c=s;}}catch(e){}if(!c)c=p[Math.floor(Math.random()*p.length)];d.setAttribute('data-palette',c);})();`,
           }}
         />
         {/* The display face: the preloader's name and the hero's are set in

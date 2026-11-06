@@ -135,31 +135,9 @@ export default function Navbar() {
         className={`${scrolled ? 'scrolled' : ''}${hidden ? ' nav-hidden' : ''}`}
       >
         <div className="nav-logo">
-          <svg
-            viewBox="0 0 64 40"
-            width="64"
-            height="40"
-            aria-label="Ahnaf Hussain"
-            className="nav-logo-img"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <text
-              x="2"
-              y="32"
-              fontFamily="'Georgia', serif"
-              fontSize="36"
-              fontWeight="700"
-              letterSpacing="-1"
-              fill="url(#logoGrad)"
-            >AH</text>
-            <defs>
-              <linearGradient id="logoGrad" x1="0" y1="0" x2="64" y2="40" gradientUnits="userSpaceOnUse">
-                <stop offset="0%" style={{ stopColor: 'var(--accent-glow)' }} />
-                <stop offset="100%" style={{ stopColor: 'var(--accent)' }} />
-              </linearGradient>
-            </defs>
-          </svg>
+          {/* The AH mark, in the display face (Greater Theory) like every
+              other heading, so the site stays at two typefaces. */}
+          <span className="nav-logo-mark" role="img" aria-label="Ahnaf Hussain">AH</span>
         </div>
 
         <ul className="nav-links">

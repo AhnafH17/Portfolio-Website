@@ -40,7 +40,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact glitch |
 | `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key position; About core cube) for handoffs to land on |
 | `public/images/handoff/*.webp` | The flying Return key: 48 Blender-rendered frames (8×6) of one smooth turn, `return-key` (the keycap) + `return-key-glyph` (white ↵, tinted to the accent at runtime). Source scene: `assets/handoff-sprites.blend` (HO_Key) |
-| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Georgia Bold like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |
+| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |
 | `lib/projectBlur.ts` | Inlined blurred previews of the project thumbnails (no empty cards); regenerate with `node scripts/make-project-blur.mjs` when a thumbnail changes |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
 
@@ -103,6 +103,13 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - **Main display image**: `onClick={() => onOpenModal(active.key)}` — opens modal
 - **VIEW PROJECT button**: `onClick={(e) => { e.stopPropagation(); onOpenModal(active.key); }}`
 - **Mobile cards**: `onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}` — both switch + open
+
+## Palette
+- Four palettes (crimson, teal, amber, purple), random per visit. Lock one with `?theme=red|teal|amber|purple`
+  (aliases: crimson, green, gold, magenta); it's kept for the session. `?theme=random` clears it.
+  Use `?theme=red` (or your pick) in the Awwwards submission link.
+- Every palette passes WCAG AA for body, dim, small-accent and placeholder text; keep it that way
+  when changing tokens (crimson's `--accent-glow` was lifted to #F23D50 for that).
 
 ## Typography
 - Two typefaces only: **Greater Theory** (`--font-display`: names, titles, big numbers) and

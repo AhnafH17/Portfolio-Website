@@ -223,14 +223,25 @@ const impactsToTestimonials: Handoff<StreamState> = {
     section.style.setProperty('--drain', drain.toFixed(3));
     ctx.globalCompositeOperation = 'lighter';
     ctx.lineCap = 'round';
+    ctx.lineWidth = 1.4;
+    // Batched by brightness: one stroke and one fill per band rather than
+    // one per particle (hundreds a frame on phones).
+    const B = 8;
+    const trails = Array.from({ length: B }, () => new Path2D());
+    const heads = Array.from({ length: B }, () => new Path2D());
     for (let k = 0; k < n; k++) {
       const a = pts[k * 5 + 4] * alpha;
       if (a <= 0.01) continue;
-      ctx.strokeStyle = `rgba(${accent},${0.5 * a})`;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(pts[k * 5 + 2], pts[k * 5 + 3]); ctx.lineTo(pts[k * 5], pts[k * 5 + 1]); ctx.stroke();
-      ctx.fillStyle = `rgba(255,255,255,${0.7 * a})`;
-      ctx.fillRect(pts[k * 5] - 0.9, pts[k * 5 + 1] - 0.9, 1.8, 1.8);
+      const b = Math.min(B - 1, Math.floor(a * B));
+      trails[b].moveTo(pts[k * 5 + 2], pts[k * 5 + 3]); trails[b].lineTo(pts[k * 5], pts[k * 5 + 1]);
+      heads[b].rect(pts[k * 5] - 0.9, pts[k * 5 + 1] - 0.9, 1.8, 1.8);
+    }
+    for (let b = 0; b < B; b++) {
+      const a = (b + 0.5) / B;
+      ctx.strokeStyle = `rgba(${accent},${(0.5 * a).toFixed(3)})`;
+      ctx.stroke(trails[b]);
+      ctx.fillStyle = `rgba(255,255,255,${(0.7 * a).toFixed(3)})`;
+      ctx.fill(heads[b]);
     }
     ctx.globalCompositeOperation = 'source-over';
   },
@@ -258,12 +269,16 @@ const testimonialsToContact: Handoff<TxState> = {
   read(env) {
     const cardEl = q('.ts-stack-card'), conEl = q<HTMLElement>('.ct-console'), section = q<HTMLElement>('.ts-section');
     if (!cardEl || !conEl || !section) return null;
-    const card = cardEl.getBoundingClientRect(), con = conEl.getBoundingClientRect();
-    // Starts only once the testimonials have the screen and begin to scroll
-    // up off it (their top passing the top edge), and lands as the console
+    const card = cardEl.getBoundingClientRect();
+    // The landing: the console on desktop. On phones the console sits far
+    // below the form, so the transmission lands on the "Let's build"
+    // heading instead of streaking across the inputs.
+    const target = (env.phone && q('.ct-heading')) || conEl;
+    const con = target.getBoundingClientRect();
+    // Starts only once the testimonial card itself scrolls up off the
+    // screen (its top passing the top quarter), and lands as the target
     // reaches the upper part of the screen.
-    const top = section.getBoundingClientRect().top;
-    const scrolled = -top;
+    const scrolled = env.vh * 0.25 - card.top;
     const dist = con.top + scrolled - env.vh * 0.32;
     const t = clamp01(scrolled / Math.max(1, dist));
     if (t <= 0.01 || t >= 0.995) return null;

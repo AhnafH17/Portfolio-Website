@@ -11,7 +11,7 @@ export interface Accent {
 
 export function readAccent(): Accent {
   if (typeof window === 'undefined') {
-    return { r: 204, g: 24, b: 44, rgb: [204, 24, 44], glow: '#CC182C', light: '#ff6b7d', deep: '#A41326', silver: '#C2CAD0' };
+    return { r: 242, g: 61, b: 80, rgb: [242, 61, 80], glow: '#F23D50', light: '#ff6b7d', deep: '#A41326', silver: '#C2CAD0' };
   }
   const s = getComputedStyle(document.documentElement);
   const triplet = (s.getPropertyValue('--accent-rgb').trim() || '204,24,44')

@@ -467,7 +467,7 @@ def build_lid(mats, coll, root):
         loop[uv].uv = co
     mesh_object("SCREEN", bm, mats, coll, lid, (0, SCREEN_Y, LID_H / 2))
 
-    # LOGO: the AH monogram (the navbar's mark) on the back of the lid,
+    # LOGO: the AH monogram (the navbar's mark, in Greater Theory) on the back of the lid,
     # MAT_Accent (it glows in the visitor's palette colour). Built flat
     # (reading +X, up +Y, facing +Z),
     # then turned so it reads correctly from behind the open lid and from
@@ -482,10 +482,10 @@ def build_lid(mats, coll, root):
 
 
 LOGO_TEXT = "AH"
-# The navbar draws the mark in Georgia Bold (components/Navbar.tsx); the same
-# face here, so the lid matches it.
-LOGO_FONT = "C:/Windows/Fonts/georgiab.ttf"
-LOGO_HEIGHT = 0.30          # cap height of the monogram on the lid
+# The site's display face (Greater Theory), like the navbar's mark.
+LOGO_FONT = os.path.join(REPO, "public", "fonts", "GreaterTheory.otf")
+LOGO_HEIGHT = 0.26          # cap height of the monogram on the lid
+LOGO_MAX_W = 0.8            # and no wider than this (the face is very wide)
 LOGO_H = 0.0025             # how far the emblem stands proud of the lid
 
 
@@ -510,7 +510,7 @@ def logo_mesh():
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.normal.z < -0.99], context="FACES_ONLY")
     lo = Vector((min(v.co.x for v in bm.verts), min(v.co.y for v in bm.verts), min(v.co.z for v in bm.verts)))
     hi = Vector((max(v.co.x for v in bm.verts), max(v.co.y for v in bm.verts)))
-    k = LOGO_HEIGHT / (hi.y - lo.y)
+    k = min(LOGO_HEIGHT / (hi.y - lo.y), LOGO_MAX_W / (hi.x - lo.x))
     bmesh.ops.translate(bm, vec=(-(lo.x + hi.x) / 2, -(lo.y + hi.y) / 2, -lo.z), verts=bm.verts)
     bmesh.ops.scale(bm, vec=(k, k, 1.0), verts=bm.verts)
     for f in bm.faces:

@@ -442,6 +442,21 @@ function Bloom() {
   return null;
 }
 
+/* Phones: the same scene drawn straight to the screen, without the bloom
+   passes (the glow materials still glow, they just don't bleed). Same rule
+   as Bloom: draw only while on screen. */
+function PlainRender() {
+  const get = useThree((s) => s.get);
+  useEffect(() => { get().gl.setClearColor(0x000000, 0); }, [get]);
+  useFrame(() => {
+    if (!drawing.onScreen && drawing.warm <= 0) return;
+    drawing.warm = Math.max(0, drawing.warm - 1);
+    const { gl, scene, camera } = get();
+    gl.render(scene, camera);
+  }, 1);
+  return null;
+}
+
 /* The canvas stays transparent so the section's own background shows through
    untouched; fog in the page colour fades the far field into it. Distances are
    set by the framing (Workspace). */
@@ -522,6 +537,8 @@ export default function WorkspaceCanvas({ stageRef }: { stageRef: RefObject<HTML
   // Whether the pointer is over the canvas itself (not the copy on top of it).
   const pointerInside = useRef(false);
   const glow = useMemo(() => readAccent().glow, []);
+  // Small screens get a lighter render: 1x pixels, no antialiasing, no bloom.
+  const lite = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches, []);
 
   return (
     <div
@@ -531,9 +548,9 @@ export default function WorkspaceCanvas({ stageRef }: { stageRef: RefObject<HTML
       onPointerLeave={() => { pointerInside.current = false; }}
     >
       <Canvas
-        dpr={[1, 1.25]}
+        dpr={lite ? 1 : [1, 1.25]}
         camera={{ fov: FOV, position: [6, 5.2, 7], near: 0.1, far: 80 }}
-        gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+        gl={{ antialias: !lite, alpha: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.15;
@@ -549,7 +566,7 @@ export default function WorkspaceCanvas({ stageRef }: { stageRef: RefObject<HTML
         <Atmosphere />
         <Surroundings glow={glow} />
         <FramedWorkspace wrapRef={wrapRef} stageRef={stageRef} pointerInside={pointerInside} />
-        <Bloom />
+        {lite ? <PlainRender /> : <Bloom />}
         <Prewarm />
       </Canvas>
     </div>

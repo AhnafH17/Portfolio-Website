@@ -21,6 +21,8 @@ const TARGETS = [
 const SWEEP = 0.75;     // radians either side of home
 const SWEEP_SPEED = 0.11;
 const D2R = Math.PI / 180;
+// Dots are drawn in this many depth bands (one fill each).
+const DEPTH_BANDS = 10;
 
 /** Points along the great circle a -> b (degrees), as [lat, lng]. */
 function greatCircle(a: { lat: number; lng: number }, b: { lat: number; lng: number }, n: number) {
@@ -121,18 +123,29 @@ export default function ParticleGlobe() {
 
       // Land dots: a ghost of the far side, then the near side, brighter
       // and bigger toward the viewer.
+      // Batched: dots go into one path per depth band and each band is
+      // filled once (thousands of separate fills, each with its own colour
+      // string, cost a phone ~25ms a frame).
       const unit = Math.max(1, r / 220);
+      const back = new Path2D();
+      const bands = Array.from({ length: DEPTH_BANDS }, () => new Path2D());
       for (let i = 0; i < DOT_COUNT; i++) {
         projectDot(i, p);
         const z = p[2];
         if (z <= 0) {
-          if (z > -0.6) { ctx.fillStyle = `rgba(${accent},0.06)`; ctx.fillRect(p[0] - 0.6, p[1] - 0.6, 1.2, 1.2); }
+          if (z > -0.6) back.rect(p[0] - 0.6, p[1] - 0.6, 1.2, 1.2);
           continue;
         }
-        const s = (1.3 + z * 1.6) * unit;
-        ctx.fillStyle = `rgba(${accent},${0.35 + z * 0.65})`;
-        ctx.fillRect(p[0] - s / 2, p[1] - s / 2, s, s);
+        const b = Math.min(DEPTH_BANDS - 1, Math.floor(z * DEPTH_BANDS));
+        const s = (1.3 + ((b + 0.5) / DEPTH_BANDS) * 1.6) * unit;
+        bands[b].rect(p[0] - s / 2, p[1] - s / 2, s, s);
       }
+      ctx.fillStyle = `rgba(${accent},0.06)`;
+      ctx.fill(back);
+      bands.forEach((band, b) => {
+        ctx.fillStyle = `rgba(${accent},${(0.35 + ((b + 0.5) / DEPTH_BANDS) * 0.65).toFixed(3)})`;
+        ctx.fill(band);
+      });
 
       // Arcs from home, each with a light travelling along it.
       ctx.lineCap = 'round';

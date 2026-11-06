@@ -76,7 +76,7 @@
   --black:#151B24; --black-deep:#0d131b; --black-card:rgba(21,27,36,0.97);
   --gold:#C2CAD0; --gold-dim:#8d9aa6; --gold-bright:#e6eaed;
   --gold-hover:rgba(194,202,208,0.08);
-  --accent:#A41326; --accent-glow:#CC182C; --accent-rgb:204,24,44; --accent-light:#ff6b7d;
+  --accent:#A41326; --accent-glow:#F23D50; --accent-rgb:242,61,80; --accent-light:#ff6b7d;
   --gold-border:rgba(var(--accent-rgb),0.12); --gold-border-hover:rgba(var(--accent-rgb),0.30);
   --steel:#596A77; --steel-dark:#384857; --wine:#4A121D; --silver:#C2CAD0;
 }
@@ -127,7 +127,7 @@ nav.nav-hidden{transform:translateY(-102%)}
 nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8rem 3rem;border-bottom:1px solid var(--gold-border)}
 
 .nav-logo{display:flex;align-items:center;gap:.5rem}
-.nav-logo-img{width:72px;height:auto;display:block;object-fit:contain}
+.nav-logo-mark{display:block;font-family:var(--font-display);font-size:1.45rem;line-height:1;letter-spacing:.02em;background:linear-gradient(135deg,var(--accent-light),var(--accent-glow));-webkit-background-clip:text;background-clip:text;color:transparent}
 .nav-logo .logo-fallback{font-family:var(--font-display);font-weight:700;font-size:.75rem;letter-spacing:.15em;text-transform:uppercase;color:var(--gold-dim);border:1px solid rgba(var(--accent-rgb),0.2);padding:.3rem .7rem;border-radius:4px}
 
 .nav-links{display:flex;gap:2.2rem;list-style:none;font-size:.85rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase}
@@ -149,9 +149,6 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 .mobile-nav a:hover{color:var(--accent-glow)}
 
 /* ===== ACCORDION STRIP HERO ===== */
-#showcase{
-  position:relative;
-}
 .acc-showcase-sticky{
   height:100svh;
   display:flex;
@@ -373,7 +370,6 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
 
 /* ===== ACCORDION RESPONSIVE ===== */
 @media(max-width:900px){
-  #showcase{height:auto}
   .acc-track-wrap::before,.acc-track-wrap::after{display:none}
   .acc-showcase-sticky{position:relative;height:auto;padding-top:4rem;padding-bottom:2rem;}
   .acc-track-wrap{padding:0 1rem}
@@ -460,7 +456,7 @@ nav.scrolled{background:rgba(7,7,7,0.92);backdrop-filter:blur(20px);padding:.8re
   font-size:min(12vw, 21vh); line-height:.86; letter-spacing:-0.005em;
 }
 .hx-first, .hx-last{ display:block; }
-.hx-slant{ display:block; transform:skewX(-11deg); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.hx-slant{ display:block; -webkit-background-clip:text; background-clip:text; color:transparent; }
 .hx-first .hx-slant{
   margin-left:.55em;
   background-image:linear-gradient(180deg, rgba(236,242,242,0.62) 0%, rgba(160,178,178,0.42) 55%, rgba(var(--accent-rgb),0.16) 100%);
@@ -1824,7 +1820,10 @@ footer span{color:var(--accent-glow)}
      between the focus cards and the skills. */
   .ab3-left{ display:contents; }
   .ab3-label, .ab3-bio{ display:none; }
-  .ab3-title{ font-size:clamp(2.2rem, 10.4vw, 4.4rem); line-height:1.06; }
+  /* Greater Theory is very wide: sized to fit "LEAD BY ROLE," on one line,
+     and allowed to wrap rather than run off the screen. */
+  .ab3-title{ font-size:clamp(1.5rem, 7.2vw, 3.6rem); line-height:1.08; }
+  .ab3-title span{ white-space:normal; }
   .ab3-mbr{ display:inline; }
   .ab3-rule{ width:42px; margin:1.6rem 0 1.5rem; }
   .ab3-name{ font-size:clamp(1.4rem, 6.2vw, 1.9rem); }
