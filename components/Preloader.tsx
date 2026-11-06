@@ -52,22 +52,31 @@ function heroReady(): Promise<void> {
    The art is one 1672 x 941 frame per pose (open, half-closed, gripping;
    the half-closed one was re-aligned to the same bar edges), split at row
    SPLIT into a top half (bar + top hand) and a bottom half; the bars' edges
-   sit at rows TOP_EDGE and BOT_EDGE. The frame is scaled to fill the width
+   sit at rows `top` and `bot` (see ARTS). The frame is scaled to fill the width
    (or, on tall phones, 60% of the height) and centred on the slit. */
-const ART_W = 1672;
-const ART_H = 941;
-const SPLIT = 449;
-const TOP_EDGE = 349;
-const BOT_EDGE = 644;
-const SLIT_MID = (TOP_EDGE + BOT_EDGE) / 2;
-const ART = {
-  openTop: '/images/preloader/open-top.webp',
-  openBottom: '/images/preloader/open-bottom.webp',
-  midTop: '/images/preloader/mid-top.webp',
-  midBottom: '/images/preloader/mid-bottom.webp',
-  gripTop: '/images/preloader/grip-top.webp',
-  gripBottom: '/images/preloader/grip-bottom.webp',
+const PHONE = '(max-width: 768px)';
+const ARTS = {
+  // The wide frame, for desktop and tablets in landscape.
+  desk: { w: 1672, h: 941, split: 449, top: 349, bot: 644, prefix: '' },
+  // Phones get their own tall frame (assets/preloader/hands-mobile-sheet.png)
+  // where the hands fill the width; on the wide one they looked tiny.
+  phone: { w: 522, h: 902, split: 419, top: 338, bot: 569, prefix: 'm-' },
 };
+type Art = (typeof ARTS)['desk'];
+const POSES = ['open', 'mid', 'grip'] as const;
+const pickArt = (): Art => (window.matchMedia(PHONE).matches ? ARTS.phone : ARTS.desk);
+const slitMid = (a: Art) => (a.top + a.bot) / 2;
+
+/** One pose of one half. <picture> means each device fetches only its set. */
+function Hand({ pose, half }: { pose: (typeof POSES)[number]; half: 'top' | 'bottom' }) {
+  return (
+    <picture>
+      <source media={PHONE} srcSet={`/images/preloader/m-${pose}-${half}.webp`} />
+      { }
+      <img className={`pl-art pl-${pose}`} src={`/images/preloader/${pose}-${half}.webp`} alt="" decoding="async" />
+    </picture>
+  );
+}
 
 export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
@@ -81,6 +90,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const quick         = useRef(false);
   const repeat        = useRef(false);
   const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
+  const art           = useRef<Art>(ARTS.desk);
   const exitStarted   = useRef(false);
 
   useEffect(() => {
@@ -101,7 +111,9 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // The art loads while the name shows (~120KB); the hands only come in
     // if it has.
     if (!quick.current) {
-      artReady.current = Promise.all(Object.values(ART).map((src) => {
+      const { prefix } = pickArt();
+      const srcs = POSES.flatMap((pose) => [`${pose}-top`, `${pose}-bottom`].map((n) => `/images/preloader/${prefix}${n}.webp`));
+      artReady.current = Promise.all(srcs.map((src) => {
         const img = new Image();
         img.src = src;
         return img.decode().then(() => true, () => false);
@@ -123,22 +135,23 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     if (!top || !bot) return;
     const layout = () => {
       const vw = window.innerWidth, vh = window.innerHeight;
-      const s = Math.max(vw / ART_W, (vh * 0.6) / ART_H);
-      const imgTop = vh / 2 - SLIT_MID * s;
+      const a = (art.current = pickArt());
+      const s = Math.max(vw / a.w, (vh * 0.6) / a.h);
+      const imgTop = vh / 2 - slitMid(a) * s;
       geo.current = { s, imgTop, vh };
-      const w = ART_W * s;
+      const w = a.w * s;
       // Each half: a CSS black bar down to its edge (reaching far past the
       // screen so it can move), with the art on top, anchored to the frame.
-      top.style.setProperty('--edge', `${imgTop + TOP_EDGE * s}px`);
+      top.style.setProperty('--edge', `${imgTop + a.top * s}px`);
       top.style.setProperty('--art-top', `${imgTop}px`);
-      bot.style.setProperty('--edge', `${imgTop + BOT_EDGE * s}px`);
-      bot.style.setProperty('--art-top', `${imgTop + SPLIT * s}px`);
+      bot.style.setProperty('--edge', `${imgTop + a.bot * s}px`);
+      bot.style.setProperty('--art-top', `${imgTop + a.split * s}px`);
       // The slit's height, for sizing the name to fit it.
-      rootRef.current?.style.setProperty('--slit', `${(BOT_EDGE - TOP_EDGE) * s}px`);
+      rootRef.current?.style.setProperty('--slit', `${(a.bot - a.top) * s}px`);
       for (const el of [top, bot]) {
         el.style.setProperty('--art-w', `${w}px`);
-        el.style.setProperty('--art-split', `${SPLIT * s}px`);
-        el.style.setProperty('--art-rest', `${(ART_H - SPLIT) * s}px`);
+        el.style.setProperty('--art-split', `${a.split * s}px`);
+        el.style.setProperty('--art-rest', `${(a.h - a.split) * s}px`);
       }
     };
     layout();
@@ -147,8 +160,9 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // Start shut on a hairline of light, then open to the slit.
     const { s } = geo.current;
     const k = quick.current || repeat.current ? 0.65 : 1;
-    gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
-    gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
+    const a = art.current, mid = slitMid(a);
+    gsap.fromTo(top, { y: (mid - a.top) * s - 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
+    gsap.fromTo(bot, { y: -(a.bot - mid) * s + 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
     // The name arrives whole as the slit opens: out of a blur, settling
     // from wide tracking.
     gsap.fromTo(nameRef.current,
@@ -169,7 +183,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     if (quick.current) { openWhenReady(false); return; }
     const ok = await Promise.race([
       artReady.current ?? Promise.resolve(false),
-      sleep(600).then(() => false),
+      sleep(1000).then(() => false),
     ]);
     if (exitStarted.current) return;
     if (!ok) { openWhenReady(false); return; }
@@ -216,8 +230,9 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     const top = topRef.current, bot = botRef.current, root = rootRef.current;
     const { s, imgTop, vh } = geo.current;
     // Far enough that each half (bar, hand and all) is past the screen edge.
-    const outTop = -(imgTop + SPLIT * s) - 40;
-    const outBot = vh - (imgTop + SPLIT * s) + 40;
+    const { split } = art.current;
+    const outTop = -(imgTop + split * s) - 40;
+    const outBot = vh - (imgTop + split * s) + 40;
 
     onReveal();
     const tl = gsap.timeline({ onComplete: onDone });
@@ -241,21 +256,15 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
 
       <div ref={topRef} className="pl-half pl-top" aria-hidden="true">
         <div className="pl-bar" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-open" src={ART.openTop} alt="" decoding="async" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-mid" src={ART.midTop} alt="" decoding="async" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-grip" src={ART.gripTop} alt="" decoding="async" />
+        <Hand pose="open" half="top" />
+        <Hand pose="mid" half="top" />
+        <Hand pose="grip" half="top" />
       </div>
       <div ref={botRef} className="pl-half pl-bottom" aria-hidden="true">
         <div className="pl-bar" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-open" src={ART.openBottom} alt="" decoding="async" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-mid" src={ART.midBottom} alt="" decoding="async" />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="pl-art pl-grip" src={ART.gripBottom} alt="" decoding="async" />
+        <Hand pose="open" half="bottom" />
+        <Hand pose="mid" half="bottom" />
+        <Hand pose="grip" half="bottom" />
       </div>
     </div>
   );
