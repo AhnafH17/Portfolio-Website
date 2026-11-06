@@ -1,11 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
-import {
-  ParticleTextEffect,
-  ParticleTextHandle,
-} from '@/components/ui/particle-text-effect';
 
 declare global {
   interface Window { __lenis?: import('lenis').default; }
@@ -19,15 +15,12 @@ interface PreloaderProps {
   onDone: () => void;
 }
 
-const WORDS = ['AHNAF', 'HUSSAIN', 'DEVELOPER'];
-
-// Per-word pacing. The effect holds each word until it has actually formed,
-// so this is a target rather than a hard clock.
-const WORD_MS = 1400;
+// When the name has had its moment and the hands come (s from mount).
+const NAME_HOLD_S = 2.7;
 // Absolute ceiling — if anything goes wrong the site still gets revealed.
-const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 6000;
+const SAFETY_MS = 9000;
 
-/* The letterbox: two black bars with the words glowing in the slit between
+/* The letterbox: two black bars with the name glowing in the slit between
    them. When the words are done, two hands (manga-style illustrations,
    public/images/preloader/, cut from assets/preloader/hands-*.png) reach out
    of the bars, grip their edges, and pull them apart onto the hero.
@@ -51,14 +44,13 @@ const ART = {
 
 export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
-  const canvasWrapRef = useRef<HTMLDivElement>(null);
-  const particleRef   = useRef<ParticleTextHandle>(null);
+  const nameRef       = useRef<HTMLDivElement>(null);
   const topRef        = useRef<HTMLDivElement>(null);
   const botRef        = useRef<HTMLDivElement>(null);
   const exitRef       = useRef<() => void>(() => {});
+  const handsRef      = useRef<() => void>(() => {});
   const artReady      = useRef<Promise<boolean> | null>(null);
   const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
-  const [ready, setReady] = useState(false);
   const exitStarted   = useRef(false);
 
   useEffect(() => {
@@ -67,7 +59,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // Freeze Lenis during preloader
     if (window.__lenis) window.__lenis.stop();
 
-    // The art loads while the words play (~100KB); the hands only come in
+    // The art loads while the name shows (~100KB); the hands only come in
     // if it has.
     artReady.current = Promise.all(Object.values(ART).map((src) => {
       const img = new Image();
@@ -75,11 +67,11 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
       return img.decode().then(() => true, () => false);
     })).then((ok) => ok.every(Boolean));
 
-    const id = requestAnimationFrame(() => setReady(true));
     const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
+    const hands = setTimeout(() => handsRef.current(), NAME_HOLD_S * 1000);
     return () => {
-      cancelAnimationFrame(id);
       clearTimeout(safety);
+      clearTimeout(hands);
     };
   }, []);
 
@@ -99,6 +91,8 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
       top.style.setProperty('--art-top', `${imgTop}px`);
       bot.style.setProperty('--edge', `${imgTop + BOT_EDGE * s}px`);
       bot.style.setProperty('--art-top', `${imgTop + SPLIT * s}px`);
+      // The slit's height, for sizing the name to fit it.
+      rootRef.current?.style.setProperty('--slit', `${(BOT_EDGE - TOP_EDGE) * s}px`);
       for (const el of [top, bot]) {
         el.style.setProperty('--art-w', `${w}px`);
         el.style.setProperty('--art-split', `${SPLIT * s}px`);
@@ -112,11 +106,16 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     const { s } = geo.current;
     gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
     gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
+    // The name arrives whole as the slit opens: out of a blur, settling
+    // from wide tracking.
+    gsap.fromTo(nameRef.current,
+      { opacity: 0, filter: 'blur(14px)', letterSpacing: '0.32em', scale: 1.06 },
+      { opacity: 1, filter: 'blur(0px)', letterSpacing: '0.04em', scale: 1, duration: 1.1, ease: 'power3.out', delay: 0.75 });
     return () => window.removeEventListener('resize', layout);
   }, []);
 
-  /** Last word is done: the hands, if their art is in; otherwise just open. */
-  const handleCycleComplete = async () => {
+  /** The name has been read: the hands, if their art is in; otherwise just open. */
+  const startHands = async () => {
     const ok = await Promise.race([
       artReady.current ?? Promise.resolve(false),
       new Promise<boolean>((r) => setTimeout(() => r(false), 1200)),
@@ -126,8 +125,8 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     const top = topRef.current!, bot = botRef.current!;
     const q = (el: HTMLElement, sel: string) => el.querySelector<HTMLElement>(sel)!;
     const tl = gsap.timeline({ onComplete: () => triggerExit(true) });
-    // The words dim as the hands come out of the dark.
-    tl.to(canvasWrapRef.current, { opacity: 0.35, duration: 0.6, ease: 'power2.out' }, 0);
+    // The name dims as the hands come out of the dark.
+    tl.to(nameRef.current, { opacity: 0.35, duration: 0.6, ease: 'power2.out' }, 0);
     tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.55, ease: 'power2.out' }, 0);
     tl.fromTo(q(top, '.pl-open'), { y: -46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
     tl.fromTo(q(bot, '.pl-open'), { y: 46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
@@ -162,7 +161,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     onReveal();
     const tl = gsap.timeline({ onComplete: onDone });
     // The slit stops being a backdrop: the site shows through the gap.
-    tl.to(canvasWrapRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
+    tl.to(nameRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
     tl.set(root, { background: 'transparent' }, 0.05);
     tl.set([top, bot], { x: 0 }, 0);
     tl.to(top, { y: outTop, duration: gripped ? 1.25 : 0.9, ease: 'power4.inOut' }, 0.05);
@@ -170,24 +169,12 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   };
 
   // Kept current so the safety timeout above always calls the live closure
-  useEffect(() => { exitRef.current = triggerExit; });
+  useEffect(() => { exitRef.current = triggerExit; handsRef.current = startHands; });
 
   return (
     <div ref={rootRef} className="pl-root">
-      {/* The words, glowing in the slit */}
-      <div ref={canvasWrapRef} className="pl-words">
-        {ready && (
-          <ParticleTextEffect
-            ref={particleRef}
-            words={WORDS}
-            autoAdvance
-            intervalMs={WORD_MS}
-            onCycleComplete={handleCycleComplete}
-            fontSize={Math.min(130, Math.floor(window.innerWidth / 6.5))}
-            fontFamily="'Greater Theory', sans-serif"
-          />
-        )}
-      </div>
+      {/* The name, glowing in the slit */}
+      <div ref={nameRef} className="pl-name">Ahnaf Hussain</div>
 
       <div ref={topRef} className="pl-half pl-top" aria-hidden="true">
         <div className="pl-bar" />

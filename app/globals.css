@@ -2472,7 +2472,13 @@ footer span{color:var(--accent-glow)}
 /* ══ Preloader: the words in a letterbox slit, then two hands pull it open
    (components/Preloader.tsx sets --edge / --art-* per screen) ══ */
 .pl-root{ position:fixed; inset:0; z-index:99999; background:var(--black); overflow:hidden; --rim:0; }
-.pl-words{ position:absolute; inset:0; }
+.pl-name{
+  position:absolute; left:0; right:0; top:50%; translate:0 -50%; text-align:center; white-space:nowrap;
+  font-family:'Greater Theory', var(--font-display); font-weight:400; text-transform:uppercase;
+  font-size:min(7.4vw, calc(var(--slit, 30vh) * 0.4)); line-height:1; letter-spacing:0.04em;
+  color:rgb(var(--accent-rgb)); opacity:0;
+  text-shadow:0 0 18px rgba(var(--accent-rgb),0.55), 0 0 60px rgba(var(--accent-rgb),0.3);
+}
 .pl-half{ position:absolute; inset:0; pointer-events:none; will-change:transform; }
 .pl-bar{
   position:absolute; left:0; right:0; background:#000;
