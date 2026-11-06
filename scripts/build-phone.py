@@ -18,7 +18,7 @@ devices.blend.
 The look is an iPhone 17 Pro Max, unbranded: flat frame with soft edges and
 antenna lines, a full-width camera plateau across the top of the back with
 the three lenses at the brief's positions, flash and LiDAR on its right, a
-frosted glass back below it and "Ahnaf" where Apple puts its logo.
+frosted glass back below it and the AH monogram where Apple puts its logo.
 
 Shared materials
 ----------------
@@ -61,7 +61,7 @@ LENS_RING, LENS_GLASS, LENS_PROUD = 0.115, 0.082, 0.03
 # exported .glb (export() rewrites the node and mesh names).
 SCREEN_OBJ = "SCREEN.phone"
 GLB_RENAMES = {SCREEN_OBJ: "SCREEN"}
-NAME = "Ahnaf"
+NAME = "AH"                              # the site's monogram (navbar, laptop lid)
 NAME_Z = -0.30                           # Apple-logo position on the 17 Pro back
 SEG = 32                                 # brief: circles 32 segments at most
 
@@ -423,7 +423,7 @@ def build_screen(mats, coll, root):
 
 
 def build_back(mats, coll, root):
-    """Frosted back glass in the frame's pocket, with the name where Apple
+    """Frosted back glass in the frame's pocket, with the monogram where Apple
     puts its logo, reading correctly from behind."""
     m = EDGE + BACK_RIM
     bm = bmesh.new()
@@ -434,7 +434,7 @@ def build_back(mats, coll, root):
 
     font = bpy.data.fonts.load(FONT, check_existing=True)
     cu = bpy.data.curves.new("_phone_name", "FONT")
-    cu.body, cu.font, cu.size, cu.resolution_u, cu.space_character = NAME, font, 0.11, 4, 1.05
+    cu.body, cu.font, cu.size, cu.resolution_u, cu.space_character = NAME, font, 0.16, 5, 0.96
     ob = bpy.data.objects.new("_phone_name", cu)
     bpy.data.collections[COLL].objects.link(ob)
     dg = bpy.context.evaluated_depsgraph_get()

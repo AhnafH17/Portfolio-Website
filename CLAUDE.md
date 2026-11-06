@@ -41,6 +41,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key position; About core cube) for handoffs to land on |
 | `public/images/handoff/*.webp` | The flying Return key: 48 Blender-rendered frames (8×6) of one smooth turn, `return-key` (the keycap) + `return-key-glyph` (white ↵, tinted to the accent at runtime). Source scene: `assets/handoff-sprites.blend` (HO_Key) |
 | `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |
+| `lib/caseStudies.ts` | Full case studies for the 4 flagship projects (problem, role, approach, images, result), rendered by `ProjectPageContent`; images in `public/images/case/`. Facts only: a figure belongs to the project it was measured on, and dashboard images are labelled demo data |
 | `lib/projectBlur.ts` | Inlined blurred previews of the project thumbnails (no empty cards); regenerate with `node scripts/make-project-blur.mjs` when a thumbnail changes |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
 
