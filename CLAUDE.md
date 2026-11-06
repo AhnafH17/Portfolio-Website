@@ -103,6 +103,12 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - **VIEW PROJECT button**: `onClick={(e) => { e.stopPropagation(); onOpenModal(active.key); }}`
 - **Mobile cards**: `onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}` — both switch + open
 
+## Typography
+- Two typefaces only: **Greater Theory** (`--font-display`: names, titles, big numbers) and
+  **DM Sans** (`--font-body`: everything else, incl. small uppercase UI labels). Don't add a third.
+- DM Sans is variable 300–600; ask for 600, not 700+. Greater Theory is one wide weight: big text only.
+- Greater Theory is a personal-use licence; it needs a commercial licence before the live site ships.
+
 ## CSS Design Tokens (globals.css)
 ```css
 --gold:        #c9a84c

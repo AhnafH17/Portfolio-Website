@@ -58,8 +58,8 @@ export function toPlane(kind: 'laptop' | 'phone', r: readonly [number, number, n
 /* ── Shared helpers ───────────────────────────────────────────────────── */
 
 const MONO = '"SF Mono", "JetBrains Mono", Menlo, Consolas, monospace';
-const SANS = 'system-ui, -apple-system, sans-serif';
-const SYNE = '"Syne", system-ui, sans-serif';
+// The site's body face (DM Sans), so the screens match the page around them.
+const SANS = '"DM Sans", system-ui, -apple-system, sans-serif';
 
 const BG        = '#0b0f16';
 const BG_PANEL  = '#0e131c';
@@ -588,7 +588,7 @@ function phoneContent(): ContentSurface {
       const g = c.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
       g.addColorStop(0, a.glow); g.addColorStop(1, a.deep);
       c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.fillStyle = g; c.fill();
-      c.font = `700 26px ${SYNE}`;
+      c.font = `600 26px ${SANS}`;
       c.fillStyle = '#0b0f16'; c.textAlign = 'center';
       c.fillText('AH', cx, cy + 9);
       c.textAlign = 'left';
@@ -611,7 +611,7 @@ function phoneContent(): ContentSurface {
         c.fillStyle = 'rgba(255,255,255,0.05)'; c.fill();
         c.strokeStyle = rgba(0.16); c.lineWidth = 1.4; c.stroke();
         c.textAlign = 'center';
-        c.font = `700 27px ${SYNE}`; c.fillStyle = a.glow;
+        c.font = `600 27px ${SANS}`; c.fillStyle = a.glow;
         c.fillText(st.v, x + tw / 2, y + 34);
         c.font = `400 14px ${SANS}`; c.fillStyle = 'rgba(255,255,255,0.45)';
         c.fillText(st.l, x + tw / 2, y + 58);
@@ -664,7 +664,7 @@ function phoneContent(): ContentSurface {
         roundRect(c, pad - 10, startY - 16, maxW + 20, cardH, 20);
         c.fillStyle = 'rgba(255,255,255,0.045)'; c.fill();
         c.strokeStyle = rgba(0.14); c.lineWidth = 1.4; c.stroke();
-        c.font = `700 22px ${SYNE}`;
+        c.font = `600 22px ${SANS}`;
         c.fillStyle = WHITE;
         c.fillText(card.h, pad + 2, startY + 10);
         let iy = startY + 48;

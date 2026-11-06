@@ -1,16 +1,8 @@
-@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-400.woff2') format('woff2'); font-weight:400; font-display:swap; }
-@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-600.woff2') format('woff2'); font-weight:600; font-display:swap; }
-@font-face { font-family:'Chakra Petch'; src:url('/fonts/ChakraPetch-700.woff2') format('woff2'); font-weight:700; font-display:swap; }
-
-/* Greater Theory (brandsemut) — personal-use licence only; needs a
+/* Two typefaces across the whole site: Greater Theory for display (names,
+   titles, big numbers) and DM Sans for everything else, including the small
+   uppercase UI labels.
+   Greater Theory (brandsemut) — personal-use licence only; needs a
    commercial licence before this ships on the live site. */
-@font-face {
-  font-family: 'Sddystopian';
-  src: url('/fonts/Sddystopiandemo-GO7xa.otf') format('opentype');
-  font-weight: 400;
-  font-display: swap;
-}
-
 @font-face {
   font-family: 'Greater Theory';
   src: url('/fonts/GreaterTheory.otf') format('opentype');
@@ -19,14 +11,14 @@
 }
 
 /* ============================================================
-   Syne + DM Sans, self-hosted.
+   DM Sans, self-hosted.
    These were loaded through next/font/google, which resolves static
    per-weight files from fonts.gstatic.com at BUILD time. Google has since
-   moved both families to variable fonts and deleted those static instances,
+   moved the family to variable fonts and deleted those static instances,
    so cold builds broke with 404s that no code change could fix. These are the
    variable files, vendored — the build no longer touches the network, and
    there is one less third-party origin at runtime.
-   Both are SIL Open Font License.
+   SIL Open Font License.
    ============================================================ */
 @font-face {
   font-family: 'DM Sans';
@@ -60,30 +52,13 @@
   font-display: swap;
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
-@font-face {
-  font-family: 'Syne';
-  src: url('/fonts/Syne-latin.woff2') format('woff2');
-  font-weight: 400 800;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
-}
-@font-face {
-  font-family: 'Syne';
-  src: url('/fonts/Syne-latin-ext.woff2') format('woff2');
-  font-weight: 400 800;
-  font-style: normal;
-  font-display: swap;
-  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
-}
-
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 /* Hidden until GSAP entrance animation fires */
 [data-site-content]{opacity:0}
 
 :root{
   color-scheme:dark;
-  --font-display:'Greater Theory','Syne',sans-serif;
+  --font-display:'Greater Theory','DM Sans',sans-serif;
   --font-body:'DM Sans',sans-serif;
 }
 
@@ -783,12 +758,12 @@ section{padding:7rem 3rem;position:relative}
 
 /* Left: heading + form */
 .ct-left{display:flex;flex-direction:column}
-.ct-heading{font-family:'Sddystopian',var(--font-display);font-size:clamp(2.4rem,4.5vw,4rem);font-weight:400;line-height:1.08;color:var(--gold);margin:.6rem 0 1.4rem;letter-spacing:0.01em}
+.ct-heading{font-family:var(--font-display);font-size:clamp(2rem,3.6vw,3.4rem);font-weight:400;line-height:1.08;color:var(--gold);margin:.6rem 0 1.4rem;letter-spacing:0.01em}
 .ct-sub{color:var(--gold-dim);font-size:.98rem;line-height:1.75;max-width:480px;margin-bottom:2.4rem}
 .ct-form{display:flex;flex-direction:column;gap:1.25rem}
 .ct-row{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
 .ct-field label{
-  display:block;margin-bottom:.5rem;font-family:'Chakra Petch',var(--font-body);font-size:.68rem;font-weight:600;
+  display:block;margin-bottom:.5rem;font-family:var(--font-body);font-size:.68rem;font-weight:600;
   letter-spacing:.24em;text-transform:uppercase;color:var(--gold-dim);
 }
 .ct-field label span{color:var(--accent-glow)}
@@ -807,7 +782,7 @@ section{padding:7rem 3rem;position:relative}
   --landed:0;
   display:inline-flex;align-items:center;gap:.7rem;padding:1rem 1.9rem;border:none;border-radius:3px;cursor:pointer;touch-action:manipulation;
   background:var(--accent-glow);color:var(--black-deep);
-  font-family:'Chakra Petch',var(--font-body);font-weight:700;font-size:.82rem;letter-spacing:.22em;text-transform:uppercase;
+  font-family:var(--font-body);font-weight:600;font-size:.82rem;letter-spacing:.22em;text-transform:uppercase;
   /* Lights up as the testimonials' paper plane lands on it. */
   box-shadow:0 6px 22px rgba(var(--accent-rgb),0.35),0 0 calc(var(--landed) * 40px) calc(var(--landed) * 8px) rgba(var(--accent-rgb),calc(var(--landed) * 0.85));
   transition:transform .2s,box-shadow .2s,filter .2s;
@@ -827,7 +802,7 @@ section{padding:7rem 3rem;position:relative}
   --landed:0;
   position:relative;padding:1.8rem 1.9rem 1.6rem;border:1px solid rgba(var(--accent-rgb),0.3);border-radius:3px;
   background:linear-gradient(160deg,rgba(var(--accent-rgb),0.07),rgba(8,10,14,0.94) 45%);
-  font-family:'Chakra Petch',var(--font-body);
+  font-family:var(--font-body);
   /* Flares as the testimonials' transmission lands on it. */
   box-shadow:0 0 calc(var(--landed) * 60px) calc(var(--landed) * 6px) rgba(var(--accent-rgb),calc(var(--landed) * 0.6));
 }
@@ -858,7 +833,7 @@ section{padding:7rem 3rem;position:relative}
 .ct-email{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
 .ct-email a{color:var(--gold-bright);text-decoration:none;overflow-wrap:anywhere}
 .ct-email a:hover{color:var(--accent-glow)}
-.ct-copy{padding:.25rem .6rem;border:1px solid rgba(var(--accent-rgb),0.4);border-radius:2px;background:none;cursor:pointer;color:var(--accent-glow);font:600 .6rem/1 'Chakra Petch',var(--font-body);letter-spacing:.2em;text-transform:uppercase}
+.ct-copy{padding:.25rem .6rem;border:1px solid rgba(var(--accent-rgb),0.4);border-radius:2px;background:none;cursor:pointer;color:var(--accent-glow);font:600 .6rem/1 var(--font-body);letter-spacing:.2em;text-transform:uppercase}
 .ct-copy:hover{background:rgba(var(--accent-rgb),0.12)}
 .ct-fit{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.4rem}
 .ct-fit li{font-size:.9rem;color:var(--gold-bright)}
@@ -1784,12 +1759,12 @@ footer span{color:var(--accent-glow)}
 .ab3-target-line{ stroke:rgba(var(--accent-rgb),.28); }
 .ab3-target-dot{ fill:var(--accent-glow); stroke:none; filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),.95)); }
 .ab3-label p{
-  margin:.9rem 0 0; font-family:'Chakra Petch',var(--font-body); font-weight:600;
+  margin:.9rem 0 0; font-family:var(--font-body); font-weight:600;
   font-size:.82rem; letter-spacing:.42em; text-transform:uppercase; color:var(--accent-glow);
 }
 
 .ab3-title{
-  margin:0; font-family:'Chakra Petch',var(--font-display); font-weight:700; text-transform:uppercase;
+  margin:0; font-family:var(--font-display); font-weight:400; text-transform:uppercase;
   font-size:clamp(2.2rem, 3.6vw, 4rem); line-height:1.08; letter-spacing:.005em; color:var(--gold-bright);
 }
 .ab3-title span{ display:block; white-space:nowrap; }
@@ -1798,8 +1773,8 @@ footer span{color:var(--accent-glow)}
   display:block; width:50px; height:4px; border-radius:2px; margin:2.1rem 0 2rem;
   background:var(--accent-glow); box-shadow:0 0 12px rgba(var(--accent-rgb),.75);
 }
-.ab3-name{ margin:0; font-family:'Chakra Petch',var(--font-display); font-weight:600; font-size:clamp(1.5rem, 1.9vw, 1.95rem); color:var(--gold-bright); letter-spacing:.01em; }
-.ab3-role{ margin:.15rem 0 1.3rem; font-family:'Chakra Petch',var(--font-body); font-weight:400; font-size:clamp(1.05rem, 1.3vw, 1.32rem); color:var(--gold-dim); }
+.ab3-name{ margin:0; font-family:var(--font-body); font-weight:600; font-size:clamp(1.5rem, 1.9vw, 1.95rem); color:var(--gold-bright); letter-spacing:.01em; }
+.ab3-role{ margin:.15rem 0 1.3rem; font-family:var(--font-body); font-weight:400; font-size:clamp(1.05rem, 1.3vw, 1.32rem); color:var(--gold-dim); }
 .ab3-bio{ margin:0 0 1.9rem; max-width:24rem; font-size:1.06rem; line-height:1.55; color:var(--gold-dim); }
 
 /* One glowing card, three rows. */
@@ -1992,7 +1967,7 @@ footer span{color:var(--accent-glow)}
 .cs-hud-corner.is-bl{ bottom:1.4rem; left:1.6rem; border-bottom-width:1px; border-left-width:1px; }
 .cs-hud-corner.is-br{ bottom:1.4rem; right:1.6rem; border-bottom-width:1px; border-right-width:1px; }
 .cs-hud-text{
-  position:absolute; font-family:'Chakra Petch', ui-monospace, monospace; font-weight:600;
+  position:absolute; font-family:var(--font-body); font-weight:600;
   font-size:0.66rem; letter-spacing:0.28em; text-transform:uppercase; color:var(--gold-dim);
   white-space:nowrap;
 }
@@ -2012,7 +1987,7 @@ footer span{color:var(--accent-glow)}
 .cs-title{ margin:0; line-height:1; color:var(--gold-bright); }
 .cs-kinetic-pre{
   display:block; margin-bottom:0.55rem;
-  font-family:'Chakra Petch', var(--font-body); font-weight:600; font-size:clamp(0.75rem, 1vw, 0.95rem);
+  font-family:var(--font-body); font-weight:600; font-size:clamp(0.75rem, 1vw, 0.95rem);
   letter-spacing:0.3em; text-transform:uppercase; color:var(--accent-glow);
 }
 .cs-kinetic-big{
@@ -2047,7 +2022,7 @@ footer span{color:var(--accent-glow)}
   position:relative; z-index:1; flex:none;
   width:26px; height:26px; border-radius:2px;
   display:flex; align-items:center; justify-content:center;
-  font-family:'Chakra Petch', var(--font-body); font-size:0.62rem; font-weight:700;
+  font-family:var(--font-body); font-size:0.62rem; font-weight:600;
   color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.3);
   background:rgba(6,8,10,0.6); transition:all 0.35s ease;
 }
@@ -2103,7 +2078,7 @@ footer span{color:var(--accent-glow)}
 .cs-card-body{ padding:0.9rem 1.05rem 1.05rem; display:flex; flex-direction:column; flex:1 1 auto; }
 .cs-card-tags{ display:flex; flex-wrap:wrap; gap:0.35rem; margin-bottom:0.6rem; }
 .cs-tag-pill{
-  font-family:'Chakra Petch', var(--font-body); font-size:0.56rem; font-weight:600; letter-spacing:0.12em;
+  font-family:var(--font-body); font-size:0.56rem; font-weight:600; letter-spacing:0.12em;
   text-transform:uppercase; padding:0.2rem 0.45rem; border-radius:2px; white-space:nowrap;
   color:var(--gold-dim); border:1px solid rgba(var(--accent-rgb),0.3);
 }
@@ -2114,7 +2089,7 @@ footer span{color:var(--accent-glow)}
 .cs-card-desc{ font-size:clamp(0.68rem, 0.82vw, 0.78rem); color:var(--gold-dim); line-height:1.45; margin:0 0 0.7rem; }
 .cs-card-cta{
   margin-top:auto; display:flex; align-items:center; gap:0.45rem;
-  font-family:'Chakra Petch', var(--font-body); font-size:0.64rem; font-weight:700;
+  font-family:var(--font-body); font-size:0.64rem; font-weight:600;
   color:var(--accent-glow); letter-spacing:0.2em; text-transform:uppercase;
 }
 .cs-card-cta svg{ width:12px; height:12px; transition:transform 0.25s ease; }
@@ -2135,7 +2110,7 @@ footer span{color:var(--accent-glow)}
   background:var(--accent-glow); box-shadow:0 0 6px rgba(var(--accent-rgb),0.6);
 }
 .cs-scroll-cue{
-  font-family:'Chakra Petch', var(--font-body); font-size:0.6rem; letter-spacing:0.3em;
+  font-family:var(--font-body); font-size:0.6rem; letter-spacing:0.3em;
   text-transform:uppercase; color:var(--gold-dim); font-weight:600;
 }
 
@@ -2379,7 +2354,7 @@ footer span{color:var(--accent-glow)}
 .im-item[data-side="l"] .im-item-inner{ align-items:flex-end; transform-origin:right center; }
 .im-item[data-side="b"] .im-item-inner{ align-items:center; transform-origin:center top; }
 .im-big{
-  font-family:'Sddystopian',var(--font-display); font-weight:400; font-size:clamp(1.5rem, 2.3vw, 2.2rem); line-height:1;
+  font-family:var(--font-display); font-weight:400; font-size:clamp(1.5rem, 2.3vw, 2.2rem); line-height:1;
   color:var(--accent-light);
   text-shadow:0 0 18px rgba(var(--accent-rgb),0.5);
 }

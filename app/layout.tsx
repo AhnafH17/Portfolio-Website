@@ -3,8 +3,9 @@ import './globals.css';
 import { SITE_URL } from '@/lib/site';
 import { DESCRIPTION, rootGraph, jsonLd } from '@/lib/schema';
 
-/* Syne and DM Sans are self-hosted via @font-face in globals.css rather than
-   next/font/google — see the note there. --font-display and --font-body are
+/* Two typefaces: Greater Theory (display) and DM Sans (body), both
+   self-hosted via @font-face in globals.css rather than next/font/google —
+   see the note there. --font-display and --font-body are
    defined on :root, so nothing needs to be wired onto <html>. */
 
 const TITLE = 'Ahnaf Hussain – Web Developer in Calgary | AurixLab';
@@ -65,8 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);}catch(e){}})();`,
           }}
         />
-        {/* The preloader traces this font's glyphs into particles on first
-            frame — preload so it's ready before sampling. */}
+        {/* The display face: the preloader's name and the hero's are set in
+            it from the first frame. */}
         <link
           rel="preload"
           as="font"
@@ -74,10 +75,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="/fonts/GreaterTheory.otf"
           crossOrigin="anonymous"
         />
-        {/* Latin subsets of the body/display faces — next/font used to emit
-            these preloads itself. latin-ext and italic stay lazy. */}
+        {/* Latin subset of the body face — next/font used to emit this
+            preload itself. latin-ext and italic stay lazy. */}
         <link rel="preload" as="font" type="font/woff2" href="/fonts/DMSans-latin.woff2" crossOrigin="anonymous" />
-        <link rel="preload" as="font" type="font/woff2" href="/fonts/Syne-latin.woff2" crossOrigin="anonymous" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32x32.png" />
         <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16x16.png" />

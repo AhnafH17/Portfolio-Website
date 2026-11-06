@@ -161,7 +161,7 @@ export default function ParticleGlobe() {
         ctx.beginPath(); ctx.arc(hx, hy, 4 + pulse * 16, 0, Math.PI * 2); ctx.stroke();
         ctx.fillStyle = '#fff';
         ctx.beginPath(); ctx.arc(hx, hy, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.font = `600 ${Math.round(11 * unit)}px 'Chakra Petch', sans-serif`;
+        ctx.font = `600 ${Math.round(11 * unit)}px 'DM Sans', sans-serif`;
         ctx.fillStyle = `rgba(255,255,255,${0.85 * hz})`;
         ctx.fillText(HOME.label.toUpperCase(), hx + 10 * unit, hy - 8 * unit);
       }
