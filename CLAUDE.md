@@ -24,7 +24,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `app/globals.css` | All CSS — variables, component styles |
 | `app/layout.tsx` | Root layout, loads fonts |
 | `app/page.tsx` | Page composition |
-| `components/HeroSection.tsx` | Hero — uses plain `<img>` (NOT Next Image) for photo |
+| `components/HeroSection.tsx` | Hero — role line, giant name behind a cut-out portrait, orbit, CTA; GSAP entrance on reveal |
 | `components/Navbar.tsx` | Inline SVG monogram logo (no image file) |
 | `components/ShowcaseSection.tsx` | Project showcase — GSAP transitions, CSS bg lines |
 | `components/ContactSection.tsx` | Contact — canvas sparkles + form + dashboard mockup |
@@ -32,9 +32,9 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `components/LenisProvider.tsx` | Lenis smooth scroll, throttled scroll events |
 | `components/Modal.tsx` | Project detail modal |
 | `lib/projects.ts` | Project data + `stripMeta` array |
-| `public/images/hero/` | Hero portraits (one per palette) + the 4 floating UI cards |
+| `public/images/hero/` | Hero portrait cut-out: `portrait-cutout-{400,542}.{avif,webp}` |
 | `public/images/projects/` | Project thumbnails, each named after its key in `lib/projects.ts` |
-| `assets/hero-portrait-master.png` | Ungraded hero source — input to `scripts/regrade-hero.py`, never served |
+| `assets/hero-portrait-master.png` / `hero-portrait-cutout.png` | Hero source photo and its background-removed cut-out (rembg, birefnet-portrait); the served files are encoded from the cut-out with sharp |
 | `public/models/*.glb` | Compressed (meshopt + WebP) by `scripts/optimize-models.mjs` from the Blender exports in `assets/models-src/`; re-run it after re-exporting |
 | `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
 | `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact glitch |
@@ -45,13 +45,15 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 
 ## Architecture Decisions
 
-### Hero Photo
-- Uses plain `<img>` tag, NOT `next/image` — Next.js optimization pipeline was making the photo blurry
-- Rendered as a CSS `background-image` on `.hero-photo`, not an `<img>`: the palette is
-  chosen client-side, so a stylesheet rule per `[data-palette]` picks the matching file
-  without a hydration mismatch or a second download
-- Files: `public/images/hero/portrait-<palette>.png`, generated from
-  `assets/hero-portrait-master.png` by `scripts/regrade-hero.py`
+### Hero
+- Portrait is a plain `<picture>`/`<img>` (AVIF + WebP, 400w/542w), NOT `next/image` — Next.js
+  optimization made the photo blurry. One cut-out for every palette (no per-palette grading)
+- Layers (back to front): accent streaks, giant name (`.hx-name`, Greater Theory, skewed
+  gradient text), orbit SVG, portrait, role line + CTA. Sized in vw/vh so it holds to 2K
+- Entrance plays once when `paused` turns false (the preloader's reveal): backdrop, role line,
+  orbit and CTA first; portrait rises from below; as it lands the name slides in behind it
+- The preloader only opens once the portrait has decoded (`heroReady` in `Preloader.tsx`)
+- The source photo is 1024px, so the cut-out is 542×755; on 2K screens it's shown ~1.4× up
 
 ### Navbar Logo
 - Inline SVG monogram "AH" with gold gradient (the old 828KB `logo-placeholder.svg` is gone)

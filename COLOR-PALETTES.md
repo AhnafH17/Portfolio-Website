@@ -11,7 +11,7 @@ The site now ships **4 palettes** and picks one **at random on each page load**.
 - The bright accent is exposed as `--accent-rgb` (an `r,g,b` triplet) so
   `rgba(var(--accent-rgb), a)` works for every glow/border.
 - Canvas / WebGL bits can't read CSS vars, so they call `readAccent()` from
-  `lib/accent.ts` at runtime: ContactSection sparkles, StarField, the globe
+  `lib/accent.ts` at runtime: ContactSection sparkles, the globe
   (TestimonialSection), the preloader particles, and project-page tech icons.
 - Globe earth-texture tint is hue-rotated per palette via `[data-palette] .ts-globe-clip`.
 

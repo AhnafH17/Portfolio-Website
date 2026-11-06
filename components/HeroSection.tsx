@@ -1,181 +1,154 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
-import StarField from '@/components/StarField';
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 
-const PARTICLES = [
-  { top: '10%', left: '72%', size: 8 },
-  { top: '18%', left: '88%', size: 5 },
-  { top: '32%', left: '68%', size: 6 },
-  { top: '55%', left: '92%', size: 4 },
-  { top: '70%', left: '75%', size: 7 },
-  { top: '80%', left: '60%', size: 5 },
-  { top: '15%', left: '55%', size: 4 },
-  { top: '42%', left: '95%', size: 6 },
-  { top: '25%', left: '45%', size: 3 },
-  { top: '65%', left: '48%', size: 4 },
-  { top: '8%',  left: '62%', size: 9 },
-  { top: '88%', left: '80%', size: 5 },
-];
+/* The hero: a role line, the name huge behind a cut-out portrait, an orbit
+   of light around both, and one call to action.
+
+   Entrance (it starts as the preloader's bars open, i.e. when `paused`
+   turns false): the backdrop, role line, orbit and button come in first;
+   the portrait rises from below into place; as it lands, AHNAF slides in
+   from the left and HUSSAIN from the right, behind it.
+
+   The portrait is a cut-out of assets/hero-portrait-master.png
+   (assets/hero-portrait-cutout.png), served as AVIF with a WebP fallback at
+   two widths. It's a plain <img> on purpose: next/image's pipeline made the
+   photo soft. */
 
 export default function HeroSection({ paused = false }: { paused?: boolean }) {
-  const wrapperRef = useRef<HTMLDivElement>(null);
-  // Mouse tilt targets the inner img elements directly
-  const tiltRefs = useRef<(HTMLImageElement | null)[]>([]);
-  const rafRef = useRef<number>(0);
-  const mouseRef = useRef({ x: 0, y: 0 });
-  const currentRef = useRef({ x: 0, y: 0 });
+  const rootRef = useRef<HTMLElement>(null);
+  const played = useRef(false);
 
+  // Entrance, once, when the hero is revealed.
   useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper || paused) return;
-
-    const onMouseMove = (e: MouseEvent) => {
-      const rect = wrapper.getBoundingClientRect();
-      mouseRef.current = {
-        x: (e.clientX - (rect.left + rect.width / 2)) / (rect.width / 2),
-        y: (e.clientY - (rect.top + rect.height / 2)) / (rect.height / 2),
-      };
-    };
-
-    const onMouseLeave = () => { mouseRef.current = { x: 0, y: 0 }; };
-
-    window.addEventListener('mousemove', onMouseMove, { passive: true });
-    wrapper.addEventListener('mouseleave', onMouseLeave);
-
-    const animate = () => {
-      currentRef.current.x += (mouseRef.current.x - currentRef.current.x) * 0.05;
-      currentRef.current.y += (mouseRef.current.y - currentRef.current.y) * 0.05;
-
-      const mx = currentRef.current.x;
-      const my = currentRef.current.y;
-
-      // Depth multipliers — deeper cards react more
-      const depths = [1.4, 1.1, 1.0, 0.7];
-      tiltRefs.current.forEach((el, i) => {
-        if (!el) return;
-        const d = depths[i];
-        const tx = my * 2.5 * d;
-        const ty = mx * -2.5 * d;
-        el.style.transform = `${i >= 2 ? 'scaleX(-1) ' : ''}rotateX(${tx}deg) rotateY(${ty}deg)`;
-      });
-
-      if (running) rafRef.current = requestAnimationFrame(animate);
-    };
-
-    // Only while the hero is on screen (it used to restyle the cards every
-    // frame for the whole page).
-    let running = false;
-    const io = new IntersectionObserver(([entry]) => {
-      if (entry.isIntersecting && !running) { running = true; rafRef.current = requestAnimationFrame(animate); }
-      else if (!entry.isIntersecting && running) { running = false; cancelAnimationFrame(rafRef.current); }
-    });
-    io.observe(wrapper);
-
-    return () => {
-      window.removeEventListener('mousemove', onMouseMove);
-      wrapper.removeEventListener('mouseleave', onMouseLeave);
-      cancelAnimationFrame(rafRef.current);
-      io.disconnect();
-    };
+    const root = rootRef.current;
+    if (!root || paused || played.current) return;
+    played.current = true;
+    const q = (s: string) => root.querySelectorAll<HTMLElement | SVGElement>(s);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      gsap.set(q('.hx-in'), { opacity: 1, clearProps: 'transform,filter' });
+      return;
+    }
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+    // 1. Everything around the portrait.
+    tl.fromTo(q('.hx-streak'), { opacity: 0 }, { opacity: 1, duration: 1.2, stagger: 0.12, ease: 'power2.out' }, 0);
+    tl.fromTo(q('.hx-roles'), { opacity: 0, y: 10, letterSpacing: '0.7em' }, { opacity: 1, y: 0, letterSpacing: '0.42em', duration: 0.9 }, 0.05);
+    tl.fromTo(q('.hx-rule'), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: 'power3.inOut' }, 0.1);
+    tl.fromTo(q('.hx-orbit'), { opacity: 0 }, { opacity: 1, duration: 0.3 }, 0.1);
+    tl.fromTo(q('.hx-orbit-path'), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 1.5, ease: 'power2.inOut' }, 0.1);
+    tl.fromTo(q('.hx-cta'), { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.8 }, 0.25);
+    // 2. The portrait rises into place.
+    tl.fromTo(q('.hx-photo'), { opacity: 0, yPercent: 38 }, { opacity: 1, yPercent: 0, duration: 1.05, ease: 'power3.out' }, 0.3);
+    // 3. As it lands, the name slides in behind it.
+    tl.fromTo(q('.hx-first'), { opacity: 0, xPercent: -14, filter: 'blur(10px)' }, { opacity: 1, xPercent: 0, filter: 'blur(0px)', duration: 0.95, ease: 'expo.out' }, 1.0);
+    tl.fromTo(q('.hx-last'), { opacity: 0, xPercent: 14, filter: 'blur(10px)' }, { opacity: 1, xPercent: 0, filter: 'blur(0px)', duration: 0.95, ease: 'expo.out' }, 1.08);
+    return () => { tl.kill(); };
   }, [paused]);
 
+  // A little depth on the pointer: the portrait and name drift apart.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || paused || !window.matchMedia('(pointer: fine)').matches) return;
+    const photo = root.querySelector<HTMLElement>('.hx-photo-wrap');
+    const name = root.querySelector<HTMLElement>('.hx-name');
+    const orbit = root.querySelector<HTMLElement>('.hx-orbit-wrap');
+    let tx = 0, ty = 0, x = 0, y = 0, raf = 0, on = false;
+    const move = (e: PointerEvent) => {
+      tx = e.clientX / window.innerWidth - 0.5;
+      ty = e.clientY / window.innerHeight - 0.5;
+    };
+    const tick = () => {
+      x += (tx - x) * 0.06; y += (ty - y) * 0.06;
+      if (photo) photo.style.transform = `translate3d(${x * 14}px,${y * 8}px,0)`;
+      if (name) name.style.transform = `translate3d(${x * -22}px,${y * -10}px,0)`;
+      if (orbit) orbit.style.transform = `translate3d(${x * 8}px,${y * 6}px,0)`;
+      if (on) raf = requestAnimationFrame(tick);
+    };
+    const io = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && !on) { on = true; raf = requestAnimationFrame(tick); }
+      else if (!e.isIntersecting && on) { on = false; cancelAnimationFrame(raf); }
+    });
+    io.observe(root);
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => { io.disconnect(); cancelAnimationFrame(raf); window.removeEventListener('pointermove', move); };
+  }, [paused]);
+
+  const toWork = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const target = document.querySelector('#showcase');
+    if (!target) return;
+    e.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
-    <section id="hero">
-      <div className="hero-bg-line" />
-      <div className="hero-bg-line" />
-      <div className="hero-bg-line" />
-      <div className="hero-bg-line" />
+    <section id="hero" ref={rootRef} className="hx">
+      {/* Light sweeping across the dark */}
+      <div className="hx-bg" aria-hidden="true">
+        <i className="hx-streak hx-streak-1 hx-in" />
+        <i className="hx-streak hx-streak-2 hx-in" />
+        <svg className="hx-streak hx-streak-lines hx-in" viewBox="0 0 1600 900" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="hxLine" x1="0" x2="1">
+              <stop offset="0" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0" />
+              <stop offset="0.55" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0.55" />
+              <stop offset="1" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <path d="M-40 520 C 260 380, 420 260, 760 -40" stroke="url(#hxLine)" strokeWidth="2" fill="none" />
+          <path d="M760 940 C 1080 760, 1330 660, 1660 610" stroke="url(#hxLine)" strokeWidth="2" fill="none" />
+        </svg>
+      </div>
 
-      {PARTICLES.map((p, i) => (
-        <span
-          key={i}
-          className={`hero-particle${i >= 6 ? ' hero-particle--minor' : ''}`}
-          style={{ top: p.top, left: p.left, width: p.size, height: p.size }}
-        />
-      ))}
+      <p className="hx-roles hx-in">
+        <span className="hx-rule" aria-hidden="true" />
+        <span>Developer</span><i aria-hidden="true">/</i><span>Creative</span><i aria-hidden="true">/</i><span>Product builder</span>
+        <span className="hx-rule" aria-hidden="true" />
+      </p>
 
-      <div className="hero-content">
-        <div className="hero-text">
-          <h1 className="hero-name">
-            <span className="hero-greeting-line">Hi, I&apos;m</span>{' '}
-            <span className="gold-glow">Ahnaf Hussain</span>
-          </h1>
-          <p className="hero-tagline">
-            Architecting high-performance SaaS frontends and interactive digital experiences. Leading the development team at AurixLab in Calgary to bridge the gap between complex data and world-class UI.
-          </p>
-          <a href="#about" className="hero-cta">
-            Learn More{' '}
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </a>
+      <div className="hx-stage">
+        <h1 className="hx-name">
+          <span className="hx-first hx-in"><span className="hx-slant">Ahnaf</span></span>
+          <span className="hx-last hx-in"><span className="hx-slant">Hussain</span></span>
+        </h1>
+
+        <div className="hx-orbit-wrap" aria-hidden="true">
+          <svg className="hx-orbit hx-in" viewBox="0 0 1000 420">
+            <defs>
+              <linearGradient id="hxOrbit" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0.15" />
+                <stop offset="0.35" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0.95" />
+                <stop offset="0.7" style={{ stopColor: '#ffffff' }} stopOpacity="0.9" />
+                <stop offset="1" style={{ stopColor: 'rgb(var(--accent-rgb))' }} stopOpacity="0.2" />
+              </linearGradient>
+            </defs>
+            <ellipse className="hx-orbit-path" cx="500" cy="210" rx="470" ry="150" pathLength={1}
+              transform="rotate(-13 500 210)" stroke="url(#hxOrbit)" />
+          </svg>
         </div>
 
-        <div className="hero-image-wrapper" ref={wrapperRef}>
-          {/* Star field — behind everything */}
-          <StarField className="hero-starfield" paused={paused} />
-
-          {/* Concentric rings */}
-          <div className="hero-ring hero-ring-1" />
-          <div className="hero-ring hero-ring-2" />
-          <div className="hero-ring hero-ring-3" />
-
-          {/* LEFT — code editor top, code tablet bottom */}
-          <div className="hero-fc-wrap hero-fc-left-top">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero/card-code-editor.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
-              ref={el => { tiltRefs.current[0] = el; }}
-              className="hero-fc-img"
+        <div className="hx-photo-wrap">
+          <picture className="hx-photo hx-in">
+            <source type="image/avif" srcSet="/images/hero/portrait-cutout-400.avif 400w, /images/hero/portrait-cutout-542.avif 542w" sizes="(max-width: 768px) 400px, 542px" />
+            <source type="image/webp" srcSet="/images/hero/portrait-cutout-400.webp 400w, /images/hero/portrait-cutout-542.webp 542w" sizes="(max-width: 768px) 400px, 542px" />
+            <img
+              src="/images/hero/portrait-cutout-542.webp"
+              alt="Ahnaf Hussain, Head of Web Development at AurixLab"
+              width={542}
+              height={755}
+              fetchPriority="high"
+              decoding="async"
             />
-          </div>
-          <div className="hero-fc-wrap hero-fc-left-bot">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero/card-code-tablet.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
-              ref={el => { tiltRefs.current[1] = el; }}
-              className="hero-fc-img"
-            />
-          </div>
-
-          {/* RIGHT — dashboard top (mirrored), form bottom (mirrored) */}
-          <div className="hero-fc-wrap hero-fc-right-top">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero/card-dashboard.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
-              ref={el => { tiltRefs.current[2] = el; }}
-              className="hero-fc-img"
-            />
-          </div>
-          <div className="hero-fc-wrap hero-fc-right-bot">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/hero/card-form.png" alt="" aria-hidden="true" loading="lazy" decoding="async"
-              ref={el => { tiltRefs.current[3] = el; }}
-              className="hero-fc-img"
-            />
-          </div>
-
-          {/* Arch photo frame. The photo is a CSS background rather than an
-              <img> so the palette-matched file is chosen by a stylesheet rule:
-              the palette is picked client-side, and swapping a src after
-              hydration would either mismatch or download two images. Only the
-              matching rule's background is ever fetched. */}
-          <div className="hero-image-frame">
-            <div
-              className="hero-photo"
-              role="img"
-              aria-label="Ahnaf Hussain, Head of Web Development at AurixLab"
-            />
-          </div>
-
-          <div className="hero-floating-tag">
-            <span>@</span> AurixLab | Head of Dev
-          </div>
+          </picture>
         </div>
       </div>
 
-      <div className="scroll-indicator">
-        <span>Scroll</span>
-        <div className="scroll-line" />
-      </div>
+      <a href="#showcase" className="hx-cta hx-in" onClick={toWork}>
+        View my work
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 12h15m0 0-5-5m5 5-5 5" />
+        </svg>
+      </a>
     </section>
   );
 }

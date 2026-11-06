@@ -57,13 +57,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Pick a random color palette before first paint (no flash), and
-            preload the matching hero portrait. The preload has to live here
-            because which file is needed isn't known until the palette is
-            chosen — a static preload would fetch the wrong one. */}
+        {/* Pick a random color palette before first paint (no flash). The
+            hero portrait is one cut-out for every palette, a high-priority
+            <img> in the server HTML, so it needs no preload of its own. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);var l=document.createElement('link');l.rel='preload';l.as='image';l.href='/images/hero/portrait-'+c+'.png';l.setAttribute('fetchpriority','high');document.head.appendChild(l);}catch(e){}})();`,
+            __html: `(function(){try{var p=['crimson','teal','amber','purple'];var c=p[Math.floor(Math.random()*p.length)];document.documentElement.setAttribute('data-palette',c);}catch(e){}})();`,
           }}
         />
         {/* The preloader traces this font's glyphs into particles on first

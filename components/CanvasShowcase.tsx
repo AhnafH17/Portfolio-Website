@@ -270,7 +270,7 @@ export default function CanvasShowcase() {
   }, []);
 
   return (
-    <section ref={containerRef} className="cs-section" style={{ fontFamily: 'var(--font-body)' }}>
+    <section id="showcase" ref={containerRef} className="cs-section" style={{ fontFamily: 'var(--font-body)' }}>
       {/* ── Backdrop: two gradient planets, horizon, and one canvas for the
           stars, the grid and the city lights ── */}
       <div className="cs-bg" aria-hidden="true">

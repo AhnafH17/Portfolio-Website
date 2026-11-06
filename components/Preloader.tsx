@@ -35,17 +35,12 @@ const SAFETY_MS = 7000;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Resolves when what the hero shows first is in: fonts, the portrait (a
-    CSS background, so decoded from the same URL) and the floating cards. */
+/** Resolves when what the hero shows first is in: fonts and the portrait. */
 function heroReady(): Promise<void> {
-  const palette = document.documentElement.dataset.palette || 'crimson';
-  const photo = new Image();
-  photo.src = `/images/hero/portrait-${palette}.png`;
-  const cards = Array.from(document.querySelectorAll<HTMLImageElement>('#hero img'));
+  const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('#hero img'));
   return Promise.all([
     document.fonts?.ready,
-    photo.decode().catch(() => {}),
-    ...cards.map((img) => img.decode().catch(() => {})),
+    ...imgs.map((img) => img.decode().catch(() => {})),
   ]).then(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
 }
 
