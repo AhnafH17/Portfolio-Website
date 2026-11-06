@@ -5,9 +5,9 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
-import { makeScreenMaterial, prepareModel, screenTracker, SCREEN_PANEL } from './deviceModel';
+import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
 import { useAccent } from '@/lib/palette';
-import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
+import { BEATS, POSE, phase, easeIn, easeInOut, easeOut, DAMP } from './beats';
 
 /* The phone is a Blender model (scripts/build-phone.py →
    public/models/phone.glb); this file animates it and paints its screen.
@@ -20,6 +20,7 @@ export const MODEL_URL = '/models/phone.glb';
 const P = POSE.phone;
 
 const SCREEN_Z = 0.086; // the model's screen surface
+const CAM_Z = 7;        // DeviceCanvas's camera distance
 
 // Phone bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 1.62;
@@ -41,7 +42,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
 
   // three objects are mutated every frame, so they live in a ref set up once
   // the model is in.
-  const rig = useRef<{ screen: THREE.MeshStandardMaterial; track: ReturnType<typeof screenTracker> } | null>(null);
+  const rig = useRef<{ screen: THREE.MeshStandardMaterial } | null>(null);
   useEffect(() => {
     const screen = makeScreenMaterial(chrome.texture);
     prepareModel(scene, {
@@ -51,7 +52,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
       // behind the phone and read as solid colour while it turned).
       envIntensity: { MAT_Titanium: 0.8, MAT_BackGlass: 0.3, MAT_CameraPlate: 0.6, MAT_LensGlass: 1, MAT_Bezel: 0.5 },
     });
-    rig.current = { screen, track: screenTracker(scene) };
+    rig.current = { screen };
     return () => { rig.current = null; screen.dispose(); };
   }, [scene, chrome, accent]);
 
@@ -86,8 +87,9 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     content.render(read);
-    // Where the screen is on the page, for the handoff into About.
-    r.track?.(state.camera, state.size.width, state.size.height, state.gl.domElement);
+    // The ending: the camera pushes through the screen into About.
+    const dive = easeIn(phase(p, BEATS.dive));
+    state.camera.position.set(0, 0, THREE.MathUtils.lerp(CAM_Z, 0.5, dive));
   });
 
   return (

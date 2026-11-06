@@ -1,10 +1,8 @@
 import {
-  bell, clamp01, drawSprite, easeInOut, easeOut, lerp, seeded, smooth, sprite, tintSprite, topProgress,
+  bell, clamp01, easeInOut, lerp, seeded, smooth, topProgress,
   type Handoff, type HandoffEnv,
 } from '@/lib/handoff';
 import { DOT_COUNT, globeState, projectDot } from '@/lib/globe';
-import { deviceScreen } from '@/lib/deviceScreen';
-import { coreHandoff } from '@/lib/coreHandoff';
 
 /* Section handoffs, one visual style each, all in the palette's accent
    colour (see lib/handoff.ts for how they run). */
@@ -12,164 +10,6 @@ import { coreHandoff } from '@/lib/coreHandoff';
 const q = <T extends Element>(sel: string) => document.querySelector<T>(sel);
 const bez = (a: number, c: number, b: number, u: number) => (1 - u) * (1 - u) * a + 2 * (1 - u) * u * c + u * u * b;
 
-
-/* ── Laptop → About: the Return key. After `export default about;` the
-   laptop's own Return key (a separate node, KEY_Return) lights up and lifts
-   out of the keyboard, turns once through the air in a single smooth arc,
-   and settles into the About island's core cube, which takes its light (the
-   same cube then flies on into Impacts). The key is a Blender render of that
-   keycap (public/images/handoff/return-key*.webp, 48 frames of the turn);
-   scroll picks the frame, so it moves as smoothly as the page does. ── */
-const KEY_SHEET = '/images/handoff/return-key.webp';
-const KEY_GLYPH = '/images/handoff/return-key-glyph.webp';
-const keyAt = { x: 0, y: 0, w: 24, ok: false };
-const TRAIL = 14;
-interface KeyState {
-  x: number; y: number; size: number; frame: number; alpha: number; glyph: number;
-  trail: number[]; ring: number; cx: number; cy: number; edge: number; out: boolean;
-}
-const laptopToAbout: Handoff<KeyState> = {
-  id: 'laptop-about',
-  usesCanvas: true,
-  zone: () => [q('.dv-section'), q('#about')],
-  read(env) {
-    const about = q('#about');
-    if (!about) return null;
-    const ar = about.getBoundingClientRect();
-    // Target: the core cube, as the About scene publishes it; until that
-    // scene has drawn, where it will be.
-    let cx: number, cy: number, edge: number;
-    const cv = coreHandoff.canvas;
-    if (cv && coreHandoff.ready) {
-      const cr = cv.getBoundingClientRect();
-      cx = cr.left + coreHandoff.x; cy = cr.top + coreHandoff.y; edge = Math.max(24, coreHandoff.edge);
-    } else {
-      const c = about.querySelector('canvas')?.getBoundingClientRect();
-      cx = c ? c.left + c.width * 0.55 : ar.left + ar.width * 0.8;
-      cy = c ? c.top + c.height * 0.7 : ar.top + env.vh * 0.73;
-      edge = 40;
-    }
-    // From About's top entering, until the cube itself (low on the island,
-    // and below the text on phones) is well up the screen.
-    const from = env.vh * 1.35, to = env.vh * 0.62 - (cy - ar.top);
-    const span = Math.max(1, from - to);
-    const tAt = (top: number) => clamp01((from - top) / span);
-    const t = tAt(ar.top);
-    if (t <= 0.003 || t >= 0.997) { deviceScreen.keyOut = false; return null; }
-
-    // Start: the Return key while the device is drawing (or the bottom of a
-    // phone's screen), remembered in page coordinates for when it stops.
-    const live = deviceScreen.canvas && performance.now() - deviceScreen.at < 400;
-    if (live) {
-      const dr = deviceScreen.canvas!.getBoundingClientRect();
-      if (!env.phone) {
-        keyAt.x = dr.left + deviceScreen.key[0]; keyAt.y = dr.top + deviceScreen.key[1] + window.scrollY; keyAt.w = Math.max(20, deviceScreen.key[2]);
-      } else {
-        const qd = deviceScreen.quad;
-        keyAt.x = dr.left + (qd[4] + qd[6]) / 2; keyAt.y = dr.top + (qd[5] + qd[7]) / 2 - 40 + window.scrollY; keyAt.w = 44;
-      }
-      keyAt.ok = true;
-    }
-    if (!keyAt.ok) return null;
-    sprite(KEY_SHEET, 48, 8);
-    sprite(KEY_GLYPH, 48, 8);
-
-    const sy0 = window.scrollY;
-    // The key's position for any progress u (0..1), so the trail can be
-    // drawn from where it was a moment ago.
-    const at = (u: number) => {
-      const kx = keyAt.x, ky = keyAt.y - sy0, kw = keyAt.w;
-      // The sprite's key fills ~90% of its cell at rest.
-      const s0 = kw * 1.1;
-      const charge = smooth(clamp01(u / 0.1));
-      const lift = clamp01((u - 0.08) / 0.2);
-      const fly = clamp01((u - 0.18) / 0.64);
-      const dock = smooth(clamp01((u - 0.82) / 0.18));
-      const lx = kx, ly = ky - kw * 0.06 * bell(charge) - easeOut(lift) * kw * 1.6;
-      // Glides to a spot over the cube, but never below the lower part of
-      // the screen: while the cube is still scrolling up into view, the key
-      // waits for it there, then settles in as it arrives.
-      const hx = cx, hy = Math.min(cy - edge * 1.3, env.vh * 0.6);
-      // A smooth cubic: up and out of the laptop, a long glide, then down
-      // over the cube. The control points stay on screen.
-      const e = easeInOut(fly);
-      const c1x = lx + (hx - lx) * 0.15, c1y = Math.max(env.vh * 0.1, ly - env.vh * 0.22);
-      const c2x = hx - (hx - lx) * 0.1, c2y = Math.max(env.vh * 0.1, hy - env.vh * 0.25);
-      const ie = 1 - e;
-      let x = ie * ie * ie * lx + 3 * ie * ie * e * c1x + 3 * ie * e * e * c2x + e * e * e * hx;
-      let y = ie * ie * ie * ly + 3 * ie * ie * e * c1y + 3 * ie * e * e * c2y + e * e * e * hy;
-      if (fly <= 0) { x = lx; y = ly; }
-      // Comes toward you as it lifts, swells mid-glide, then eases to the
-      // cube's size.
-      const big = Math.min(env.vw * (env.phone ? 0.2 : 0.075), 150);
-      const size = (lerp(lerp(s0, s0 * 2.4, easeOut(lift)), edge * 1.5, e) + bell(e) * big) * (1 - 0.45 * dock);
-      y = lerp(y, cy, dock * 0.85);
-      return { x, y, size };
-    };
-    const now = at(t);
-    // Ahead of the dock, the frame follows one eased turn (frame 0: resting
-    // on the keyboard; 47: settled at the island's angle).
-    const turn = easeInOut(clamp01((t - 0.1) / 0.72));
-    const trail: number[] = [];
-    for (let k = 1; k <= TRAIL; k++) {
-      const p = at(Math.max(0, t - k * 0.008));
-      trail.push(p.x, p.y);
-    }
-    const fade = smooth(clamp01((t - 0.9) / 0.1));
-    coreHandoff.pulse = bell(clamp01((t - 0.84) / 0.16));
-    return {
-      x: now.x, y: now.y, size: now.size,
-      frame: Math.round(turn * 47),
-      alpha: 1 - fade,
-      glyph: smooth(clamp01(t / 0.08)) * (1 - fade) + coreHandoff.pulse * 0.5,
-      trail, cx, cy, edge,
-      ring: clamp01((t - 0.86) / 0.14),
-      out: t > 0.02,
-    };
-  },
-  write(st, { ctx, accent }) {
-    deviceScreen.keyOut = st.out;
-    const keyS = sprite(KEY_SHEET, 48, 8);
-    const glyph = sprite(KEY_GLYPH, 48, 8);
-    tintSprite(glyph, accent);
-    ctx.globalCompositeOperation = 'lighter';
-    // A thin light trail behind it, thickest at the key.
-    if (st.alpha > 0) {
-      ctx.lineCap = 'round';
-      let px = st.x, py = st.y;
-      for (let k = 0; k < TRAIL; k++) {
-        const x = st.trail[k * 2], y = st.trail[k * 2 + 1];
-        const f = 1 - k / TRAIL;
-        ctx.strokeStyle = `rgba(${accent},${0.32 * f * st.alpha})`;
-        ctx.lineWidth = Math.max(1, st.size * 0.08 * f);
-        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(x, y); ctx.stroke();
-        px = x; py = y;
-      }
-      // Its backlight, spilling around it.
-      const g = ctx.createRadialGradient(st.x, st.y, 0, st.x, st.y, st.size * 0.85);
-      g.addColorStop(0, `rgba(${accent},${0.28 * st.glyph})`);
-      g.addColorStop(1, `rgba(${accent},0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(st.x - st.size, st.y - st.size, st.size * 2, st.size * 2);
-    }
-    if (st.ring > 0 && st.ring < 1) {
-      ctx.strokeStyle = `rgba(${accent},${0.7 * (1 - st.ring)})`;
-      ctx.lineWidth = 1.5;
-      ctx.beginPath(); ctx.ellipse(st.cx, st.cy, st.edge * (0.7 + 2 * st.ring), st.edge * (0.3 + 0.75 * st.ring), 0, 0, Math.PI * 2); ctx.stroke();
-    }
-    ctx.globalCompositeOperation = 'source-over';
-    drawSprite(ctx, keyS, st.frame, st.x, st.y, st.size, 0, 1, 1, st.alpha);
-    // The glyph in the palette colour, then once more additively as bloom.
-    drawSprite(ctx, glyph, st.frame, st.x, st.y, st.size, 0, 1, 1, Math.min(1, st.glyph) * st.alpha);
-    ctx.globalCompositeOperation = 'lighter';
-    drawSprite(ctx, glyph, st.frame, st.x, st.y, st.size, 0, 1, 1, 0.6 * Math.min(1, st.glyph) * st.alpha);
-    ctx.globalCompositeOperation = 'source-over';
-  },
-  hide() {
-    coreHandoff.pulse = 0;
-    deviceScreen.keyOut = false;
-  },
-};
 
 /* ── Impacts → Testimonials: particles. The Impacts stars drain into a
    stream of light that assembles, dot by dot, into the testimonials' globe:
@@ -379,5 +219,5 @@ const testimonialsToContact: Handoff<TxState> = {
   },
 };
 
-export const HANDOFFS: Handoff[] = [laptopToAbout, impactsToTestimonials, testimonialsToContact] as Handoff[];
+export const HANDOFFS: Handoff[] = [impactsToTestimonials, testimonialsToContact] as Handoff[];
 export type { HandoffEnv };

@@ -18,6 +18,4 @@ export const coreHandoff = {
   lift: 0,
   /** Written by Impacts: the DOM copy is out, so the 3D cube hides. */
   detached: false,
-  /** 0..1 — written by the laptop's clay key landing on the cube: it flares. */
-  pulse: 0,
 };

@@ -15,7 +15,12 @@ export const BEATS = {
   // object together. The laptop doesn't need this: its screen is face-down on
   // the keyboard until the lid opens.
   wakePhone: [0.13, 0.40] as const,
-  read: [0.5, 1.0] as const,    // device is LOCKED; content scrolls inside the screen
+  read: [0.5, 0.82] as const,   // device is LOCKED; content scrolls inside the screen
+  // The ending: the camera eases toward the keyboard, Return is pressed, then
+  // it pushes through the screen into the About section.
+  focus: [0.82, 0.87] as const,
+  press: [0.865, 0.9] as const,
+  dive: [0.9, 0.985] as const,
 };
 
 // ── Pose constants (tweak to taste) ──────────────────────────────────────
@@ -46,6 +51,11 @@ export function phase(p: number, [start, end]: readonly [number, number]): numbe
 /** easeInOutCubic */
 export function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/** Accelerates into the screen. */
+export function easeIn(t: number): number {
+  return t * t * t;
 }
 
 /** easeOutCubic */

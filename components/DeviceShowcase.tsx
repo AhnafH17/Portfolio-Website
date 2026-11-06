@@ -27,6 +27,7 @@ export default function DeviceShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLSpanElement>(null);
+  const fadeRef = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
 
   // Decided once on mount — we deliberately do NOT hot-swap on resize.
@@ -69,6 +70,8 @@ export default function DeviceShowcase() {
         if (hintRef.current) {
           hintRef.current.style.opacity = String(1 - Math.min(1, self.progress / 0.12));
         }
+        // The push through the screen lands in the About section's own dark.
+        if (fadeRef.current) fadeRef.current.style.opacity = String(Math.min(1, Math.max(0, (self.progress - 0.95) / 0.04)));
       },
     });
 
@@ -91,6 +94,8 @@ export default function DeviceShowcase() {
             <DeviceCanvas kind={mode} progress={progress} active={active} />
           )}
         </div>
+
+        <div ref={fadeRef} className="dv-fade" aria-hidden="true" />
 
         {/* "About Me" overlay — fades as the device turns. Suppressed in the
             static fallback, which carries its own eyebrow and title: .dv-sticky

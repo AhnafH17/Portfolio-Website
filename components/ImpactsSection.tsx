@@ -503,7 +503,8 @@ export default function ImpactsSection() {
       trigger: section,
       start: 'top top',
       end: PIN_LENGTH,
-      pin: true,
+      // Reduced motion shows the finished state, so there's nothing to hold for.
+      pin: !reduceMotion,
       // Pin a touch early on fast touch scrolls, so it doesn't jump into place.
       anticipatePin: 1,
       scrub: 0.5,

@@ -37,10 +37,10 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `assets/hero-portrait-master.png` / `hero-portrait-cutout.png` | Hero source photo and its background-removed cut-out (rembg, birefnet-portrait); the served files are encoded from the cut-out with sharp |
 | `public/models/*.glb` | Compressed (meshopt + WebP) by `scripts/optimize-models.mjs` from the Blender exports in `assets/models-src/`; re-run it after re-exporting |
 | `public/models/about-workspace.glb` | About-section 3D workspace, built by `scripts/build-about-workspace.py` in Blender |
-| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): laptop→About Return key, Impacts→Testimonials particles, Testimonials→Contact CRT switch-off + transmission |
-| `lib/deviceScreen.ts` / `lib/coreHandoff.ts` | Live screen positions the 3D scenes publish each frame (device screen corners + Return key position; About core cube) for handoffs to land on |
-| `public/images/handoff/*.webp` | The flying Return key: 48 Blender-rendered frames (8×6) of one smooth turn, `return-key` (the keycap) + `return-key-glyph` (white ↵, tinted to the accent at runtime). Source scene: `assets/handoff-sprites.blend` (HO_Key) |
-| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (the site hides it while the key flies) |
+| `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): Impacts→Testimonials particles, Testimonials→Contact CRT switch-off + transmission |
+| `lib/coreHandoff.ts` | The About core cube's live position, for its flight into Impacts |
+| `components/about/stops.ts` | The About tour: each camera stop and the words shown there. The section is 3D only; the same words sit in the HTML, visually hidden |
+| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (it presses at the end of the laptop section, then the camera pushes through the screen; see BEATS in `components/device/beats.ts`) |
 | `lib/caseStudies.ts` | Full case studies for all 11 projects (problem, role, approach, images, result), rendered by `ProjectPageContent`; images in `public/images/case/`. Facts only: a figure belongs to the project it was measured on, and dashboard images are labelled demo data |
 | `lib/projectBlur.ts` | Inlined blurred previews of the project thumbnails (no empty cards); regenerate with `node scripts/make-project-blur.mjs` when a thumbnail changes |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
@@ -98,6 +98,12 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - Metallic dark body reads flat black without an environment map — give the scene
   `RoomEnvironment` (PMREM) and `NeutralToneMapping` (the Blender preview uses
   Khronos PBR Neutral to match)
+
+### About Tour
+- The section is 3D only: pinned, centred, the camera tours six stops as you scroll, with words on panels in the scene (`components/about/stops.ts` holds both; `drawSign` paints the panels, rebuilt on palette change)
+- Stops are framed from each node's measured box and the screen size, so they fit any aspect ratio. Views come from the front right: labels face +Z and tops catch the light there
+- The same words are real HTML in `.ab3-copy`: visually hidden normally, shown under reduced motion or without WebGL
+- Laptop → About is one move: Return key presses, terminal shows `git push`, camera pushes through the screen into `.dv-fade`, and `.ab3-veil` lifts on the far side. The core stop holds, its panel clears, then the cube flies into Impacts as the scene's bottom edge dissolves
 
 ### Showcase Click Behavior
 - **Small cards (right panel)**: `onClick={() => handleSelect(idx)}` — switches displayed project only

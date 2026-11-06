@@ -718,6 +718,8 @@ function phoneContent(): ContentSurface {
 
 export interface LiveSurface {
   texture: THREE.CanvasTexture;
+  /** Holds the terminal on the finished deploy (the laptop's ending). */
+  deployed(on: boolean): void;
   update: (elapsed: number) => void;
 }
 
@@ -745,11 +747,12 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
   const CYCLE = 5.2;                // seconds per command
   const FPS = 12;
   let lastFrame = -1;
+  let held = false;
 
   const draw = (elapsed: number) => {
     const step = Math.floor(elapsed / CYCLE) % TERM_SCRIPT.length;
-    const t = (elapsed % CYCLE) / CYCLE;
-    const { cmd, out } = TERM_SCRIPT[step];
+    const t = held ? 1 : (elapsed % CYCLE) / CYCLE;
+    const { cmd, out } = held ? { cmd: 'git push', out: '✓ deployed' } : TERM_SCRIPT[step];
 
     c.fillStyle = '#080b11';
     c.fillRect(0, 0, rw, rh);
@@ -794,6 +797,9 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
 
   return {
     texture,
+    deployed: (on: boolean) => {
+      if (on !== held) { held = on; lastFrame = -1; }
+    },
     update: (elapsed: number) => {
       const frame = Math.floor(elapsed * FPS);
       if (frame === lastFrame) return;      // throttle — nothing changed
@@ -875,6 +881,7 @@ function islandSurface(): LiveSurface {
 
   return {
     texture,
+    deployed: () => {},
     update: (elapsed: number) => {
       const frame = Math.floor(elapsed * FPS);
       if (frame === lastFrame) return;

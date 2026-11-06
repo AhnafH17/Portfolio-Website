@@ -164,7 +164,10 @@ export default function DeviceCanvas({
           <Lightformer form="rect" intensity={1.4} position={[-4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
           <Lightformer form="rect" intensity={1.4} position={[4, 1, 2]} scale={[1, 5, 1]} color="#eef2f6" />
           {/* faint accent glint only */}
-          <Lightformer form="rect" intensity={0.35} position={[0, 0, -4]} scale={[6, 6, 1]} color={accent.glow} />
+          {/* Behind: neutral high up, where the laptop's deck reflects it at a
+              grazing angle, and the accent only low, for the edges. */}
+          <Lightformer form="rect" intensity={0.3} position={[0, 2, -5]} scale={[9, 3.2, 1]} color="#c9ced6" />
+          <Lightformer form="rect" intensity={0.35} position={[0, -1.6, -4]} scale={[6, 2.4, 1]} color={accent.glow} />
           <Lightformer form="rect" intensity={0.4} position={[0, -4, 1]} scale={[8, 4, 1]} color="#1a1f27" />
         </Environment>
       )}
