@@ -15,15 +15,19 @@ interface PreloaderProps {
   onDone: () => void;
 }
 
-/* Two lengths. The first visit in a session gets the full intro (~2.7s);
-   every reload after that, and anyone who prefers reduced motion, gets a
-   ~1.3s version without the hands. Either way the bars only open once the
-   hero underneath is ready (fonts, portrait, card images), so they never
-   reveal a half-loaded page; while it isn't, the gripping hands strain. */
+/* The hands play on every load. The first visit in a session gets the full
+   intro (~2.7s); reloads after that play it faster (~2s), and anyone who
+   prefers reduced motion gets a ~1.3s version without the hands. Either
+   way the bars only open once the hero underneath is ready (fonts,
+   portrait, card images), so they never reveal a half-loaded page; while
+   it isn't, the gripping hands strain. */
 const SEEN_KEY = 'pl-seen';
-// When the hands come (full) / the bars open (quick), in s from mount.
+// When the hands come (full / repeat) or the bars open (quick), in s from mount.
 const HANDS_AT_S = 0.9;
+const REPEAT_HANDS_AT_S = 0.6;
 const QUICK_OPEN_AT_S = 0.75;
+// How much faster the hands play on a repeat visit.
+const REPEAT_SPEED = 1.35;
 // Longest the reveal waits on the hero before opening anyway.
 const HERO_WAIT_MS = 3500;
 // Absolute ceiling — if anything goes wrong the site still gets revealed.
@@ -80,6 +84,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const artReady      = useRef<Promise<boolean> | null>(null);
   const ready         = useRef<Promise<void> | null>(null);
   const quick         = useRef(false);
+  const repeat        = useRef(false);
   const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
   const exitStarted   = useRef(false);
 
@@ -94,7 +99,8 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
       seen = sessionStorage.getItem(SEEN_KEY) === '1';
       sessionStorage.setItem(SEEN_KEY, '1');
     } catch { /* storage blocked: the full intro */ }
-    quick.current = seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    repeat.current = seen;
+    quick.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     ready.current = Promise.race([heroReady(), sleep(HERO_WAIT_MS)]);
 
     // The art loads while the name shows (~120KB); the hands only come in
@@ -108,7 +114,8 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     }
 
     const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
-    const hands = setTimeout(() => handsRef.current(), (quick.current ? QUICK_OPEN_AT_S : HANDS_AT_S) * 1000);
+    const at = quick.current ? QUICK_OPEN_AT_S : repeat.current ? REPEAT_HANDS_AT_S : HANDS_AT_S;
+    const hands = setTimeout(() => handsRef.current(), at * 1000);
     return () => {
       clearTimeout(safety);
       clearTimeout(hands);
@@ -144,7 +151,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
 
     // Start shut on a hairline of light, then open to the slit.
     const { s } = geo.current;
-    const k = quick.current ? 0.65 : 1;
+    const k = quick.current || repeat.current ? 0.65 : 1;
     gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
     gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
     // The name arrives whole as the slit opens: out of a blur, settling
@@ -181,6 +188,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
         openWhenReady(true);
       },
     });
+    if (repeat.current) tl.timeScale(REPEAT_SPEED);
     // The name dims as the hands come out of the dark.
     tl.to(nameRef.current, { opacity: 0.35, duration: 0.4, ease: 'power2.out' }, 0);
     tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0);
@@ -223,7 +231,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     tl.set(root, { background: 'transparent' }, 0.05);
     gsap.killTweensOf([top, bot], 'x');
     tl.set([top, bot], { x: 0 }, 0);
-    const pull = gripped ? 0.75 : quick.current ? 0.55 : 0.65;
+    const pull = gripped ? (repeat.current ? 0.62 : 0.75) : quick.current ? 0.55 : 0.65;
     tl.to(top, { y: outTop, duration: pull, ease: 'power4.inOut' }, 0.05);
     tl.to(bot, { y: outBot, duration: pull, ease: 'power4.inOut' }, 0.05);
   };
