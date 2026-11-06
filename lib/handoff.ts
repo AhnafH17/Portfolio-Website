@@ -98,14 +98,14 @@ export function seeded(seed: number) {
 
 /** A looping sprite sheet rendered in Blender (public/images/handoff/):
     `frames` square cells, `cols` per row. Loads on first use. */
-export interface Sprite { img: HTMLImageElement; frames: number; cols: number; cell: number; ready: boolean; tinted: HTMLCanvasElement | null }
+export interface Sprite { img: HTMLImageElement; frames: number; cols: number; cell: number; ready: boolean; tinted: HTMLCanvasElement | null; tintedFor: string }
 const sprites = new Map<string, Sprite>();
 export function sprite(url: string, frames: number, cols: number): Sprite {
   let s = sprites.get(url);
   if (!s) {
     const img = new Image();
     img.decoding = 'async';
-    const made: Sprite = { img, frames, cols, cell: 0, ready: false, tinted: null };
+    const made: Sprite = { img, frames, cols, cell: 0, ready: false, tinted: null, tintedFor: '' };
     img.onload = () => { made.cell = img.naturalWidth / cols; made.ready = true; };
     img.src = url;
     sprites.set(url, (s = made));
@@ -113,9 +113,9 @@ export function sprite(url: string, frames: number, cols: number): Sprite {
   return s;
 }
 
-/** The sheet multiplied by the accent colour (for the matte clay), made once. */
+/** The sheet multiplied by the accent colour, remade if the palette changes. */
 export function tintSprite(s: Sprite, rgb: string) {
-  if (!s.ready || s.tinted) return;
+  if (!s.ready || s.tintedFor === rgb) return;
   const c = document.createElement('canvas');
   c.width = s.img.naturalWidth; c.height = s.img.naturalHeight;
   const g = c.getContext('2d');
@@ -127,6 +127,7 @@ export function tintSprite(s: Sprite, rgb: string) {
   g.globalCompositeOperation = 'destination-in';
   g.drawImage(s.img, 0, 0);
   s.tinted = c;
+  s.tintedFor = rgb;
 }
 
 /** Draws frame `f` centred on (x, y), `size` px across, stretched by

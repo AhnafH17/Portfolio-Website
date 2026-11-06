@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import * as THREE from 'three';
 import Laptop, { MODEL_URL as LAPTOP_URL, SHADOW_URL } from './Laptop';
 import Phone, { MODEL_URL as PHONE_URL } from './Phone';
-import { readAccent } from '@/lib/accent';
+import { useAccent } from '@/lib/palette';
 
 /* The render loop stays off until the section is on screen, which used to
    mean the very first frame — shader compiles, texture uploads, the
@@ -123,7 +123,7 @@ export default function DeviceCanvas({
   progress: { current: number };
   active?: boolean;
 }) {
-  const accent = useMemo(() => readAccent(), []);
+  const accent = useAccent();
   const isPhone = kind === 'phone'; // phone === the mobile path → optimise hard
   const envResolution = isPhone ? 64 : 128;
   const [envReady, setEnvReady] = useState(false);

@@ -9,7 +9,7 @@ import {
   REGION, toPlane,
 } from './screenTexture';
 import { makeScreenMaterial, prepareModel, RETURN_KEY, screenTracker, SCREEN_PANEL } from './deviceModel';
-import { readAccent } from '@/lib/accent';
+import { useAccent } from '@/lib/palette';
 import { deviceScreen } from '@/lib/deviceScreen';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
@@ -39,10 +39,13 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   const { scene } = useGLTF(MODEL_URL);
   const shadowTex = useTexture(SHADOW_URL);
 
-  const accent = useMemo(() => readAccent(), []);
-  const chrome = useMemo(() => createChromeSurface('laptop'), []);
-  const content = useMemo(() => createContentSurface('laptop'), []);
-  const live = useMemo(() => createLiveSurface(), []);
+  // The screens are painted in the accent, so a new palette repaints them.
+  const accent = useAccent();
+  const chrome = useMemo(() => createChromeSurface('laptop'), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
+  const content = useMemo(() => createContentSurface('laptop'), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
+  const live = useMemo(() => createLiveSurface(), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { chrome.texture.dispose(); content.texture.dispose(); live.texture.dispose(); }, [chrome, content, live]);
+  const lidAngle = useRef<number | null>(null);
   // Only for the portal target below; the animation reaches the lid through
   // `rig`, set up once the model is in (three objects are mutated per frame).
   const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
@@ -61,8 +64,9 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     });
     const shadow = scene.getObjectByName('SHADOW') as THREE.Mesh | undefined;
     if (shadow) { shadow.material = shadowMat; shadow.renderOrder = -1; }
-    // The model rests open; the intro starts closed.
-    lid.rotation.x = P.lidClosed;
+    // The model rests open; the intro starts closed. (A repaint keeps the
+    // lid where it is.)
+    lid.rotation.x = lidAngle.current ?? P.lidClosed;
     rig.current = { lid, screen, track: screenTracker(scene, RETURN_KEY), returnKey: scene.getObjectByName('KEY_Return') ?? null };
     return () => { rig.current = null; screen.dispose(); shadowMat.dispose(); };
   }, [scene, chrome, shadowTex, accent]);
@@ -85,7 +89,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
 
     // Beat B — lid opens + rig settles into docked pose (then HOLDS)
     const open = easeInOut(phase(p, BEATS.open));
-    const lidAngle = THREE.MathUtils.lerp(P.lidClosed, P.lidOpen, open);
+    const lidTarget = THREE.MathUtils.lerp(P.lidClosed, P.lidOpen, open);
     const tiltX = THREE.MathUtils.lerp(0, P.dockTilt, open);
 
     // Responsive: fit the device to the actual visible area (adapts to resize).
@@ -107,7 +111,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     root.current.position.y += (targetPosY - root.current.position.y) * k;
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
     root.current.scale.setScalar(s);
-    r.lid.rotation.x += (lidAngle - r.lid.rotation.x) * k;
+    r.lid.rotation.x += (lidTarget - r.lid.rotation.x) * k;
+    lidAngle.current = r.lid.rotation.x;
 
     const target = 0.15 + wake * 1.0;
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;

@@ -8,7 +8,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
-import { readAccent } from '@/lib/accent';
+import { useAccent } from '@/lib/palette';
 import { coreHandoff } from '@/lib/coreHandoff';
 
 /* The About section's workspace scene (public/models/about-workspace.glb,
@@ -62,6 +62,9 @@ function seeded(seed: number) {
 
 interface Frame { x: number; y: number; w: number; h: number }
 
+// How much the island's edges glow: enough to read the shapes, under bloom.
+const EDGE_GLOW = 0.28;
+
 /* Whether to draw. R3F's loop always runs (its `frameloop` prop is re-applied
    whenever the canvas re-renders, which it does on scroll, so switching the
    loop off from inside got undone and froze the scene); instead every frame
@@ -79,6 +82,7 @@ function platformOf(obj: THREE.Object3D | null) {
 
 function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInside: RefObject<boolean> }) {
   const { scene } = useGLTF(MODEL_URL);
+  const accent = useAccent();
   const rootRef = useRef<THREE.Group>(null);
   const hovered = useRef<string | null>(null);
 
@@ -88,20 +92,35 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     platforms: Map<string, { node: THREE.Object3D; baseY: number; phase: number }>;
     core: THREE.Object3D | null;
     glow: number;
-    accentMat: THREE.MeshStandardMaterial | null;
+    coreMat: THREE.MeshStandardMaterial | null;
   } | null>(null);
 
   useEffect(() => {
-    const accent = readAccent();
-    let accentMat: THREE.MeshStandardMaterial | null = null;
+    // The core cube is the one thing that glows. Every glow in the model
+    // shares MAT_Accent_Emissive, so the core gets its own copy and the
+    // shared one drops to a faint edge that shows the shapes and no more.
+    const coreNode = scene.getObjectByName('CUBE_Core');
+    const under = new Set<THREE.Object3D>();
+    coreNode?.traverse((o) => under.add(o));
+    let coreMat: THREE.MeshStandardMaterial | null = null;
     scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
       const mat = mesh.material as THREE.MeshStandardMaterial;
-      if (mat.name === 'MAT_Accent_Emissive') {
+      if (mat.name === 'MAT_Accent_Core') {
         mat.emissive.set(accent.glow);
-        mat.toneMapped = false; // bright enough to cross the bloom threshold
-        accentMat = mat;
+        coreMat = mat;
+      } else if (mat.name === 'MAT_Accent_Emissive') {
+        mat.emissive.set(accent.glow);
+        mat.toneMapped = false;
+        if (under.has(mesh)) {
+          // Bright enough to cross the bloom threshold; nothing else is.
+          const own = (coreMat ??= mat.clone());
+          own.name = 'MAT_Accent_Core';
+          mesh.material = own;
+        } else {
+          mat.emissiveIntensity = EDGE_GLOW;
+        }
       } else if (mat.name === 'MAT_Body') {
         // Near-black and glossy: the shape comes from the rim light catching
         // edges and the accent lights spilling onto faces, not flat grey.
@@ -124,10 +143,10 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     modelRef.current = {
       platforms,
       core: scene.getObjectByName('CUBE_Core') ?? null,
-      accentMat: accentMat as THREE.MeshStandardMaterial | null,
+      coreMat: coreMat as THREE.MeshStandardMaterial | null,
       glow: glowScale(accent.glow),
     };
-  }, [scene]);
+  }, [scene, accent]);
 
   /* Hover. Checked by ray each frame (every other frame) rather than with
      pointer over/out events: the model is many small meshes, and moving
@@ -169,7 +188,7 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
       const target = baseY + drift + rise + (hovered.current === name ? LIFT : 0);
       node.position.y += (target - node.position.y) * k;
     });
-    if (model.accentMat) model.accentMat.emissiveIntensity = (2.2 + Math.sin(t * 1.6) * 0.35) * model.glow * (1 + coreHandoff.pulse * 0.7);
+    if (model.coreMat) model.coreMat.emissiveIntensity = (2.2 + Math.sin(t * 1.6) * 0.35) * model.glow * (1 + coreHandoff.pulse * 0.7);
 
     // Hand-off: while the Impacts section has the cube, hide it here and let
     // its platform go dark; otherwise publish where it is on screen, so the
@@ -282,49 +301,22 @@ function Workspace({ frame, pointerInside }: { frame: Frame | null; pointerInsid
     if (world.fog instanceof THREE.Fog) { world.fog.near = d - 1; world.fog.far = d + 13; }
   }, [scene, get, width, height, frame]);
 
-  // Accent lights sit where the model glows (model space, so they sway with
-  // it): this is what spills the glow onto the surrounding surfaces.
-  const { glow, k } = useMemo(() => { const g = readAccent().glow; return { glow: g, k: glowScale(g) * 0.75 }; }, []);
+  // The one coloured light: the core's, in model space so it sways with it.
+  const k = glowScale(accent.glow) * 0.75;
   return (
     <group ref={rootRef}>
       <primitive object={scene} />
-      <pointLight position={[0, 1.05, -0.15]} intensity={7 * k} distance={3.2} decay={2} color={glow} />
-      <pointLight ref={coreLightRef} position={[0.39, 1.25, 0.6]} intensity={5 * k} userData={{ base: 5 * k }} distance={2.4} decay={2} color={glow} />
-      <pointLight position={[0, 2.4, -1.0]} intensity={6 * k} distance={3.4} decay={2} color={glow} />
-      <pointLight position={[-0.95, 0.85, 1.35]} intensity={3.5 * k} distance={2.6} decay={2} color={glow} />
-      <pointLight position={[0.95, 0.85, 1.35]} intensity={3.5 * k} distance={2.6} decay={2} color={glow} />
-      <Beams glow={glow} />
+      <pointLight ref={coreLightRef} position={[0.39, 1.25, 0.6]} intensity={7 * k} userData={{ base: 7 * k }} distance={3} decay={2} color={accent.glow} />
     </group>
   );
 }
 
-/* Thin vertical light beams rising out of the island, like the reference. */
-const BEAMS: [number, number, number][] = [[-0.55, 2.2, -1.25], [0.75, 2.4, -1.35], [1.45, 1.8, -0.55]];
-function Beams({ glow }: { glow: string }) {
-  const mat = useMemo(() => {
-    const m = new THREE.MeshBasicMaterial({ color: glow, transparent: true, opacity: 0.35 * glowScale(glow), depthWrite: false, blending: THREE.AdditiveBlending });
-    m.toneMapped = false;
-    return m;
-  }, [glow]);
-  return (
-    <>
-      {BEAMS.map(([x, y, z], i) => (
-        <mesh key={i} position={[x, y + 1.6 + i * 0.3, z]} material={mat}>
-          <boxGeometry args={[0.01, 3 + i * 0.6, 0.01]} />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-/* The world around the island: a glossy floor that picks up the glow, and a
-   dim field of towers (some with glowing beacons) fading into fog — so the
-   model sits in a place, not on an empty shelf. Static, so the island's sway
-   reads against it. One instanced draw call for towers, one for beacons. */
-function Surroundings({ glow }: { glow: string }) {
+/* The world around the island: a glossy floor and a dim field of towers
+   fading into fog, so the model sits in a place, not on an empty shelf.
+   Static, so the island's sway reads against it. One instanced draw call. */
+function Surroundings() {
   const towersRef = useRef<THREE.InstancedMesh>(null);
-  const beaconsRef = useRef<THREE.InstancedMesh>(null);
-  const { towers, beacons } = useMemo(() => {
+  const towers = useMemo(() => {
     const rand = seeded(0x51ab3);
     const towers: { x: number; z: number; w: number; d: number; h: number }[] = [];
     while (towers.length < 80) {
@@ -340,8 +332,7 @@ function Surroundings({ glow }: { glow: string }) {
       const h = 0.4 + rand() * (0.8 + r * 0.32);
       towers.push({ x, z, w, d, h });
     }
-    const beacons = towers.filter((_, i) => i % 3 === 0);
-    return { towers, beacons };
+    return towers;
   }, []);
 
   useEffect(() => {
@@ -353,19 +344,8 @@ function Surroundings({ glow }: { glow: string }) {
       m.compose(p.set(t.x, t.h / 2, t.z), q, s.set(t.w, t.h, t.d));
       towersRef.current?.setMatrixAt(i, m);
     });
-    beacons.forEach((t, i) => {
-      m.compose(p.set(t.x, t.h + 0.03, t.z), q, s.set(Math.min(t.w, 0.3), 0.06, Math.min(t.d, 0.3)));
-      beaconsRef.current?.setMatrixAt(i, m);
-    });
     if (towersRef.current) towersRef.current.instanceMatrix.needsUpdate = true;
-    if (beaconsRef.current) beaconsRef.current.instanceMatrix.needsUpdate = true;
-  }, [towers, beacons]);
-
-  const beaconMat = useMemo(() => {
-    const m = new THREE.MeshStandardMaterial({ color: '#000000', emissive: glow, emissiveIntensity: 2.4 * glowScale(glow) });
-    m.toneMapped = false;
-    return m;
-  }, [glow]);
+  }, [towers]);
 
   return (
     <>
@@ -376,9 +356,6 @@ function Surroundings({ glow }: { glow: string }) {
       <instancedMesh ref={towersRef} args={[undefined, undefined, towers.length]}>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#0e1013" metalness={0.3} roughness={0.55} />
-      </instancedMesh>
-      <instancedMesh ref={beaconsRef} args={[undefined, undefined, beacons.length]} material={beaconMat}>
-        <boxGeometry args={[1, 1, 1]} />
       </instancedMesh>
     </>
   );
@@ -536,7 +513,6 @@ export default function WorkspaceCanvas({ stageRef }: { stageRef: RefObject<HTML
   const wrapRef = useRef<HTMLDivElement>(null);
   // Whether the pointer is over the canvas itself (not the copy on top of it).
   const pointerInside = useRef(false);
-  const glow = useMemo(() => readAccent().glow, []);
   // Small screens get a lighter render: 1x pixels, no antialiasing, no bloom.
   const lite = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches, []);
 
@@ -564,7 +540,7 @@ export default function WorkspaceCanvas({ stageRef }: { stageRef: RefObject<HTML
         <directionalLight position={[7, 4, 6]} intensity={0.55} />
         <directionalLight position={[-8, 2.2, -5]} intensity={0.9} color="#d5deea" />
         <Atmosphere />
-        <Surroundings glow={glow} />
+        <Surroundings />
         <FramedWorkspace wrapRef={wrapRef} stageRef={stageRef} pointerInside={pointerInside} />
         {lite ? <PlainRender /> : <Bloom />}
         <Prewarm />

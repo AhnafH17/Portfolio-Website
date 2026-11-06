@@ -83,7 +83,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - Rebuilt from scratch by `scripts/build-about-workspace.py` (run inside Blender; it only
   touches the `AboutWorkspace` scene). References: `assets/references/about-workspace/`
 - Every glow shares ONE material, `MAT_Accent_Emissive`, so the palette recolours it at
-  runtime. No texture holds accent colour; the screen's accent marks are meshes
+  runtime (the site clones it for `CUBE_Core` and dims the shared one: only the core glows). No texture holds accent colour; the screen's accent marks are meshes
 - The exporter normalises emissive: colour is stored as a unit colour plus
   `emissiveStrength` 2.415 (= #CC182C × 4). When recolouring set both `emissive` and
   `emissiveIntensity` (≈ 2.4), not just the colour
@@ -106,9 +106,12 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - **Mobile cards**: `onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}` — both switch + open
 
 ## Palette
-- Four palettes (crimson, teal, amber, purple), random per visit. Lock one with `?theme=red|teal|amber|purple`
-  (aliases: crimson, green, gold, magenta); it's kept for the session. `?theme=random` clears it.
-  Use `?theme=red` (or your pick) in the Awwwards submission link.
+- The site starts crimson. Four palettes exist (crimson, teal, amber, purple); the Return key
+  (`components/ReturnKey.tsx`) and a sent contact message step through them with a colour wave
+  (`nextPalette` in `lib/palette.ts`, View Transitions). The choice lasts the session.
+- `?theme=red|teal|amber|purple` (aliases: crimson, green, gold, magenta) forces one for the session.
+- Anything drawn in the accent outside CSS must follow changes: `useAccent()` in React scenes,
+  `onPaletteChange()` in canvas loops. Don't read the accent once at mount.
 - Every palette passes WCAG AA for body, dim, small-accent and placeholder text; keep it that way
   when changing tokens (crimson's `--accent-glow` was lifted to #F23D50 for that).
 

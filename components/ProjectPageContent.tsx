@@ -7,6 +7,8 @@ import { motion, MotionConfig } from 'framer-motion';
 import { Project, StripMeta, projectData } from '@/lib/projects';
 import { CASE_STUDIES, CASE_STUDY_ORDER, type CaseImage, type CaseStudy } from '@/lib/caseStudies';
 import { readAccent } from '@/lib/accent';
+import { onPaletteChange } from '@/lib/palette';
+import ReturnKey from '@/components/ReturnKey';
 
 // Simple Icons CDN slug mapping — https://simpleicons.org
 const ICONS: Record<string, string> = {
@@ -82,10 +84,15 @@ export default function ProjectPageContent({ project, meta }: Props) {
   // Scroll to top instantly before the slide-in animation plays
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-    setIconColor(readAccent().glow.replace('#', '') || 'cc182c');
+    const tint = () => setIconColor(readAccent().glow.replace('#', '') || 'cc182c');
+    tint();
+    return onPaletteChange(tint);
   }, []);
 
   return (
+    <>
+    {/* Outside .proj-page: its entrance transform would break position:fixed. */}
+    <ReturnKey />
     <div className="proj-page">
 
       {/* ── HERO ── */}
@@ -241,6 +248,7 @@ export default function ProjectPageContent({ project, meta }: Props) {
         )}
       </div>
     </div>
+    </>
   );
 }
 

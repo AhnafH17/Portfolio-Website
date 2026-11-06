@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { onPaletteChange } from '@/lib/palette';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { coreHandoff } from '@/lib/coreHandoff';
@@ -154,7 +155,9 @@ export default function ImpactsSection() {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     // Phones get a lighter sky and galaxy.
     const phone = window.matchMedia('(max-width: 768px)').matches;
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const readRgb = () => getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    let accent = readRgb();
+    const offPalette = onPaletteChange(() => { accent = readRgb(); });
 
     // Seeded background stars (same sky every visit), in -1..1 around centre.
     let seed = 0x1a2b3c;
@@ -509,6 +512,7 @@ export default function ImpactsSection() {
     });
 
     return () => {
+      offPalette();
       st.kill();
       io.disconnect();
       ro.disconnect();

@@ -8,6 +8,7 @@ import CustomCursor from '@/components/CustomCursor';
 import Preloader from '@/components/Preloader';
 import Footer from '@/components/Footer';
 import HandoffLayer from '@/components/handoff/HandoffLayer';
+import ReturnKey from '@/components/ReturnKey';
 import { homeGraph, jsonLd } from '@/lib/schema';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -166,6 +167,7 @@ export default function Home() {
             needs (the sections above only arrive after mount). */}
         <Footer />
         {reveal && <HandoffLayer />}
+        {reveal && <ReturnKey />}
       </div>
     </>
   );

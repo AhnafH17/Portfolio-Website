@@ -762,38 +762,6 @@ section{padding:7rem 3rem;position:relative}
   -webkit-mask-image:radial-gradient(ellipse 70% 70% at 60% 45%,#000 30%,transparent 80%);
           mask-image:radial-gradient(ellipse 70% 70% at 60% 45%,#000 30%,transparent 80%);
 }
-/* Synthwave sun: banded, rising slowly behind the console. */
-.ct-sun{
-  position:absolute;left:50%;bottom:40%;width:clamp(280px,34vw,720px);aspect-ratio:1;margin-left:calc(clamp(280px,34vw,720px) / -2);border-radius:50%;pointer-events:none;
-  background:linear-gradient(to bottom, rgba(var(--accent-rgb),0.85), rgba(var(--accent-rgb),0.25) 60%, transparent 85%);
-  -webkit-mask-image:repeating-linear-gradient(to bottom,#000 0 55%,transparent 55% 58%,#000 58% 63%,transparent 63% 67%,#000 67% 71%,transparent 71% 76%,#000 76% 80%,transparent 80% 86%,#000 86% 100%);
-          mask-image:repeating-linear-gradient(to bottom,#000 0 55%,transparent 55% 58%,#000 58% 63%,transparent 63% 67%,#000 67% 71%,transparent 71% 76%,#000 76% 80%,transparent 80% 86%,#000 86% 100%);
-  opacity:.3;filter:drop-shadow(0 0 40px rgba(var(--accent-rgb),0.6));
-  animation:ctSun 14s ease-in-out infinite alternate;
-}
-@keyframes ctSun{from{transform:translateY(6%)}to{transform:translateY(-4%)}}
-/* Endless neon floor: a grid plane laid back in perspective, its pattern
-   sliding toward the viewer (a transform loop, so no repaints). */
-.ct-floor{
-  position:absolute;left:0;right:0;bottom:0;height:40%;overflow:hidden;pointer-events:none;perspective:260px;
-  -webkit-mask-image:linear-gradient(to top,#000 55%,transparent);
-          mask-image:linear-gradient(to top,#000 55%,transparent);
-}
-.ct-floor::before{ /* horizon glow */
-  content:'';position:absolute;left:0;right:0;top:0;height:2px;z-index:1;
-  background:linear-gradient(90deg,transparent,rgba(var(--accent-rgb),0.9) 30%,rgba(var(--accent-rgb),0.9) 70%,transparent);
-  box-shadow:0 0 22px 3px rgba(var(--accent-rgb),0.55);
-}
-.ct-floor-plane{position:absolute;left:-80%;width:260%;top:0;height:220%;transform-origin:50% 0;transform:rotateX(-76deg)}
-.ct-floor-grid{
-  position:absolute;left:0;right:0;top:-80px;bottom:0;will-change:transform;
-  background:
-    linear-gradient(rgba(var(--accent-rgb),0.8) 2px,transparent 2px) 0 0/80px 80px,
-    linear-gradient(90deg,rgba(var(--accent-rgb),0.7) 2px,transparent 2px) 0 0/80px 80px;
-  animation:ctFloor 1.6s linear infinite;
-}
-@keyframes ctFloor{to{transform:translateY(80px)}}
-@media (prefers-reduced-motion:reduce){.ct-floor-grid,.ct-sun{animation:none}}
 
 /* Glitch on "Let's build": two offset copies flicker through slices every few seconds. */
 .ct-glitch{position:relative;display:inline-block}
@@ -851,7 +819,10 @@ section{padding:7rem 3rem;position:relative}
   transition:transform .2s,box-shadow .2s,filter .2s;
 }
 .ct-submit svg{width:16px;height:16px;transition:transform .25s}
-.ct-submit:hover{transform:translateY(-2px);filter:brightness(1.08)}
+/* Send is a Return key: it has depth and travels down when pressed. */
+.ct-submit{box-shadow:0 5px 0 var(--accent),0 12px 22px rgba(0,0,0,0.4);transition:transform .16s cubic-bezier(.3,1.6,.5,1),box-shadow .16s,filter .2s}
+.ct-submit:hover{filter:brightness(1.08)}
+.ct-submit:active{transform:translateY(4px);box-shadow:0 1px 0 var(--accent),0 3px 8px rgba(0,0,0,0.4);transition-duration:.06s}
 .ct-submit:hover svg{transform:translate(3px,-3px)}
 .ct-submit:disabled{opacity:.6;cursor:progress;transform:none}
 .ct-form[data-state="sent"] .ct-submit svg{transform:translate(40px,-40px);opacity:0;transition:transform .7s ease-in,opacity .7s}
@@ -1950,59 +1921,6 @@ footer span{color:var(--accent-glow)}
    a slow raster the first time it painted) on a 300%-wide ::before that
    slides for the idle spin; ::after adds the spherical shading. The
    top-left one takes the visitor's accent colour. */
-.cs-planet{
-  position:absolute; border-radius:50%; overflow:hidden; isolation:isolate;
-  will-change:transform;
-}
-.cs-planet::before{
-  content:''; position:absolute; top:0; left:0; width:300%; height:100%;
-  background:var(--planet-bands);
-  background-size:33.3334% 100%; background-repeat:repeat-x;
-  animation:cs-planet-spin var(--planet-spin) linear infinite;
-  translate:calc(var(--spin-shift, 0%) * -1) 0;
-  will-change:transform;
-}
-.cs-planet::after{
-  content:''; position:absolute; inset:0; border-radius:50%;
-  background:radial-gradient(circle at var(--light-x) var(--light-y),
-    rgba(255,255,255,0.10) 0%, transparent 16%, rgba(0,0,0,0.55) 40%, rgba(0,0,0,0.93) 62%);
-  box-shadow:inset 0 0 40px var(--planet-rim);
-}
-@keyframes cs-planet-spin{ from{ transform:translateX(0); } to{ transform:translateX(-33.3333%); } }
-.cs-planet-tl{
-  top:-14vw; left:-10vw; width:32vw; height:32vw;
-  background:#07090c;
-  box-shadow:0 0 70px rgba(var(--accent-rgb),0.14);
-  --light-x:80%; --light-y:84%;
-  --planet-rim:rgba(var(--accent-rgb),0.28);
-  --planet-spin:90s;
-  --planet-bands:
-    radial-gradient(ellipse 30% 9% at 30% 38%, rgba(var(--accent-rgb),0.30), transparent 70%),
-    radial-gradient(ellipse 22% 7% at 72% 62%, rgba(var(--accent-rgb),0.22), transparent 70%),
-    repeating-linear-gradient(176deg,
-      rgba(var(--accent-rgb),0.20) 0 5%, rgba(var(--accent-rgb),0.06) 5% 11%,
-      rgba(255,255,255,0.05) 11% 13%, rgba(var(--accent-rgb),0.14) 13% 21%, transparent 21% 26%);
-}
-/* The gas giant: banded in lighter and darker shades of the palette's
-   accent (it was a fixed orange, off-palette in every theme but amber). */
-.cs-planet-tr{
-  top:-16vw; right:-12vw; width:26vw; height:26vw;
-  background:color-mix(in srgb, rgb(var(--accent-rgb)) 12%, #050608);
-  box-shadow:0 0 80px rgba(var(--accent-rgb),0.16);
-  --light-x:20%; --light-y:84%;
-  --planet-rim:color-mix(in srgb, rgba(var(--accent-rgb),0.35) 70%, rgba(255,255,255,0.35));
-  --planet-spin:70s;
-  --planet-bands:
-    radial-gradient(ellipse 14% 6% at 62% 46%, color-mix(in srgb, rgba(var(--accent-rgb),0.6) 70%, rgba(255,255,255,0.6)), transparent 70%),
-    repeating-linear-gradient(180deg,
-      color-mix(in srgb, rgba(var(--accent-rgb),0.55) 75%, rgba(255,255,255,0.55)) 0 4%,
-      color-mix(in srgb, rgba(var(--accent-rgb),0.45) 45%, rgba(0,0,0,0.45)) 4% 9%,
-      color-mix(in srgb, rgba(var(--accent-rgb),0.35) 50%, rgba(255,255,255,0.35)) 9% 12%,
-      color-mix(in srgb, rgba(var(--accent-rgb),0.5) 35%, rgba(0,0,0,0.5)) 12% 18%,
-      rgba(var(--accent-rgb),0.4) 18% 23%);
-}
-@media (prefers-reduced-motion:reduce){ .cs-planet::before{ animation:none; } }
-
 /* Soft colour wash behind the panels (no blur filter: the gradients are
    already soft, and a filtered layer this size costs a full repaint). */
 .cs-nebula{
@@ -2011,26 +1929,6 @@ footer span{color:var(--accent-glow)}
   background:
     radial-gradient(ellipse 45% 55% at 32% 42%, rgba(var(--accent-rgb),0.10), transparent 70%),
     radial-gradient(ellipse 40% 50% at 68% 56%, rgba(218,150,38,0.07), transparent 70%);
-}
-.cs-asteroids{ position:absolute; inset:0; }
-.cs-asteroid{
-  position:absolute; border-radius:42% 58% 60% 40% / 55% 45% 58% 42%;
-  background:radial-gradient(circle at 35% 30%, rgba(80,70,60,0.9), rgba(6,5,4,0.98) 65%);
-  box-shadow:inset -6px -6px 14px rgba(0,0,0,0.6);
-}
-.cs-horizon{ position:absolute; left:0; right:0; bottom:-18vh; height:38vh; }
-.cs-horizon-curve{
-  position:absolute; left:50%; bottom:0; width:150vw; height:60vh;
-  transform:translateX(-50%); border-radius:50%;
-  background:linear-gradient(to bottom, transparent 0%, rgba(4,10,9,0.7) 8%, var(--black-deep) 30%);
-  box-shadow:0 -2px 60px rgba(var(--accent-rgb),0.32), 0 -1px 0 rgba(var(--accent-rgb),0.55);
-}
-.cs-surface{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
-.cs-horizon-glow{
-  position:absolute; left:50%; bottom:22vh; width:150vw; height:2px;
-  transform:translateX(-50%);
-  background:linear-gradient(to right, transparent 0%, rgba(var(--accent-rgb),0.75) 20%, rgba(var(--accent-rgb),0.95) 50%, rgba(var(--accent-rgb),0.75) 80%, transparent 100%);
-  box-shadow:0 0 24px 4px rgba(var(--accent-rgb),0.5);
 }
 
 /* ── HUD: hairline corner marks + mono microtype ── */
@@ -2252,7 +2150,6 @@ footer span{color:var(--accent-glow)}
     --cs-vh:100vh; --cs-top:calc(var(--cs-hud-top) + 7.4rem); --cs-bottom:calc(2.4vh + 3.4rem);
   }
   @supports (height:100svh){ .cs-section{ --cs-vh:100svh; } }
-  .cs-planet-tl,.cs-planet-tr{ width:44vw; height:44vw; }
   .cs-hud-text.is-bl, .cs-hud-text.is-br, .cs-hud-corner.is-bl, .cs-hud-corner.is-br{ display:none; }
   .cs-hud-text{ font-size:0.56rem; letter-spacing:0.22em; }
   .cs-hud-text.is-tl, .cs-hud-text.is-tr{ top:calc(var(--cs-hud-top) - 0.2rem); }
@@ -2532,3 +2429,60 @@ footer span{color:var(--accent-glow)}
 }
 .pl-top .pl-art{ top:var(--art-top, 0); height:var(--art-split, 50vh); }
 .pl-bottom .pl-art{ top:var(--art-top, 50vh); height:var(--art-rest, 50vh); }
+
+/* ══ The Return key: a keycap in the corner (components/ReturnKey.tsx).
+   Pressing it spreads the next palette across the page (lib/palette.ts). ══ */
+.rk{
+  position:fixed; left:1.5rem; bottom:1.5rem; z-index:950;
+  width:68px; height:58px; padding:0 0 6px; border:none; background:none; cursor:pointer;
+  color:var(--accent-light); -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+  animation:rkIn .7s cubic-bezier(.2,1.3,.4,1) 1.5s both;
+}
+.rk-cap{
+  position:relative; display:grid; place-items:center; width:100%; height:100%; border-radius:10px;
+  background:linear-gradient(165deg, #2a2f38 0%, #191d24 46%, #12151a 100%);
+  border:1px solid rgba(255,255,255,0.09); border-bottom-color:rgba(0,0,0,0.6);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.14),
+    inset 0 -3px 6px rgba(0,0,0,0.45),
+    0 6px 0 #07090c,
+    0 7px 0 rgba(var(--accent-rgb),0.5),
+    0 14px 22px rgba(0,0,0,0.5);
+  transition:transform .2s cubic-bezier(.3,1.7,.5,1), box-shadow .2s cubic-bezier(.3,1.7,.5,1);
+}
+.rk-cap::after{ /* the backlight bleeding out from under the cap */
+  content:''; position:absolute; inset:auto 12% -9px; height:9px; border-radius:50%;
+  background:rgba(var(--accent-rgb),0.55); filter:blur(6px); z-index:-1;
+}
+.rk-cap svg{ width:26px; height:26px; filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),0.75)); }
+.rk:hover .rk-cap{ transform:translateY(1px); }
+.rk:active .rk-cap, .rk.is-down .rk-cap{
+  transform:translateY(5px); transition-duration:.05s;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.1),
+    inset 0 -2px 4px rgba(0,0,0,0.45),
+    0 1px 0 #07090c,
+    0 2px 0 rgba(var(--accent-rgb),0.7),
+    0 4px 8px rgba(0,0,0,0.5);
+}
+.rk:focus-visible{ outline:2px solid var(--accent-light); outline-offset:5px; border-radius:12px; }
+.rk-hint{
+  position:absolute; left:calc(100% + .85rem); top:50%; translate:0 -60%; white-space:nowrap;
+  font-family:var(--font-body); font-weight:600; font-size:.72rem; letter-spacing:.18em; text-transform:uppercase;
+  color:var(--gold-bright); pointer-events:none;
+  animation:rkHint 6s ease 2.4s both;
+}
+@keyframes rkIn{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
+@keyframes rkHint{ 0%{ opacity:0; } 8%,80%{ opacity:1; } 100%{ opacity:0; } }
+@media (max-width:768px){
+  /* Bottom right on phones: their content is left-aligned. */
+  .rk{ left:auto; right:1rem; bottom:1rem; width:60px; height:52px; }
+  .rk-hint{ left:auto; right:calc(100% + .75rem); }
+  .rk-cap svg{ width:23px; height:23px; }
+}
+@media (hover:none){ .rk-hint{ font-size:0; } .rk-hint::after{ content:'Tap'; font-size:.72rem; } }
+@media (prefers-reduced-motion:reduce){ .rk{ animation:none; } .rk-hint{ display:none; } }
+
+/* The colour wave: old colours stay put while the new page is revealed
+   through a growing circle (the animation is set in lib/palette.ts). */
+::view-transition-old(root), ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }

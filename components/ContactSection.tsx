@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SOCIAL } from '@/lib/site';
+import { nextPalette, onPaletteChange } from '@/lib/palette';
 
 /* Contact as a "transmission console": the form on the left, and on the
    right a panel of real details only (availability, the email address with a
    copy button, what I'm a good fit for, and social links once they exist in
    lib/site.ts), with a live signal scope that reacts to typing. Behind it:
-   a synthwave sun and an endless neon grid floor (CSS only), and a glitch
-   on "Let's build". The testimonials' transmission lands on the console
+   a faint grid, and a glitch on "Let's build". The testimonials' transmission lands on the console
    (components/handoff/handoffs.ts). */
 
 /** Oscilloscope trace: an idle carrier that spikes as the visitor types and
@@ -19,7 +19,9 @@ function SignalScope({ energy }: { energy: React.RefObject<number> }) {
     const c = ref.current;
     const ctx = c?.getContext('2d');
     if (!c || !ctx) return;
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const readRgb = () => getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    let accent = readRgb();
+    const offPalette = onPaletteChange(() => { accent = readRgb(); });
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let dpr = 1, w = 0, h = 0, amp = 0.15;
     const size = () => { dpr = Math.min(2, window.devicePixelRatio || 1); w = c.offsetWidth; h = c.offsetHeight; c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); };
@@ -58,7 +60,7 @@ function SignalScope({ energy }: { energy: React.RefObject<number> }) {
       else if (!e.isIntersecting && raf !== null) { cancelAnimationFrame(raf); raf = null; }
     });
     io.observe(c);
-    return () => { io.disconnect(); ro.disconnect(); if (raf !== null) cancelAnimationFrame(raf); };
+    return () => { offPalette(); io.disconnect(); ro.disconnect(); if (raf !== null) cancelAnimationFrame(raf); };
   }, [energy]);
   return <canvas ref={ref} className="ct-scope" aria-hidden="true" />;
 }
@@ -71,6 +73,7 @@ type SendState = 'idle' | 'sending' | 'sent' | 'error';
 
 export default function ContactSection() {
   const formRef = useRef<HTMLFormElement>(null);
+  const sendRef = useRef<HTMLButtonElement>(null);
   const [state, setState] = useState<SendState>('idle');
   const [copied, setCopied] = useState(false);
   // Typing feeds the signal scope.
@@ -88,6 +91,10 @@ export default function ContactSection() {
       if (!data.success) throw new Error(data.message || 'Something went wrong.');
       setState('sent');
       formRef.current?.reset();
+      // The site ends on the visitor's keypress: Send is a Return key too,
+      // and a sent message sets off the same colour wave from the button.
+      const r = sendRef.current?.getBoundingClientRect();
+      if (r) nextPalette(r.left + r.width / 2, r.top + r.height / 2);
     } catch {
       setState('error');
     }
@@ -104,10 +111,6 @@ export default function ContactSection() {
   return (
     <section id="contact" className="ct-section">
       <div className="ct-grid-bg" aria-hidden="true" />
-      <div className="ct-sun" aria-hidden="true" />
-      <div className="ct-floor" aria-hidden="true">
-        <div className="ct-floor-plane"><div className="ct-floor-grid" /></div>
-      </div>
 
       <div className="ct-wrap">
         <div className="ct-left reveal">
@@ -142,7 +145,7 @@ export default function ContactSection() {
             </div>
 
             <div className="ct-actions">
-              <button type="submit" className="ct-submit" disabled={state === 'sending'}>
+              <button ref={sendRef} type="submit" className="ct-submit" disabled={state === 'sending'}>
                 <span className="ct-submit-label">{state === 'sending' ? 'Sending…' : state === 'sent' ? 'Sent' : 'Send message'}</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 12 20 4l-5 16-3-7-8-1Z" />

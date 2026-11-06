@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { Handoff, HandoffEnv } from '@/lib/handoff';
 import { HANDOFFS } from './handoffs';
+import { onPaletteChange } from '@/lib/palette';
 
 /* One fixed overlay for every section handoff (see lib/handoff.ts): a 2D
    canvas the canvas-drawn ones share, plus room for DOM pieces. One loop,
@@ -25,7 +26,8 @@ export default function HandoffLayer() {
     const ctx = canvas.getContext('2d');
     if (!ctx) { layer.remove(); return; }
 
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const readRgb = () => getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const accent = readRgb();
     const env: HandoffEnv = { vw: 0, vh: 0, phone, time: 0, layer, ctx, accent };
     let dpr = 1;
     const size = () => {
@@ -37,6 +39,7 @@ export default function HandoffLayer() {
     };
     size();
     window.addEventListener('resize', size);
+    const offPalette = onPaletteChange(() => { env.accent = readRgb(); });
 
     // Which handoffs are near the screen. Sections mount lazily, so each
     // one's zone is (re)observed until its elements exist.
@@ -93,6 +96,7 @@ export default function HandoffLayer() {
       if (raf !== null) cancelAnimationFrame(raf);
       window.clearInterval(zonePoll);
       window.removeEventListener('resize', size);
+      offPalette();
       io.disconnect();
       for (const h of shown) h.hide(env);
       layer.remove();

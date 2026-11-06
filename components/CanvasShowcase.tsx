@@ -6,13 +6,12 @@ import { PROJECT_BLUR } from '@/lib/projectBlur';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { projectData, stripMeta, ProjectKey } from '@/lib/projects';
-import PlanetSurface, { ShowcaseStars, STAR_PARALLAX } from './canvas-showcase/PlanetSurface';
+import { ShowcaseStars, STAR_PARALLAX } from './canvas-showcase/ShowcaseStars';
 
 gsap.registerPlugin(ScrollTrigger);
 
-/* "Orbital HUD": the pinned Selected Work scene. A flight over the night
-   side of a planet (one 2D canvas: stars, perspective grid, city lights),
-   framed by hairline HUD marks. One giant category title rides a horizontal
+/* The pinned Selected Work scene: a starfield framed by hairline HUD
+   marks. One giant category title rides a horizontal
    track (Swiss kinetic type) and three flat project panels change category
    with a shutter wipe. Every per-frame change is written to the DOM through
    refs, never React state, so scrolling never re-renders the section. */
@@ -78,18 +77,6 @@ const TAGS: Record<ProjectKey, string[]> = Object.fromEntries(
 ) as Record<ProjectKey, string[]>;
 
 /* Fixed (non-random) asteroid silhouettes along the bottom edge. */
-const ASTEROIDS = [
-  { left: '4%', bottom: '-4%', size: 110, rotate: -12, opacity: 0.9 },
-  { left: '19%', bottom: '-8%', size: 150, rotate: 8, opacity: 0.95 },
-  { left: '30%', bottom: '10%', size: 30, rotate: -20, opacity: 0.6 },
-  { left: '80%', bottom: '-10%', size: 160, rotate: -6, opacity: 0.95 },
-  { left: '90%', bottom: '4%', size: 60, rotate: 22, opacity: 0.8 },
-];
-
-/* Scroll-driven planet motion across the pin: extra spin and growth. */
-const PLANET_SCROLL_SPIN = [12, 9];
-const PLANET_SCROLL_GROW = 0.08;
-
 /* ── Scroll timing ──
    The pin lasts PIN_LENGTH of the viewport height. Progress (0-1) changes
    category at BOUNDARIES; the first category is kept short so the first
@@ -158,9 +145,6 @@ export default function CanvasShowcase() {
   const progressFillRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const timelineRefs = useRef<Array<HTMLDivElement | null>>([]);
   const counterRef = useRef<HTMLSpanElement>(null);
-  const flightRef = useRef<HTMLSpanElement>(null);
-  const planetRefs = useRef<Array<HTMLDivElement | null>>([]);
-  const surfaceProgressRef = useRef(0);
   const starsRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -168,18 +152,10 @@ export default function CanvasShowcase() {
     if (!section) return;
     let lastCat = -1;
     let lastTimeline = -1;
-    let lastFlight = -1;
 
     const apply = (p: number) => {
-      surfaceProgressRef.current = p;
       // The starfield (painted once) rises slowly as you fly on.
       if (starsRef.current) starsRef.current.style.transform = `translate3d(0,${-p * STAR_PARALLAX * 100 / (1 + STAR_PARALLAX)}%,0)`;
-
-      planetRefs.current.forEach((el, i) => {
-        if (!el) return;
-        el.style.setProperty('--spin-shift', `${p * PLANET_SCROLL_SPIN[i]}%`);
-        el.style.transform = `scale(${1 + p * PLANET_SCROLL_GROW})`;
-      });
 
       // Kinetic title: the track slides one title per category change and
       // keeps drifting a little in between; the outlined echo lags behind.
@@ -249,11 +225,6 @@ export default function CanvasShowcase() {
         lastTimeline = tl;
         timelineRefs.current.forEach((el, i) => { if (el) el.dataset.active = String(i === tl); });
       }
-      const flight = Math.round(p * 100);
-      if (flight !== lastFlight && flightRef.current) {
-        lastFlight = flight;
-        flightRef.current.textContent = String(flight).padStart(3, '0');
-      }
     };
 
     // Paint progress 0 now: ScrollTrigger only reports later changes.
@@ -281,23 +252,7 @@ export default function CanvasShowcase() {
           stars, the grid and the city lights ── */}
       <div className="cs-bg" aria-hidden="true">
         <ShowcaseStars starsRef={starsRef} />
-        <div className="cs-planet cs-planet-tl" ref={(el) => { planetRefs.current[0] = el; }} />
-        <div className="cs-planet cs-planet-tr" ref={(el) => { planetRefs.current[1] = el; }} />
         <div className="cs-nebula" />
-        <div className="cs-asteroids">
-          {ASTEROIDS.map((a, i) => (
-            <span
-              key={i}
-              className="cs-asteroid"
-              style={{ left: a.left, bottom: a.bottom, width: a.size, height: a.size, transform: `rotate(${a.rotate}deg)`, opacity: a.opacity }}
-            />
-          ))}
-        </div>
-        <div className="cs-horizon">
-          <div className="cs-horizon-curve" />
-          <div className="cs-horizon-glow" />
-        </div>
-        <PlanetSurface progressRef={surfaceProgressRef} />
       </div>
 
       {/* ── HUD: hairline corner marks and microtype ── */}
@@ -309,9 +264,6 @@ export default function CanvasShowcase() {
         <span className="cs-hud-text is-tl">Selected work</span>
         <span className="cs-hud-text is-tr">
           Sector <span ref={counterRef} className="cs-hud-strong">01</span> / 03
-        </span>
-        <span className="cs-hud-text is-bl">
-          Flight <span ref={flightRef} className="cs-hud-strong">000</span>%
         </span>
         <span className="cs-hud-text is-br">{CATEGORIES.reduce((n, c) => n + c.projects.length, 0)} projects / 3 sectors</span>
       </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { DOT_COUNT, HOME, globeState, projectDot, projectLatLng } from '@/lib/globe';
+import { onPaletteChange } from '@/lib/palette';
 
 /* "Bangladesh to the world": a globe made of particles, one per patch of
    land, drawn on a 2D canvas, with arcs from Bangladesh to where clients
@@ -51,7 +52,9 @@ export default function ParticleGlobe() {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
-    const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    const readRgb = () => getComputedStyle(document.documentElement).getPropertyValue('--accent-rgb').trim() || '201,168,76';
+    let accent = readRgb();
+    const offPalette = onPaletteChange(() => { accent = readRgb(); });
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     let dpr = 1, w = 0, h = 0;
     const size = () => {
@@ -190,6 +193,7 @@ export default function ParticleGlobe() {
 
     return () => {
       if (raf !== null) cancelAnimationFrame(raf);
+      offPalette();
       io.disconnect(); ro.disconnect();
       canvas.removeEventListener('pointerdown', down);
       window.removeEventListener('pointermove', move);

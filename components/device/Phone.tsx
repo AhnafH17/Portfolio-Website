@@ -6,7 +6,7 @@ import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
 import { makeScreenMaterial, prepareModel, screenTracker, SCREEN_PANEL } from './deviceModel';
-import { readAccent } from '@/lib/accent';
+import { useAccent } from '@/lib/palette';
 import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 /* The phone is a Blender model (scripts/build-phone.py →
@@ -30,11 +30,13 @@ export default function Phone({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
   const { scene } = useGLTF(MODEL_URL);
 
-  const accent = useMemo(() => readAccent(), []);
-  const chrome = useMemo(() => createChromeSurface('phone'), []);
-  const content = useMemo(() => createContentSurface('phone'), []);
+  // The screens are painted in the accent, so a new palette repaints them.
+  const accent = useAccent();
+  const chrome = useMemo(() => createChromeSurface('phone'), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
+  const content = useMemo(() => createContentSurface('phone'), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
   const contentRect = useMemo(() => toPlane('phone', REGION.phone.editor), []);
-  const island = useMemo(() => createLiveSurface('phone'), []);
+  const island = useMemo(() => createLiveSurface('phone'), [accent]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => { chrome.texture.dispose(); content.texture.dispose(); island.texture.dispose(); }, [chrome, content, island]);
   const islandRect = useMemo(() => toPlane('phone', REGION.phone.terminal), []);
 
   // three objects are mutated every frame, so they live in a ref set up once
