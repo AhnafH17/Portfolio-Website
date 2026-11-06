@@ -5,8 +5,6 @@ import gsap from 'gsap';
 import {
   ParticleTextEffect,
   ParticleTextHandle,
-  sampleImageCloud,
-  type Cloud,
 } from '@/components/ui/particle-text-effect';
 
 declare global {
@@ -14,10 +12,10 @@ declare global {
 }
 
 interface PreloaderProps {
-  /** Start revealing the site — fires as the dissolve begins, not after it. */
+  /** Start revealing the site — fires as the bars are pulled apart. */
   onReveal: () => void;
-  /** Dissolve is over and the preloader can be removed from the tree.
-   *  Kept separate from onReveal: unmounting on reveal kills the dissolve. */
+  /** The bars are gone and the preloader can be removed from the tree.
+   *  Kept separate from onReveal: unmounting on reveal kills the exit. */
   onDone: () => void;
 }
 
@@ -25,30 +23,41 @@ const WORDS = ['AHNAF', 'HUSSAIN', 'DEVELOPER'];
 
 // Per-word pacing. The effect holds each word until it has actually formed,
 // so this is a target rather than a hard clock.
-const WORD_MS = 1500;
+const WORD_MS = 1400;
 // Absolute ceiling — if anything goes wrong the site still gets revealed.
-const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 5000;
+const SAFETY_MS = WORDS.length * WORD_MS * 1.9 + 6000;
 
-// The hero photo, and the transform it carries, so the particle portrait can
-// be sampled to land exactly on top of it. The photo is graded per palette, so
-// this must resolve to the same variant the hero is about to show — otherwise
-// the morph dissolves into a differently-coloured picture.
-const photoSrc = () =>
-  `/images/hero/portrait-${document.documentElement.dataset.palette || 'crimson'}.png`;
-const PHOTO_FOCUS_Y = 0.30;   // background-position: center 30%
-const PHOTO_ZOOM = 1.35;      // transform: scale(1.35)
+/* The letterbox: two black bars with the words glowing in the slit between
+   them. When the words are done, two hands (manga-style illustrations,
+   public/images/preloader/, cut from assets/preloader/hands-*.png) reach out
+   of the bars, grip their edges, and pull them apart onto the hero.
 
-// A photo is a filled region, not a few glyph strokes, so it needs several
-// times the particles the words do.
-const portraitBudget = (w: number) => (w < 700 ? 7000 : 17000);
+   The art is one 1672 x 941 frame per pose (open, gripping), split at row
+   SPLIT into a top half (bar + top hand) and a bottom half; the bars' edges
+   sit at rows TOP_EDGE and BOT_EDGE. The frame is scaled to fill the width
+   (or, on tall phones, 60% of the height) and centred on the slit. */
+const ART_W = 1672;
+const ART_H = 941;
+const SPLIT = 449;
+const TOP_EDGE = 349;
+const BOT_EDGE = 644;
+const SLIT_MID = (TOP_EDGE + BOT_EDGE) / 2;
+const ART = {
+  openTop: '/images/preloader/open-top.webp',
+  openBottom: '/images/preloader/open-bottom.webp',
+  gripTop: '/images/preloader/grip-top.webp',
+  gripBottom: '/images/preloader/grip-bottom.webp',
+};
 
 export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
   const canvasWrapRef = useRef<HTMLDivElement>(null);
   const particleRef   = useRef<ParticleTextHandle>(null);
+  const topRef        = useRef<HTMLDivElement>(null);
+  const botRef        = useRef<HTMLDivElement>(null);
   const exitRef       = useRef<() => void>(() => {});
-  const portraitRef   = useRef<Cloud | null>(null);
-  const focusRef      = useRef<{ x: number; y: number } | null>(null);
+  const artReady      = useRef<Promise<boolean> | null>(null);
+  const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
   const [ready, setReady] = useState(false);
   const exitStarted   = useRef(false);
 
@@ -58,6 +67,14 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // Freeze Lenis during preloader
     if (window.__lenis) window.__lenis.stop();
 
+    // The art loads while the words play (~100KB); the hands only come in
+    // if it has.
+    artReady.current = Promise.all(Object.values(ART).map((src) => {
+      const img = new Image();
+      img.src = src;
+      return img.decode().then(() => true, () => false);
+    })).then((ok) => ok.every(Boolean));
+
     const id = requestAnimationFrame(() => setReady(true));
     const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
     return () => {
@@ -66,79 +83,68 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     };
   }, []);
 
-  /* Build the portrait point cloud while the words are still cycling, so the
-     morph costs nothing at the moment it happens. Measured from the live
-     element rather than hardcoded — the frame is 340x440 on desktop, 220x290
-     on phones, and sits above the copy on narrow layouts. */
+  /* Lay the bars out for this screen, and open the slit. */
   useEffect(() => {
-    if (!ready) return;
-    let cancelled = false;
-
-    const build = async () => {
-      const frame = document.querySelector<HTMLElement>('.hero-image-frame');
-      if (!frame) return;
-
-      const rect = frame.getBoundingClientRect();
-      // Bail if it isn't laid out, or isn't actually on screen — flying the
-      // particles somewhere the user can't see would be worse than the
-      // plain exit we fall back to.
-      if (rect.width < 40 || rect.height < 40) return;
-      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
-      if (rect.right < 0 || rect.left > window.innerWidth) return;
-
-      const img = new Image();
-      img.decoding = 'async';
-      img.src = photoSrc();
-      try { await img.decode(); } catch { return; }
-      if (cancelled) return;
-
-      // The dissolve blooms outward from the portrait, not from screen centre
-      focusRef.current = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-
-      const cs = getComputedStyle(frame);
-      const accent = getComputedStyle(document.documentElement)
-        .getPropertyValue('--accent-rgb').trim().split(',').map((n) => parseInt(n, 10));
-
-      portraitRef.current = sampleImageCloud({
-        img,
-        left: rect.left, top: rect.top, width: rect.width, height: rect.height,
-        radii: [
-          parseFloat(cs.borderTopLeftRadius) || 0,
-          parseFloat(cs.borderTopRightRadius) || 0,
-          parseFloat(cs.borderBottomRightRadius) || 0,
-          parseFloat(cs.borderBottomLeftRadius) || 0,
-        ],
-        focusY: PHOTO_FOCUS_Y,
-        zoom: PHOTO_ZOOM,
-        accent: { r: accent[0] || 204, g: accent[1] || 24, b: accent[2] || 44 },
-        budget: portraitBudget(window.innerWidth),
-      });
+    const top = topRef.current, bot = botRef.current;
+    if (!top || !bot) return;
+    const layout = () => {
+      const vw = window.innerWidth, vh = window.innerHeight;
+      const s = Math.max(vw / ART_W, (vh * 0.6) / ART_H);
+      const imgTop = vh / 2 - SLIT_MID * s;
+      geo.current = { s, imgTop, vh };
+      const w = ART_W * s;
+      // Each half: a CSS black bar down to its edge (reaching far past the
+      // screen so it can move), with the art on top, anchored to the frame.
+      top.style.setProperty('--edge', `${imgTop + TOP_EDGE * s}px`);
+      top.style.setProperty('--art-top', `${imgTop}px`);
+      bot.style.setProperty('--edge', `${imgTop + BOT_EDGE * s}px`);
+      bot.style.setProperty('--art-top', `${imgTop + SPLIT * s}px`);
+      for (const el of [top, bot]) {
+        el.style.setProperty('--art-w', `${w}px`);
+        el.style.setProperty('--art-split', `${SPLIT * s}px`);
+        el.style.setProperty('--art-rest', `${(ART_H - SPLIT) * s}px`);
+      }
     };
+    layout();
+    window.addEventListener('resize', layout);
 
-    // The hero wrapper runs a fadeUp (translateY 40px, .6s delay + 1s) on
-    // mount; measure once it has settled or the target would be 40px off.
-    const id = setTimeout(build, 2000);
-    return () => { cancelled = true; clearTimeout(id); };
-  }, [ready]);
+    // Start shut on a hairline of light, then open to the slit.
+    const { s } = geo.current;
+    gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
+    gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
+    return () => window.removeEventListener('resize', layout);
+  }, []);
 
-  /** Last word is done: morph into the portrait, or fall straight through. */
-  const handleCycleComplete = () => {
-    const cloud = portraitRef.current;
-    const api = particleRef.current;
-    if (!cloud || !api) { triggerExit(); return; }
-
-    api.showPoints(cloud, () => {
-      // Just long enough to register the portrait. Any longer and the frozen
-      // frame reads as a stall before the transition.
-      setTimeout(() => triggerExit(), 340);
-    });
+  /** Last word is done: the hands, if their art is in; otherwise just open. */
+  const handleCycleComplete = async () => {
+    const ok = await Promise.race([
+      artReady.current ?? Promise.resolve(false),
+      new Promise<boolean>((r) => setTimeout(() => r(false), 1200)),
+    ]);
+    if (exitStarted.current) return;
+    if (!ok) { triggerExit(); return; }
+    const top = topRef.current!, bot = botRef.current!;
+    const q = (el: HTMLElement, sel: string) => el.querySelector<HTMLElement>(sel)!;
+    const tl = gsap.timeline({ onComplete: () => triggerExit(true) });
+    // The words dim as the hands come out of the dark.
+    tl.to(canvasWrapRef.current, { opacity: 0.35, duration: 0.6, ease: 'power2.out' }, 0);
+    tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.55, ease: 'power2.out' }, 0);
+    tl.fromTo(q(top, '.pl-open'), { y: -46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
+    tl.fromTo(q(bot, '.pl-open'), { y: 46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
+    // Grip: the fingers close on the edges.
+    tl.set([q(top, '.pl-grip'), q(bot, '.pl-grip')], { opacity: 1 }, 0.95);
+    tl.set([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, 0.99);
+    tl.to(rootRef.current, { '--rim': 1, duration: 0.08, yoyo: true, repeat: 1 }, 0.95);
+    // A beat of strain: the bars give a little, toward each other, shaking.
+    tl.to(top, { y: 7, duration: 0.18, ease: 'power2.out' }, 1.0);
+    tl.to(bot, { y: -7, duration: 0.18, ease: 'power2.out' }, 1.0);
+    tl.to([top, bot], { x: () => gsap.utils.random(-3, 3), duration: 0.05, repeat: 5, yoyo: true, ease: 'none' }, 1.05);
   };
 
-  const triggerExit = () => {
+  /** Pull the bars off the screen (gripped, or plain if the hands never came). */
+  const triggerExit = (gripped = false) => {
     if (exitStarted.current) return;
     exitStarted.current = true;
-
-    const morphed = portraitRef.current !== null;
 
     document.body.style.overflow = '';
     window.scrollTo(0, 0);
@@ -147,59 +153,29 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
       window.__lenis.start();   // clear isStopped so wheel scrolling works again
     }
 
-    if (morphed) {
-      /* Cross-dissolve. The particle portrait sits exactly on top of the real
-         <img>, so as the preloader's opacity falls the photo shows through
-         underneath in register — the particles visibly resolve into it. The
-         canvas also blooms very slightly outward from the portrait so the
-         handoff is carried by motion rather than by opacity alone. */
-      const focus = focusRef.current;
-      if (focus && canvasWrapRef.current) {
-        canvasWrapRef.current.style.transformOrigin = `${focus.x}px ${focus.y}px`;
-      }
+    const top = topRef.current, bot = botRef.current, root = rootRef.current;
+    const { s, imgTop, vh } = geo.current;
+    // Far enough that each half (bar, hand and all) is past the screen edge.
+    const outTop = -(imgTop + SPLIT * s) - 40;
+    const outBot = vh - (imgTop + SPLIT * s) + 40;
 
-      onReveal();
-
-      const tl = gsap.timeline({ onComplete: onDone });
-      tl.to(canvasWrapRef.current, {
-        scale: 1.035, duration: 1.0, ease: 'power1.out',
-      }, 0);
-      tl.to(rootRef.current, {
-        opacity: 0, duration: 0.95, ease: 'power2.inOut',
-      }, 0);
-      return;
-    }
-
-    // Fallback: the original scatter-and-zoom exit
-    particleRef.current?.killAll();
-    const tl = gsap.timeline();
-    tl.to(canvasWrapRef.current, {
-      scale: 1.4, opacity: 0, duration: 0.85, ease: 'power3.in',
-    }, 0);
-    tl.to(rootRef.current, {
-      opacity: 0, duration: 0.4, ease: 'power2.out',
-      onStart: onReveal,
-      onComplete: onDone,
-    }, 0.45);
+    onReveal();
+    const tl = gsap.timeline({ onComplete: onDone });
+    // The slit stops being a backdrop: the site shows through the gap.
+    tl.to(canvasWrapRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
+    tl.set(root, { background: 'transparent' }, 0.05);
+    tl.set([top, bot], { x: 0 }, 0);
+    tl.to(top, { y: outTop, duration: gripped ? 1.25 : 0.9, ease: 'power4.inOut' }, 0.05);
+    tl.to(bot, { y: outBot, duration: gripped ? 1.25 : 0.9, ease: 'power4.inOut' }, 0.05);
   };
 
   // Kept current so the safety timeout above always calls the live closure
   useEffect(() => { exitRef.current = triggerExit; });
 
   return (
-    <div
-      ref={rootRef}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 99999,
-        background: 'var(--black)',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Canvas fills full screen */}
-      <div
-        ref={canvasWrapRef}
-        style={{ position: 'absolute', inset: 0, transformOrigin: 'center center' }}
-      >
+    <div ref={rootRef} className="pl-root">
+      {/* The words, glowing in the slit */}
+      <div ref={canvasWrapRef} className="pl-words">
         {ready && (
           <ParticleTextEffect
             ref={particleRef}
@@ -207,19 +183,26 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
             autoAdvance
             intervalMs={WORD_MS}
             onCycleComplete={handleCycleComplete}
-            reserve={portraitBudget(window.innerWidth)}
             fontSize={Math.min(130, Math.floor(window.innerWidth / 6.5))}
             fontFamily="'Greater Theory', sans-serif"
           />
         )}
       </div>
 
-      {/* Ambient glow — sits above the canvas, which is now opaque (alpha:false
-          gives the compositor a much cheaper path on mobile) */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', mixBlendMode: 'screen',
-        background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(var(--accent-rgb),0.08) 0%, transparent 70%)',
-      }} />
+      <div ref={topRef} className="pl-half pl-top" aria-hidden="true">
+        <div className="pl-bar" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-open" src={ART.openTop} alt="" decoding="async" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-grip" src={ART.gripTop} alt="" decoding="async" />
+      </div>
+      <div ref={botRef} className="pl-half pl-bottom" aria-hidden="true">
+        <div className="pl-bar" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-open" src={ART.openBottom} alt="" decoding="async" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="pl-art pl-grip" src={ART.gripBottom} alt="" decoding="async" />
+      </div>
     </div>
   );
 }

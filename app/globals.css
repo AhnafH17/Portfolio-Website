@@ -2468,3 +2468,24 @@ footer span{color:var(--accent-glow)}
   .ts-wrap{ max-width:2100px; }
   .ts-left{ zoom:1.45; }
 }
+
+/* ══ Preloader: the words in a letterbox slit, then two hands pull it open
+   (components/Preloader.tsx sets --edge / --art-* per screen) ══ */
+.pl-root{ position:fixed; inset:0; z-index:99999; background:var(--black); overflow:hidden; --rim:0; }
+.pl-words{ position:absolute; inset:0; }
+.pl-half{ position:absolute; inset:0; pointer-events:none; will-change:transform; }
+.pl-bar{
+  position:absolute; left:0; right:0; background:#000;
+  box-shadow:0 0 0 1px rgba(var(--accent-rgb),calc(0.35 + 0.6 * var(--rim))),
+             0 0 34px rgba(var(--accent-rgb),calc(0.22 + 0.4 * var(--rim)));
+}
+/* Each bar reaches far past the screen, so it can slide without a gap. */
+.pl-top .pl-bar{ top:-150vh; height:calc(150vh + var(--edge, 50vh)); }
+.pl-bottom .pl-bar{ top:var(--edge, 50vh); height:250vh; }
+.pl-art{
+  position:absolute; left:50%; width:var(--art-w, 100vw); margin-left:calc(var(--art-w, 100vw) / -2);
+  opacity:0; max-width:none; user-select:none;
+  filter:drop-shadow(0 0 calc(6px + 10px * var(--rim)) rgba(var(--accent-rgb),calc(0.28 + 0.5 * var(--rim))));
+}
+.pl-top .pl-art{ top:var(--art-top, 0); height:var(--art-split, 50vh); }
+.pl-bottom .pl-art{ top:var(--art-top, 50vh); height:var(--art-rest, 50vh); }
