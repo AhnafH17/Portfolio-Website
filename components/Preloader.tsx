@@ -15,13 +15,38 @@ interface PreloaderProps {
   onDone: () => void;
 }
 
-// When the name has had its moment and the hands come (s from mount).
-const NAME_HOLD_S = 2.7;
+/* Two lengths. The first visit in a session gets the full intro (~2.7s);
+   every reload after that, and anyone who prefers reduced motion, gets a
+   ~1.3s version without the hands. Either way the bars only open once the
+   hero underneath is ready (fonts, portrait, card images), so they never
+   reveal a half-loaded page; while it isn't, the gripping hands strain. */
+const SEEN_KEY = 'pl-seen';
+// When the hands come (full) / the bars open (quick), in s from mount.
+const HANDS_AT_S = 0.9;
+const QUICK_OPEN_AT_S = 0.75;
+// Longest the reveal waits on the hero before opening anyway.
+const HERO_WAIT_MS = 3500;
 // Absolute ceiling — if anything goes wrong the site still gets revealed.
-const SAFETY_MS = 9000;
+const SAFETY_MS = 7000;
+
+const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/** Resolves when what the hero shows first is in: fonts, the portrait (a
+    CSS background, so decoded from the same URL) and the floating cards. */
+function heroReady(): Promise<void> {
+  const palette = document.documentElement.dataset.palette || 'crimson';
+  const photo = new Image();
+  photo.src = `/images/hero/portrait-${palette}.png`;
+  const cards = Array.from(document.querySelectorAll<HTMLImageElement>('#hero img'));
+  return Promise.all([
+    document.fonts?.ready,
+    photo.decode().catch(() => {}),
+    ...cards.map((img) => img.decode().catch(() => {})),
+  ]).then(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
+}
 
 /* The letterbox: two black bars with the name glowing in the slit between
-   them. When the words are done, two hands (manga-style illustrations,
+   them. Once it has been read, two hands (manga-style illustrations,
    public/images/preloader/, cut from assets/preloader/hands-*.png) reach out
    of the bars, grip their edges, and pull them apart onto the hero.
 
@@ -53,6 +78,8 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const exitRef       = useRef<() => void>(() => {});
   const handsRef      = useRef<() => void>(() => {});
   const artReady      = useRef<Promise<boolean> | null>(null);
+  const ready         = useRef<Promise<void> | null>(null);
+  const quick         = useRef(false);
   const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
   const exitStarted   = useRef(false);
 
@@ -62,16 +89,26 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // Freeze Lenis during preloader
     if (window.__lenis) window.__lenis.stop();
 
-    // The art loads while the name shows (~100KB); the hands only come in
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(SEEN_KEY) === '1';
+      sessionStorage.setItem(SEEN_KEY, '1');
+    } catch { /* storage blocked: the full intro */ }
+    quick.current = seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ready.current = Promise.race([heroReady(), sleep(HERO_WAIT_MS)]);
+
+    // The art loads while the name shows (~120KB); the hands only come in
     // if it has.
-    artReady.current = Promise.all(Object.values(ART).map((src) => {
-      const img = new Image();
-      img.src = src;
-      return img.decode().then(() => true, () => false);
-    })).then((ok) => ok.every(Boolean));
+    if (!quick.current) {
+      artReady.current = Promise.all(Object.values(ART).map((src) => {
+        const img = new Image();
+        img.src = src;
+        return img.decode().then(() => true, () => false);
+      })).then((ok) => ok.every(Boolean));
+    }
 
     const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
-    const hands = setTimeout(() => handsRef.current(), NAME_HOLD_S * 1000);
+    const hands = setTimeout(() => handsRef.current(), (quick.current ? QUICK_OPEN_AT_S : HANDS_AT_S) * 1000);
     return () => {
       clearTimeout(safety);
       clearTimeout(hands);
@@ -107,42 +144,58 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
 
     // Start shut on a hairline of light, then open to the slit.
     const { s } = geo.current;
-    gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
-    gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 1.1, ease: 'power3.inOut', delay: 0.15 });
+    const k = quick.current ? 0.65 : 1;
+    gsap.fromTo(top, { y: (SLIT_MID - TOP_EDGE) * s - 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
+    gsap.fromTo(bot, { y: -(BOT_EDGE - SLIT_MID) * s + 1 }, { y: 0, duration: 0.6 * k, ease: 'power3.inOut', delay: 0.05 });
     // The name arrives whole as the slit opens: out of a blur, settling
     // from wide tracking.
     gsap.fromTo(nameRef.current,
       { opacity: 0, filter: 'blur(14px)', letterSpacing: '0.32em', scale: 1.06 },
-      { opacity: 1, filter: 'blur(0px)', letterSpacing: '0.04em', scale: 1, duration: 1.1, ease: 'power3.out', delay: 0.75 });
+      { opacity: 1, filter: 'blur(0px)', letterSpacing: '0.04em', scale: 1, duration: 0.65 * k, ease: 'power3.out', delay: 0.2 * k });
     return () => window.removeEventListener('resize', layout);
   }, []);
 
+  /** Open once the hero is ready (see heroReady). */
+  const openWhenReady = async (gripped: boolean) => {
+    await ready.current;
+    triggerExit(gripped);
+  };
+
   /** The name has been read: the hands, if their art is in; otherwise just open. */
   const startHands = async () => {
+    if (exitStarted.current) return;
+    if (quick.current) { openWhenReady(false); return; }
     const ok = await Promise.race([
       artReady.current ?? Promise.resolve(false),
-      new Promise<boolean>((r) => setTimeout(() => r(false), 1200)),
+      sleep(600).then(() => false),
     ]);
     if (exitStarted.current) return;
-    if (!ok) { triggerExit(); return; }
+    if (!ok) { openWhenReady(false); return; }
     const top = topRef.current!, bot = botRef.current!;
     const q = (el: HTMLElement, sel: string) => el.querySelector<HTMLElement>(sel)!;
-    const tl = gsap.timeline({ onComplete: () => triggerExit(true) });
+    const tl = gsap.timeline({
+      onComplete: () => {
+        // Still waiting on the hero: keep straining, as if the bars won't
+        // quite give yet.
+        gsap.to([top, bot], { x: () => gsap.utils.random(-2.5, 2.5), duration: 0.06, repeat: -1, yoyo: true, repeatRefresh: true, ease: 'none' });
+        openWhenReady(true);
+      },
+    });
     // The name dims as the hands come out of the dark.
-    tl.to(nameRef.current, { opacity: 0.35, duration: 0.6, ease: 'power2.out' }, 0);
-    tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.55, ease: 'power2.out' }, 0);
-    tl.fromTo(q(top, '.pl-open'), { y: -46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
-    tl.fromTo(q(bot, '.pl-open'), { y: 46 }, { y: 0, duration: 0.75, ease: 'power3.out' }, 0);
+    tl.to(nameRef.current, { opacity: 0.35, duration: 0.4, ease: 'power2.out' }, 0);
+    tl.fromTo([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, { opacity: 1, duration: 0.3, ease: 'power2.out' }, 0);
+    tl.fromTo(q(top, '.pl-open'), { y: -46 }, { y: 0, duration: 0.45, ease: 'power3.out' }, 0);
+    tl.fromTo(q(bot, '.pl-open'), { y: 46 }, { y: 0, duration: 0.45, ease: 'power3.out' }, 0);
     // Grip: the fingers close on the edges, through the half-closed pose.
-    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 1 }, 0.88);
-    tl.set([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, 0.9);
-    tl.set([q(top, '.pl-grip'), q(bot, '.pl-grip')], { opacity: 1 }, 0.98);
-    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 0 }, 1.0);
-    tl.to(rootRef.current, { '--rim': 1, duration: 0.08, yoyo: true, repeat: 1 }, 0.95);
+    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 1 }, 0.5);
+    tl.set([q(top, '.pl-open'), q(bot, '.pl-open')], { opacity: 0 }, 0.52);
+    tl.set([q(top, '.pl-grip'), q(bot, '.pl-grip')], { opacity: 1 }, 0.58);
+    tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 0 }, 0.6);
+    tl.to(rootRef.current, { '--rim': 1, duration: 0.07, yoyo: true, repeat: 1 }, 0.56);
     // A beat of strain: the bars give a little, toward each other, shaking.
-    tl.to(top, { y: 7, duration: 0.18, ease: 'power2.out' }, 1.0);
-    tl.to(bot, { y: -7, duration: 0.18, ease: 'power2.out' }, 1.0);
-    tl.to([top, bot], { x: () => gsap.utils.random(-3, 3), duration: 0.05, repeat: 5, yoyo: true, ease: 'none' }, 1.05);
+    tl.to(top, { y: 6, duration: 0.14, ease: 'power2.out' }, 0.6);
+    tl.to(bot, { y: -6, duration: 0.14, ease: 'power2.out' }, 0.6);
+    tl.to([top, bot], { x: () => gsap.utils.random(-3, 3), duration: 0.045, repeat: 3, yoyo: true, ease: 'none' }, 0.62);
   };
 
   /** Pull the bars off the screen (gripped, or plain if the hands never came). */
@@ -168,9 +221,11 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     // The slit stops being a backdrop: the site shows through the gap.
     tl.to(nameRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
     tl.set(root, { background: 'transparent' }, 0.05);
+    gsap.killTweensOf([top, bot], 'x');
     tl.set([top, bot], { x: 0 }, 0);
-    tl.to(top, { y: outTop, duration: gripped ? 1.25 : 0.9, ease: 'power4.inOut' }, 0.05);
-    tl.to(bot, { y: outBot, duration: gripped ? 1.25 : 0.9, ease: 'power4.inOut' }, 0.05);
+    const pull = gripped ? 0.75 : quick.current ? 0.55 : 0.65;
+    tl.to(top, { y: outTop, duration: pull, ease: 'power4.inOut' }, 0.05);
+    tl.to(bot, { y: outBot, duration: pull, ease: 'power4.inOut' }, 0.05);
   };
 
   // Kept current so the safety timeout above always calls the live closure
