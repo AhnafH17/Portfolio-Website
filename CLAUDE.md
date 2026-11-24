@@ -52,6 +52,8 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
 - `components/desk/screens.ts` paints one texture per monitor. The same rectangles position transparent HTML links through the four projected screen corners. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
 - The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+- Phones and lower-capability devices use a 30 fps, 1× pixel-ratio budget. Desktop starts with a 60 fps, 1.75× budget and drops to the lighter profile after sustained slow frames. Save Data and devices reporting at most 2 GB of memory use the static index.
+- Pointer targets follow the monitors near each stop. Keyboard users can focus a settled monitor, open the static list, or skip directly to About Me.
 - `DeviceShowcase` covers the final viewport of the desk pin to introduce About Me.
 
 ### Navbar Logo

@@ -13,15 +13,17 @@ export default function LenisProvider() {
   useEffect(() => {
     // Reduced motion: keep the instance (the site scrolls through it) but
     // let the wheel scroll natively, without the eased glide.
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
-      smoothWheel: !reduce,
+      smoothWheel: !reduced.matches,
     });
 
     window.__lenis = lenis;
+    const syncMotion = () => { lenis.options.smoothWheel = !reduced.matches; };
+    reduced.addEventListener('change', syncMotion);
 
     let scrolling = false;
     let scrollTimer: ReturnType<typeof setTimeout>;
@@ -43,6 +45,7 @@ export default function LenisProvider() {
 
     return () => {
       cancelAnimationFrame(rafId);
+      reduced.removeEventListener('change', syncMotion);
       lenis.destroy();
       window.__lenis = undefined;
     };

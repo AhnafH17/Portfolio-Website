@@ -2,11 +2,13 @@ import { Box3, MathUtils, Mesh, Object3D, Vector3 } from 'three';
 import { CATEGORIES } from './screens';
 
 export const HOLDS = [
-  [0.224, 0.3],
-  [0.393, 0.474],
-  [0.553, 0.635],
+  [0.2, 0.3],
+  [0.38, 0.48],
+  [0.56, 0.69],
 ] as const;
 export const FIRST_WORK = (HOLDS[0][0] + HOLDS[0][1]) / 2;
+export const tourScreens = (phone: boolean) => (phone ? 4.4 : 4.8);
+export const aboutOverlapStart = (phone: boolean) => 1 - 1 / tourScreens(phone);
 export const ease = (v: number) => {
   const t = MathUtils.clamp(v, 0, 1);
   return t * t * (3 - 2 * t);
@@ -127,9 +129,8 @@ export function fitTour(scene: Object3D, displays: Display[], aspect: number, ph
     portrait ? 0 : 0.29,
     portrait ? -0.23 : -0.03
   );
-  const outroBounds = portrait ? furniture : above(0.41);
-  const wide = framedRoom(outroBounds, aspect, new Vector3(0.025, 0.32, 1), 0.92, 0.93);
-  const exit = framedRoom(outroBounds, aspect, new Vector3(0.04, 0.4, 1), 0.92, 0.89, 0, -0.04);
+  const outroBounds = above(portrait ? 0.28 : 0.53);
+  const wide = framedRoom(outroBounds, aspect, new Vector3(0.035, 0.33, 1), 0.94, 0.94);
   const screens = displays.map((d) => {
     // Keep the housing and some of the desk in frame at each stop. Limit
     // distance on narrow viewports so the visitor never lands in the chair.
@@ -155,7 +156,7 @@ export function fitTour(scene: Object3D, displays: Display[], aspect: number, ph
     hood.max.y + displays[0].height * 0.5,
     chair.max.z
   );
-  return { hero, screens, wide, exit, shoulder, arc: displays[1].width * 0.31 };
+  return { hero, screens, wide, shoulder, overlap: aboutOverlapStart(phone), arc: displays[1].width * 0.31 };
 }
 
 function blend(out: Pose, a: Pose, b: Pose, t: number) {
@@ -166,7 +167,7 @@ function blend(out: Pose, a: Pose, b: Pose, t: number) {
   out.shiftY = MathUtils.lerp(a.shiftY, b.shiftY, t);
 }
 export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pose) {
-  const { hero, screens, wide, exit, arc, shoulder } = tour;
+  const { hero, screens, wide, overlap, arc, shoulder } = tour;
   let light = 1;
   let panel = -1;
   if (p < HOLDS[0][0]) {
@@ -194,12 +195,16 @@ export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pos
       out.eye.y += arc * 0.22 * arcAmount;
       light = 0.63 + 0.23 * arcAmount;
     }
-  } else if (p < 0.8) {
-    const t = ease((p - HOLDS[2][1]) / (0.8 - HOLDS[2][1]));
+  } else {
+    const t = ease((p - HOLDS[2][1]) / (overlap - HOLDS[2][1]));
     blend(out, screens[2], wide, t);
     light = 0.63 + 0.37 * t;
-  } else blend(out, wide, exit, ease((p - 0.8) / 0.2));
-  return { light, panel };
+  }
+  // Pointer targets track the screen during arrival and departure. Only
+  // settled monitors are added to the normal keyboard tab order.
+  const nearPanel =
+    panel >= 0 ? panel : HOLDS.findIndex(([start, end]) => p >= start - 0.021 && p <= end + 0.021);
+  return { light, panel: nearPanel, settled: nearPanel >= 0 && panel === nearPanel };
 }
 
 /** Project a flat link layer through the same four corners as the display. */

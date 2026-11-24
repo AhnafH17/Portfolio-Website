@@ -1,23 +1,19 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
-import { useFrame, useLoader, useThree } from '@react-three/fiber';
-import { GLTFLoader, MeshoptDecoder } from 'three-stdlib';
+import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAccent } from '@/lib/palette';
 import { drawScreen, loadDeskThumbnails, screenLayout } from './screens';
 import { ease, fitTour, HOLDS, measureDisplays, panelTransform, pose, sampleTour } from './beats';
-import type { ReportDeskLoad } from './loading';
 
 export interface DeskBindings {
   progress: RefObject<number>;
   panels: RefObject<(HTMLDivElement | null)[]>;
+  focusFirstProjectRef: RefObject<boolean>;
+  indexButton: RefObject<HTMLButtonElement | null>;
   onReady: () => void;
-  reportLoad: ReportDeskLoad;
 }
-
-const meshopt = (loader: GLTFLoader) =>
-  loader.setMeshoptDecoder(typeof MeshoptDecoder === 'function' ? MeshoptDecoder() : MeshoptDecoder);
 
 function softGlow() {
   const size = 64;
@@ -36,13 +32,14 @@ function softGlow() {
   return texture;
 }
 
-export default function DeskModel({ progress, panels, onReady, reportLoad }: DeskBindings) {
-  const { scene: source } = useLoader(GLTFLoader, '/models/desk-hero.glb', meshopt, (event) => {
-    reportLoad({
-      phase: 'downloading',
-      fraction: event.lengthComputable && event.total ? Math.min(1, event.loaded / event.total) : null,
-    });
-  });
+export default function DeskModel({
+  progress,
+  panels,
+  focusFirstProjectRef,
+  indexButton,
+  onReady,
+  source,
+}: DeskBindings & { source: THREE.Group }) {
   const { size, get, gl } = useThree();
   const accent = useAccent();
   const phone = size.width <= 768;
@@ -132,15 +129,13 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
   const firstFrame = useRef(0);
   const screenSizes = useRef<ReturnType<typeof screenLayout>[]>([]);
   const lastPanel = useRef(-1);
+  const lastSettled = useRef(false);
   const overlayBox = useRef('');
   const modelRef = useRef(prepared);
   useLayoutEffect(() => {
     modelRef.current = prepared;
   }, [prepared]);
-  useEffect(() => {
-    reportLoad({ phase: 'rendering' });
-    return () => cancelAnimationFrame(firstFrame.current);
-  }, [reportLoad]);
+  useEffect(() => () => cancelAnimationFrame(firstFrame.current), []);
 
   useEffect(() => {
     const world = get().scene;
@@ -211,6 +206,49 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
     };
   }, [prepared, panels, phone, accent, gl]);
 
+  useEffect(() => {
+    const ray = new THREE.Raycaster();
+    const point = new THREE.Vector2();
+    const installations = prepared.displays.map(({ mesh }, index) => {
+      const panel = panels.current[index]!;
+      let hovered: HTMLAnchorElement | null = null;
+      const clear = () => {
+        hovered?.removeAttribute('data-hit');
+        hovered = null;
+      };
+      const hitsScreen = (event: MouseEvent) => {
+        const { left, top, width, height } = gl.domElement.getBoundingClientRect();
+        point.set(((event.clientX - left) / width) * 2 - 1, 1 - ((event.clientY - top) / height) * 2);
+        ray.setFromCamera(point, get().camera);
+        return ray.intersectObject(prepared.scene, true)[0]?.object === mesh;
+      };
+      const pick = (event: PointerEvent) => {
+        const link = event.target instanceof Element ? event.target.closest('a') : null;
+        if (link === hovered && hovered?.hasAttribute('data-hit') && panel.dataset.settled === 'true') return;
+        clear();
+        if (link && hitsScreen(event)) {
+          hovered = link;
+          link.setAttribute('data-hit', '');
+        }
+      };
+      const activate = (event: MouseEvent) => {
+        if (event.detail && !hitsScreen(event)) event.preventDefault();
+      };
+      panel.addEventListener('pointermove', pick);
+      panel.addEventListener('pointerleave', clear);
+      panel.addEventListener('click', activate);
+      panel.addEventListener('auxclick', activate);
+      return () => {
+        clear();
+        panel.removeEventListener('pointermove', pick);
+        panel.removeEventListener('pointerleave', clear);
+        panel.removeEventListener('click', activate);
+        panel.removeEventListener('auxclick', activate);
+      };
+    });
+    return () => installations.forEach((remove) => remove());
+  }, [prepared, panels, gl, get]);
+
   useEffect(
     () => () => {
       prepared.accentMaterial.dispose();
@@ -226,7 +264,7 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
     const rig = rigRef.current;
     const cam = camera as THREE.PerspectiveCamera;
     const p = progress.current;
-    const { light, panel } = sampleTour(tour, p, rig.pose);
+    const { light, panel, settled } = sampleTour(tour, p, rig.pose);
     const { eye, at, fov, shiftX, shiftY } = rig.pose;
     const idle = 1 - ease((p - 0.08) / 0.03);
     const phase = (clock.elapsedTime * Math.PI) / 6;
@@ -274,6 +312,8 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
     if (lastPanel.current !== panel) {
       if (lastPanel.current >= 0) {
         const prev = panels.current[lastPanel.current]!;
+        if (prev.contains(document.activeElement)) indexButton.current?.focus({ preventScroll: true });
+        prev.querySelector('[data-hit]')?.removeAttribute('data-hit');
         prev.setAttribute('hidden', '');
         prev.setAttribute('inert', '');
       }
@@ -284,6 +324,7 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
       }
       lastPanel.current = panel;
       overlayBox.current = '';
+      lastSettled.current = !settled;
     }
     if (panel >= 0) {
       const d = model.displays[panel],
@@ -294,6 +335,21 @@ export default function DeskModel({ progress, panels, onReady, reportLoad }: Des
       if (overlayBox.current !== transform) {
         el.style.setProperty('transform', transform);
         overlayBox.current = transform;
+      }
+      if (lastSettled.current !== settled) {
+        el.querySelectorAll('a').forEach((link) => link.setAttribute('tabindex', settled ? '0' : '-1'));
+        el.setAttribute('data-settled', String(settled));
+        if (!settled && el.contains(document.activeElement))
+          indexButton.current?.focus({ preventScroll: true });
+        lastSettled.current = settled;
+      }
+      if (settled && focusFirstProjectRef.current) {
+        focusFirstProjectRef.current = false;
+        requestAnimationFrame(() => {
+          if (!el.hidden && el.dataset.settled === 'true') {
+            el.querySelector('a')?.focus({ preventScroll: true });
+          }
+        });
       }
     }
     if (painted.current && !ready.current) {

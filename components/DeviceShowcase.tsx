@@ -103,7 +103,7 @@ export default function DeviceShowcase() {
         {!isStatic && (
           <div ref={overlayRef} className="dv-overlay">
             <span className="dv-eyebrow">WHO I AM</span>
-            <h2 className="dv-title">About&nbsp;Me</h2>
+            <h2 className="dv-title" tabIndex={-1}>About&nbsp;Me</h2>
             <span ref={hintRef} className="dv-hint" aria-hidden="true">
               scroll&nbsp;↓
             </span>
@@ -114,7 +114,7 @@ export default function DeviceShowcase() {
         {isStatic && (
           <div className="dv-fallback">
             <span className="dv-eyebrow">WHO I AM</span>
-            <h2 className="dv-title">About Me</h2>
+            <h2 className="dv-title" tabIndex={-1}>About Me</h2>
             <p className="dv-fallback-text">
               I&apos;m Ahnaf Hussain, Head of Web Development at AurixLab — building
               high-performance frontends and interactive digital experiences.

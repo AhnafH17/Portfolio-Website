@@ -105,12 +105,25 @@ export default function Navbar() {
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
+    if (href === '#showcase' && e.detail === 0) {
+      document.querySelector<HTMLAnchorElement>('#hero .dh-work')?.click();
+      setMenuOpen(false);
+      return;
+    }
     const target = document.querySelector(href);
     if (target instanceof HTMLElement) {
       const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (window.__lenis) window.__lenis.scrollTo(target, { immediate: reduce });
       else target.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' });
     }
+    setMenuOpen(false);
+  };
+  const handleNavKey = (e: React.KeyboardEvent<HTMLAnchorElement>, href: string) => {
+    if (e.key !== 'Enter' || href !== '#showcase') return;
+    const work = document.querySelector<HTMLAnchorElement>('#hero .dh-work');
+    if (!work) return;
+    e.preventDefault();
+    work.click();
     setMenuOpen(false);
   };
 
@@ -138,6 +151,7 @@ export default function Navbar() {
                 href={href}
                 className={activeHref === href ? 'active' : ''}
                 onClick={(e) => handleNavClick(e, href)}
+                onKeyDown={(e) => handleNavKey(e, href)}
               >
                 {label}
               </a>
@@ -149,6 +163,8 @@ export default function Navbar() {
           className={`menu-toggle${menuOpen ? ' active' : ''}`}
           onClick={toggleMenu}
           aria-label="Toggle menu"
+          aria-controls="mobile-navigation"
+          aria-expanded={menuOpen}
         >
           <span />
           <span />
@@ -156,9 +172,9 @@ export default function Navbar() {
         </button>
       </nav>
 
-      <div className={`mobile-nav${menuOpen ? ' open' : ''}`}>
+      <div id="mobile-navigation" className={`mobile-nav${menuOpen ? ' open' : ''}`} inert={!menuOpen}>
         {navItems.map(({ href, label }) => (
-          <a key={href} href={href} onClick={(e) => handleNavClick(e, href)}>
+          <a key={href} href={href} onClick={(e) => handleNavClick(e, href)} onKeyDown={(e) => handleNavKey(e, href)}>
             {label}
           </a>
         ))}

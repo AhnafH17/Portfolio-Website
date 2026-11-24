@@ -10,12 +10,10 @@ import { nextPalette } from '@/lib/palette';
 export default function ReturnKey() {
   const ref = useRef<HTMLButtonElement>(null);
   const [down, setDown] = useState(false);
-  const [pressed, setPressed] = useState(false);
 
   const press = useCallback(() => {
     const r = ref.current?.getBoundingClientRect();
     if (!r) return;
-    setPressed(true);
     nextPalette(r.left + r.width / 2, r.top + r.height / 2);
   }, []);
 
@@ -42,6 +40,7 @@ export default function ReturnKey() {
       type="button"
       className={`rk${down ? ' is-down' : ''}`}
       aria-label="Change the colour theme"
+      title="Change the colour theme (Enter)"
       onClick={press}
     >
       <span className="rk-cap" aria-hidden="true">
@@ -50,7 +49,7 @@ export default function ReturnKey() {
           <path d="m9 10-4 4 4 4" />
         </svg>
       </span>
-      {!pressed && <span className="rk-hint" aria-hidden="true">Press Return</span>}
+      <span className="rk-hint" aria-hidden="true">Theme</span>
     </button>
   );
 }
