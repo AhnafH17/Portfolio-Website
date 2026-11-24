@@ -2,12 +2,15 @@
 
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import type { DeskLoad } from './desk/loading';
 
 declare global {
   interface Window { __lenis?: import('lenis').default; }
 }
 
 interface PreloaderProps {
+  load: DeskLoad;
+  onSkip: () => void;
   /** Start revealing the site — fires as the bars are pulled apart. */
   onReveal: () => void;
   /** The bars are gone and the preloader can be removed from the tree.
@@ -15,39 +18,11 @@ interface PreloaderProps {
   onDone: () => void;
 }
 
-/* The hands play on every load. The first visit in a session gets the full
-   intro (~2.7s); reloads after that play it faster (~2s), and anyone who
-   prefers reduced motion gets a ~1.3s version without the hands. Either
-   way the bars wait for the opening desk or its static project index; while
-   it isn't, the gripping hands strain. */
 const SEEN_KEY = 'pl-seen';
-// When the hands come (full / repeat) or the bars open (quick), in s from mount.
-const HANDS_AT_S = 0.9;
-const REPEAT_HANDS_AT_S = 0.6;
-const QUICK_OPEN_AT_S = 0.75;
-// How much faster the hands play on a repeat visit.
 const REPEAT_SPEED = 1.35;
-// Longest the reveal waits on the hero before opening anyway.
-const HERO_WAIT_MS = 3500;
-// Absolute ceiling — if anything goes wrong the site still gets revealed.
-const SAFETY_MS = 7000;
+const LOAD_TIMEOUT_MS = 10_000;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
-
-/** The desk signals its first painted frame (or static fallback). */
-function heroReady(): Promise<void> {
-  const desk = document.querySelector<HTMLElement>('#hero');
-  const frame = desk && !desk.dataset.deskReady
-    ? new Promise<void>(resolve => {
-        const done = () => { window.removeEventListener('deskready', done); clearTimeout(timer); resolve(); };
-        const timer = setTimeout(done, HERO_WAIT_MS);
-        window.addEventListener('deskready', done, {once: true});
-      })
-    : Promise.resolve();
-  return Promise.all([
-    document.fonts?.ready, frame,
-  ]).then(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
-}
 
 /* The letterbox: two black bars with the name glowing in the slit between
    them. Once it has been read, two hands (manga-style illustrations,
@@ -77,21 +52,21 @@ function Hand({ pose, half }: { pose: (typeof POSES)[number]; half: 'top' | 'bot
   return (
     <picture>
       <source media={PHONE} srcSet={`/images/preloader/m-${pose}-${half}.webp`} />
-      { }
-      <img className={`pl-art pl-${pose}`} src={`/images/preloader/${pose}-${half}.webp`} alt="" decoding="async" />
+      <img className={`pl-art pl-${pose}`} src={`/images/preloader/${pose}-${half}.webp`} alt="" decoding="async" fetchPriority="low" />
     </picture>
   );
 }
 
-export default function Preloader({ onReveal, onDone }: PreloaderProps) {
+export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
   const nameRef       = useRef<HTMLDivElement>(null);
   const topRef        = useRef<HTMLDivElement>(null);
   const botRef        = useRef<HTMLDivElement>(null);
-  const exitRef       = useRef<() => void>(() => {});
-  const handsRef      = useRef<() => void>(() => {});
+  const progressRef   = useRef<HTMLDivElement>(null);
+  const handsRef      = useRef<(fallback: boolean) => void>(() => {});
+  const startedAt     = useRef(0);
+  const handTimeline  = useRef<gsap.core.Timeline | null>(null);
   const artReady      = useRef<Promise<boolean> | null>(null);
-  const ready         = useRef<Promise<void> | null>(null);
   const quick         = useRef(false);
   const repeat        = useRef(false);
   const geo           = useRef({ s: 1, imgTop: 0, vh: 0 });
@@ -99,6 +74,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
   const exitStarted   = useRef(false);
 
   useEffect(() => {
+    startedAt.current = performance.now();
     document.body.style.overflow = 'hidden';
     window.scrollTo(0, 0);
     // Freeze Lenis during preloader
@@ -111,8 +87,6 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     } catch { /* storage blocked: the full intro */ }
     repeat.current = seen;
     quick.current = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    ready.current = Promise.race([heroReady(), sleep(HERO_WAIT_MS)]);
-
     // The art loads while the name shows (~120KB); the hands only come in
     // if it has.
     if (!quick.current) {
@@ -120,19 +94,30 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
       const srcs = POSES.flatMap((pose) => [`${pose}-top`, `${pose}-bottom`].map((n) => `/images/preloader/${prefix}${n}.webp`));
       artReady.current = Promise.all(srcs.map((src) => {
         const img = new Image();
+        img.fetchPriority = 'low';
         img.src = src;
         return img.decode().then(() => true, () => false);
       })).then((ok) => ok.every(Boolean));
     }
 
-    const safety = setTimeout(() => exitRef.current(), SAFETY_MS);
-    const at = quick.current ? QUICK_OPEN_AT_S : repeat.current ? REPEAT_HANDS_AT_S : HANDS_AT_S;
-    const hands = setTimeout(() => handsRef.current(), at * 1000);
     return () => {
-      clearTimeout(safety);
-      clearTimeout(hands);
+      handTimeline.current?.kill();
+      document.body.style.overflow = '';
+      window.__lenis?.start();
     };
   }, []);
+  const fallback = load.phase === 'fallback';
+  const finished = load.phase === 'ready' || fallback;
+  useEffect(() => {
+    if (!finished) {
+      const safety = setTimeout(onSkip, LOAD_TIMEOUT_MS);
+      return () => clearTimeout(safety);
+    }
+    const minimum = quick.current ? 420 : 690;
+    const wait = Math.max(0, minimum - (performance.now() - startedAt.current));
+    const hands = setTimeout(() => handsRef.current(fallback), wait);
+    return () => clearTimeout(hands);
+  }, [finished, fallback, onSkip]);
 
   /* Lay the bars out for this screen, and open the slit. */
   useEffect(() => {
@@ -176,32 +161,21 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     return () => window.removeEventListener('resize', layout);
   }, []);
 
-  /** Open once the hero is ready (see heroReady). */
-  const openWhenReady = async (gripped: boolean) => {
-    await ready.current;
-    triggerExit(gripped);
-  };
-
-  /** The name has been read: the hands, if their art is in; otherwise just open. */
-  const startHands = async () => {
+  /** The first frame has painted before any hand animation is started. */
+  const startHands = async (fallback: boolean) => {
     if (exitStarted.current) return;
-    if (quick.current) { openWhenReady(false); return; }
+    if (quick.current || fallback) { triggerExit(); return; }
     const ok = await Promise.race([
       artReady.current ?? Promise.resolve(false),
-      sleep(1000).then(() => false),
+      sleep(300).then(() => false),
     ]);
     if (exitStarted.current) return;
-    if (!ok) { openWhenReady(false); return; }
+    if (!ok) { triggerExit(); return; }
     const top = topRef.current!, bot = botRef.current!;
     const q = (el: HTMLElement, sel: string) => el.querySelector<HTMLElement>(sel)!;
-    const tl = gsap.timeline({
-      onComplete: () => {
-        // Still waiting on the hero: keep straining, as if the bars won't
-        // quite give yet.
-        gsap.to([top, bot], { x: () => gsap.utils.random(-2.5, 2.5), duration: 0.06, repeat: -1, yoyo: true, repeatRefresh: true, ease: 'none' });
-        openWhenReady(true);
-      },
-    });
+    const tl = gsap.timeline({ onComplete: () => triggerExit(true) });
+    handTimeline.current = tl;
+    tl.to(progressRef.current, { opacity: 0, duration: 0.18 }, 0);
     if (repeat.current) tl.timeScale(REPEAT_SPEED);
     // The name dims as the hands come out of the dark.
     tl.to(nameRef.current, { opacity: 0.35, duration: 0.4, ease: 'power2.out' }, 0);
@@ -245,6 +219,7 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     const tl = gsap.timeline({ onComplete: onDone });
     // The slit stops being a backdrop: the site shows through the gap.
     tl.to(nameRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
+    tl.to(progressRef.current, { opacity: 0, duration: 0.15 }, 0);
     tl.set(root, { background: 'transparent' }, 0.05);
     gsap.killTweensOf([top, bot], 'x');
     tl.set([top, bot], { x: 0 }, 0);
@@ -253,13 +228,32 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     tl.to(bot, { y: outBot, duration: pull, ease: 'power4.inOut' }, 0.05);
   };
 
-  // Kept current so the safety timeout above always calls the live closure
-  useEffect(() => { exitRef.current = triggerExit; handsRef.current = startHands; });
+  useEffect(() => { handsRef.current = startHands; });
+
+  const percent = load.phase === 'downloading' && load.fraction !== null
+    ? Math.round(load.fraction * 100)
+    : load.phase === 'ready' ? 100 : undefined;
+  const track = load.phase === 'rendering' || fallback ? 100 : percent;
+  const label = {
+    starting: 'Preparing the scene',
+    downloading: 'Loading the 3D desk',
+    rendering: 'Rendering the desk',
+    ready: 'Desk ready',
+    fallback: 'Opening the portfolio',
+  }[load.phase];
 
   return (
     <div ref={rootRef} className="pl-root">
       {/* The name, glowing in the slit */}
       <div ref={nameRef} className="pl-name">Ahnaf Hussain</div>
+      <div ref={progressRef} className="pl-loading">
+        <div className="pl-loading-label" aria-live="polite">{label}</div>
+        {percent !== undefined && <span className="pl-loading-percent" aria-hidden="true">{percent}%</span>}
+        <div className="pl-loading-track" role="progressbar" aria-label="Loading the portfolio" aria-valuenow={percent}
+          data-indeterminate={track === undefined}>
+          <span style={{width: track === undefined ? undefined : track + '%'}} />
+        </div>
+      </div>
 
       <div ref={topRef} className="pl-half pl-top" aria-hidden="true">
         <div className="pl-bar" />

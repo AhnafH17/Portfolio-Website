@@ -1,50 +1,48 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
-import { useGLTF } from '@react-three/drei';
+import { useFrame, useLoader, useThree } from '@react-three/fiber';
+import { GLTFLoader, MeshoptDecoder } from 'three-stdlib';
 import * as THREE from 'three';
 import { useAccent } from '@/lib/palette';
-import { drawOverview, drawScreen, screenImages, screenLayout } from './screens';
-import { ease, fitTour, HOLDS, measureDisplays, pose, sampleTour } from './beats';
+import { drawScreen, loadDeskThumbnails, screenLayout } from './screens';
+import { ease, fitTour, HOLDS, measureDisplays, panelTransform, pose, sampleTour } from './beats';
+import type { ReportDeskLoad } from './loading';
 
 export interface DeskBindings {
   progress: RefObject<number>;
   panels: RefObject<(HTMLDivElement | null)[]>;
   onReady: () => void;
+  reportLoad: ReportDeskLoad;
 }
 
-interface ScreenArtwork {
-  canvas: HTMLCanvasElement;
-  overview: HTMLCanvasElement;
-  blend: HTMLCanvasElement;
-  detailMap: THREE.CanvasTexture;
-  overviewMap: THREE.CanvasTexture;
-  blendMap: THREE.CanvasTexture;
-  material: THREE.MeshBasicMaterial;
-  step: number;
-}
+const meshopt = (loader: GLTFLoader) =>
+  loader.setMeshoptDecoder(typeof MeshoptDecoder === 'function' ? MeshoptDecoder() : MeshoptDecoder);
 
-function showArtwork(art: ScreenArtwork, detail: number) {
-  const step = Math.round(detail * 12);
-  if (step === art.step) return;
-  art.step = step;
-  if (step === 0 || step === 12) {
-    art.material.map = step === 0 ? art.overviewMap : art.detailMap;
-    return;
+function softGlow() {
+  const size = 64;
+  const pixels = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (y * size + x) * 4;
+      const radius = Math.hypot((2 * x) / (size - 1) - 1, (2 * y) / (size - 1) - 1);
+      pixels.set([255, 255, 255, Math.round(255 * (1 - ease(radius)) ** 3)], i);
+    }
   }
-  const { blend, overview, canvas } = art;
-  const ctx = blend.getContext('2d')!;
-  ctx.globalAlpha = 1;
-  ctx.drawImage(overview, 0, 0, blend.width, blend.height);
-  ctx.globalAlpha = step / 12;
-  ctx.drawImage(canvas, 0, 0, blend.width, blend.height);
-  art.blendMap.needsUpdate = true;
-  art.material.map = art.blendMap;
+  const texture = new THREE.DataTexture(pixels, size, size);
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.needsUpdate = true;
+  return texture;
 }
 
-export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
-  const { scene: source } = useGLTF('/models/desk-hero.glb');
+export default function DeskModel({ progress, panels, onReady, reportLoad }: DeskBindings) {
+  const { scene: source } = useLoader(GLTFLoader, '/models/desk-hero.glb', meshopt, (event) => {
+    reportLoad({
+      phase: 'downloading',
+      fraction: event.lengthComputable && event.total ? Math.min(1, event.loaded / event.total) : null,
+    });
+  });
   const { size, get, gl } = useThree();
   const accent = useAccent();
   const phone = size.width <= 768;
@@ -70,7 +68,7 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
           local.lightMap = mat.aoMap ?? bounce;
           const floor = mat.name === 'MAT_Floor',
             wall = mat.name === 'MAT_Wall';
-          local.lightMapIntensity = wall ? 10 : floor ? 24 : mat.name.startsWith('MAT_Hand') ? 0.45 : 2.2;
+          local.lightMapIntensity = wall ? 11 : floor ? 29 : mat.name.startsWith('MAT_Hand') ? 0.55 : 2.8;
           if (wall) {
             local.onBeforeCompile = (shader) => {
               shader.vertexShader = 'varying float wallHeight;\n' + shader.vertexShader;
@@ -112,6 +110,8 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
       accentMaterial,
       diffuse,
       bounce,
+      glow: softGlow(),
+      wallZ: new THREE.Box3().setFromObject(scene.getObjectByName('Backdrop')!).max.z,
       fan: scene.getObjectByName('FAN_Blades')!,
       shoulders: scene.getObjectByName('Shoulders')!,
       bar: scene.getObjectByName('LIGHTBAR')!.getWorldPosition(new THREE.Vector3()),
@@ -121,27 +121,33 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
     () => fitTour(prepared.scene, prepared.displays, size.width / size.height, phone),
     [prepared, size, phone]
   );
-  const rigRef = useRef({ pose: pose(), tl: new THREE.Vector3(), br: new THREE.Vector3() });
+  const rigRef = useRef({ pose: pose(), corners: Array.from({ length: 4 }, () => new THREE.Vector3()) });
   const fill = useRef<THREE.HemisphereLight>(null);
   const lamp = useRef<THREE.PointLight>(null);
+  const wallGlow = useRef<THREE.MeshBasicMaterial>(null);
   const lights = useRef<(THREE.RectAreaLight | null)[]>([]);
   const brightness = useRef<number[]>([1, 1, 1]);
   const ready = useRef(false);
   const painted = useRef(false);
-  const artwork = useRef<ScreenArtwork[]>([]);
+  const firstFrame = useRef(0);
+  const screenSizes = useRef<ReturnType<typeof screenLayout>[]>([]);
   const lastPanel = useRef(-1);
   const overlayBox = useRef('');
   const modelRef = useRef(prepared);
   useLayoutEffect(() => {
     modelRef.current = prepared;
   }, [prepared]);
+  useEffect(() => {
+    reportLoad({ phase: 'rendering' });
+    return () => cancelAnimationFrame(firstFrame.current);
+  }, [reportLoad]);
 
   useEffect(() => {
     const world = get().scene;
     const m = modelRef.current.accentMaterial;
     m.color.set('#110d0e');
     m.emissive.set(accent.glow).lerp(new THREE.Color(accent.deep), 0.42);
-    m.emissiveIntensity = 2.4;
+    m.emissiveIntensity = 1.7;
     const bg = getComputedStyle(document.documentElement).getPropertyValue('--black').trim();
     world.fog = new THREE.Fog(bg, 5, 18);
     world.background = new THREE.Color(bg);
@@ -149,83 +155,58 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
 
   useLayoutEffect(() => {
     let active = true;
-    const makeTexture = (canvas: HTMLCanvasElement) => {
+    const model = modelRef.current;
+    const entries = model.displays.map((display, i) => {
+      const panel = panels.current[i]!;
+      const canvas = document.createElement('canvas');
+      drawScreen(canvas, i, phone, accent, null);
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.flipY = false;
-      texture.anisotropy = Math.min(4, gl.capabilities.getMaxAnisotropy());
-      return texture;
-    };
-    const entries = modelRef.current.displays.map((d, i) => {
-      const panel = panels.current[i]!;
-      const canvas = panel.querySelector('canvas')!;
-      const overview = document.createElement('canvas');
-      const blend = document.createElement('canvas');
-      // Establish the backing-store sizes before WebGL allocates the textures.
-      drawScreen(canvas, i, phone, accent, {});
-      drawOverview(overview, i, accent, {});
-      blend.width = overview.width;
-      blend.height = overview.height;
-      const overviewMap = makeTexture(overview);
-      const material = new THREE.MeshBasicMaterial({ map: overviewMap, toneMapped: false, fog: false });
-      d.mesh.material = material;
+      texture.anisotropy = Math.min(12, gl.capabilities.getMaxAnisotropy());
+      const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false });
+      display.mesh.material = material;
+
       const layout = screenLayout(i, phone);
+      screenSizes.current[i] = layout;
+      panel.style.setProperty('width', layout.w + 'px');
+      panel.style.setProperty('height', layout.h + 'px');
       panel.querySelectorAll('a').forEach((link, j) => {
         const { x, y, w, h } = layout.cards[j];
-        Object.assign(link.style, {
-          left: (x / layout.w) * 100 + '%',
-          top: (y / layout.h) * 100 + '%',
-          width: (w / layout.w) * 100 + '%',
-          height: (h / layout.h) * 100 + '%',
-        });
+        Object.assign(link.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
       });
-      return {
-        canvas,
-        overview,
-        blend,
-        detailMap: makeTexture(canvas),
-        overviewMap,
-        blendMap: makeTexture(blend),
-        material,
-        step: -1,
-      };
+      return { canvas, texture, material };
     });
-    artwork.current = entries;
-    const paint = (images: Awaited<ReturnType<typeof screenImages>>) => {
+
+    // The atlas and typefaces load in parallel. The first visible GPU frame
+    // already contains the finished typography and project imagery.
+    Promise.all([
+      loadDeskThumbnails(),
+      document.fonts.load('400 32px "Greater Theory"').catch(() => []),
+      document.fonts.load('600 18px "DM Sans"').catch(() => []),
+    ]).then(([thumbs]) => {
       if (!active) return;
-      entries.forEach((art, i) => {
-        drawScreen(art.canvas, i, phone, accent, images);
-        drawOverview(art.overview, i, accent, images);
-        art.detailMap.needsUpdate = true;
-        art.overviewMap.needsUpdate = true;
-        art.step = -1;
-        // Sample the actual artwork to set the display's area-light output.
+      entries.forEach(({ canvas, texture }, i) => {
+        drawScreen(canvas, i, phone, accent, thumbs);
+        texture.needsUpdate = true;
         const meter = document.createElement('canvas');
         meter.width = meter.height = 8;
         const ctx = meter.getContext('2d')!;
-        ctx.drawImage(art.canvas, 0, 0, 8, 8);
+        ctx.drawImage(canvas, 0, 0, 8, 8);
         const pixels = ctx.getImageData(0, 0, 8, 8).data;
         let sum = 0;
-        for (let k = 0; k < pixels.length; k += 4)
+        for (let k = 0; k < pixels.length; k += 4) {
           sum += 0.213 * pixels[k] + 0.715 * pixels[k + 1] + 0.072 * pixels[k + 2];
+        }
         brightness.current[i] = sum / (64 * 255);
       });
       painted.current = true;
-    };
-    const full = screenImages(false);
-    screenImages(true).then(async (previews) => {
-      paint(previews);
-      await document.fonts.ready;
-      const loaded = await full;
-      paint({ ...previews, ...loaded });
     });
     return () => {
       active = false;
-      entries.forEach(({ material, detailMap, overviewMap, blendMap }) => {
+      entries.forEach(({ material, texture }) => {
         material.dispose();
-        detailMap.dispose();
-        overviewMap.dispose();
-        blendMap.dispose();
+        texture.dispose();
       });
     };
   }, [prepared, panels, phone, accent, gl]);
@@ -235,6 +216,7 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
       prepared.accentMaterial.dispose();
       prepared.diffuse.forEach((m) => m.dispose());
       prepared.bounce.dispose();
+      prepared.glow.dispose();
     },
     [prepared]
   );
@@ -244,7 +226,7 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
     const rig = rigRef.current;
     const cam = camera as THREE.PerspectiveCamera;
     const p = progress.current;
-    const { light, panel, opacity } = sampleTour(tour, p, rig.pose);
+    const { light, panel } = sampleTour(tour, p, rig.pose);
     const { eye, at, fov, shiftX, shiftY } = rig.pose;
     const idle = 1 - ease((p - 0.08) / 0.03);
     const phase = (clock.elapsedTime * Math.PI) / 6;
@@ -273,19 +255,18 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
       fog.near = dist * light + 0.4;
       fog.far = dist + 2 + light * 8;
     }
-    world.environmentIntensity = 0.15 * light;
-    if (fill.current) fill.current.intensity = 0.15 * light;
-    if (lamp.current) lamp.current.intensity = 0.21 * light;
+    world.environmentIntensity = 0.25 * light;
+    if (fill.current) fill.current.intensity = 0.21 * light;
+    if (lamp.current) lamp.current.intensity = 0.28 * light;
+    if (wallGlow.current) wallGlow.current.opacity = 0.085 * light;
     model.diffuse.forEach((m) => {
       m.lightMapIntensity = m.userData.bounce * light;
     });
     lights.current.forEach((l, i) => {
       const [start, end] = HOLDS[i];
       const active = ease((p - start + 0.045) / 0.045) * (1 - ease((p - end) / 0.045));
-      const exposure = Math.min(1, Math.pow(light, 1.6) + active);
+      const exposure = Math.min(1, 0.22 + light * 0.78 + active);
       const material = model.displays[i].mesh.material as THREE.MeshBasicMaterial;
-      const art = artwork.current[i];
-      if (art) showArtwork(art, active);
       material.color.setScalar(exposure);
       if (l) l.intensity = (2 + brightness.current[i] * 16) * exposure * light;
     });
@@ -307,36 +288,52 @@ export default function DeskModel({ progress, panels, onReady }: DeskBindings) {
     if (panel >= 0) {
       const d = model.displays[panel],
         el = panels.current[panel]!;
-      const a = rig.tl.copy(d.tl).project(cam),
-        b = rig.br.copy(d.br).project(cam);
-      const x = ((1 + a.x) * size.width) / 2,
-        y = ((1 - a.y) * size.height) / 2;
-      const width = ((b.x - a.x) * size.width) / 2,
-        height = ((a.y - b.y) * size.height) / 2;
-      const transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
-      const key = transform + width + ',' + height;
-      if (overlayBox.current !== key) {
-        Object.assign(el.style, { transform, width: width + 'px', height: height + 'px' });
-        overlayBox.current = key;
+      const { w, h } = screenSizes.current[panel];
+      [d.tl, d.tr, d.br, d.bl].forEach((corner, i) => rig.corners[i].copy(corner).project(cam));
+      const transform = panelTransform(rig.corners, size.width, size.height, w, h);
+      if (overlayBox.current !== transform) {
+        el.style.setProperty('transform', transform);
+        overlayBox.current = transform;
       }
-      el.style.setProperty('opacity', String(opacity));
     }
     if (painted.current && !ready.current) {
       ready.current = true;
-      onReady();
+      // R3F renders immediately after this callback. Open the letterbox
+      // on the next frame, after the desk has been presented.
+      firstFrame.current = requestAnimationFrame(onReady);
     }
   });
 
   return (
     <>
       <primitive object={prepared.scene} dispose={null} />
-      <hemisphereLight ref={fill} args={['#f5f4f2', '#9d9997', 0.15]} />
+      {/* Continue the floor beyond the small baked contact-shadow plane. */}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.005, 0]}>
+        <planeGeometry args={[40, 40]} />
+        <meshBasicMaterial color="#08090b" toneMapped={false} />
+      </mesh>
+      <hemisphereLight ref={fill} args={['#f5f4f2', '#9d9997', 0.21]} />
       <pointLight
         ref={lamp}
         position={[prepared.bar.x, prepared.bar.y - 0.015, prepared.bar.z + 0.014]}
         color={accent.glow}
         distance={1.25}
       />
+      {/* A local pool of light replaces the full-screen bloom pass, allowing
+          the scene and monitor edges to use the canvas's native MSAA. */}
+      <mesh position={[prepared.bar.x, prepared.bar.y + 0.08, prepared.wallZ + 0.008]}>
+        <planeGeometry args={[1.25, 0.88]} />
+        <meshBasicMaterial
+          ref={wallGlow}
+          map={prepared.glow}
+          color={accent.glow}
+          transparent
+          opacity={0.085}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
+          toneMapped={false}
+        />
+      </mesh>
       {prepared.displays.map((d, i) => (
         <rectAreaLight
           key={d.mesh.name}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, lazy, Suspense, useEffect, useRef } from 'react';
+import { useState, lazy, Suspense, useCallback, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
 import DeskHero from '@/components/DeskHero';
 import CustomCursor from '@/components/CustomCursor';
@@ -11,8 +11,8 @@ import ReturnKey from '@/components/ReturnKey';
 import { homeGraph, jsonLd } from '@/lib/schema';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import type { DeskLoad } from '@/components/desk/loading';
 
-const MarqueeStrip = lazy(() => import('@/components/MarqueeStrip'));
 const DeviceShowcase = lazy(() => import('@/components/DeviceShowcase'));
 const AboutSection = lazy(() => import('@/components/AboutSection'));
 const ImpactsSection = lazy(() => import('@/components/ImpactsSection'));
@@ -20,7 +20,7 @@ const TestimonialSection = lazy(() => import('@/components/TestimonialSection'))
 const ContactSection = lazy(() => import('@/components/ContactSection'));
 
 // Mounted in this order, one per idle slot; Footer (outside <main>) last.
-const BELOW_FOLD = [MarqueeStrip, DeviceShowcase, AboutSection, ImpactsSection, TestimonialSection, ContactSection];
+const BELOW_FOLD = [DeviceShowcase, AboutSection, ImpactsSection, TestimonialSection, ContactSection];
 
 export default function Home() {
   // `reveal` starts the site fading in; `preloaderGone` removes the preloader
@@ -28,6 +28,20 @@ export default function Home() {
   // the preloader mid-animation and the dissolve never renders.
   const [reveal, setReveal] = useState(false);
   const [preloaderGone, setPreloaderGone] = useState(false);
+  const [deskLoad, setDeskLoad] = useState<DeskLoad>({ phase: 'starting' });
+  const [skipDesk, setSkipDesk] = useState(false);
+  const reportDeskLoad = useCallback((load: DeskLoad) => {
+    setDeskLoad(previous => {
+      if (previous.phase === 'ready' || previous.phase === 'fallback') return previous;
+      if (previous.phase === 'downloading' && load.phase === 'downloading' &&
+          previous.fraction === load.fraction) return previous;
+      return load;
+    });
+  }, []);
+  const openStaticDesk = useCallback(() => {
+    setSkipDesk(true);
+    setDeskLoad({ phase: 'fallback' });
+  }, []);
   // How many below-fold sections are mounted (see BELOW_FOLD). They go in one
   // at a time — mounting all six in one commit blocked the main thread for
   // ~430ms, which landed on anyone already scrolling into the showcase.
@@ -86,15 +100,9 @@ export default function Home() {
     };
   }, [mounted]);
 
-  /* Warm the heavy below-fold chunks while the preloader is still on screen.
-     Fetching and mounting are deliberately separated: mounting during the
-     preloader was what cost frames, but the download is off the main thread,
-     and Three.js + R3F is ~260KB that used to arrive during the preloader for
-     free. Left until mount it downloads, parses, and initialises WebGL only
-     once the section is already scrolling into view.
-     Evaluation is spread across idle callbacks so it lands between particle
-     frames rather than inside one. */
+  // Let the hero finish downloading and painting before fetching the next scenes.
   useEffect(() => {
+    if (!preloaderGone) return;
     let cancelled = false;
     const jobs: (() => Promise<unknown>)[] = [
       // Heaviest, needed first, and then its model, fetched and parsed now
@@ -110,7 +118,6 @@ export default function Home() {
       () => import('@/components/ImpactsSection'),
       () => import('@/components/ContactSection'),
       () => import('@/components/TestimonialSection'),
-      () => import('@/components/MarqueeStrip'),
     ];
 
     const idle = (cb: () => void) =>
@@ -127,7 +134,7 @@ export default function Home() {
     idle(step);
 
     return () => { cancelled = true; };
-  }, []);
+  }, [preloaderGone]);
 
   return (
     <>
@@ -135,6 +142,8 @@ export default function Home() {
       <noscript><style>{'.pl-root{display:none}[data-site-content]{opacity:1}'}</style></noscript>
       {!preloaderGone && (
         <Preloader
+          load={deskLoad}
+          onSkip={openStaticDesk}
           onReveal={() => setReveal(true)}
           onDone={() => setPreloaderGone(true)}
         />
@@ -143,7 +152,7 @@ export default function Home() {
       <div ref={siteRef} data-site-content>
         <Navbar />
         <main>
-          <DeskHero revealed={reveal} />
+          <DeskHero revealed={reveal} skip={skipDesk} reportLoad={reportDeskLoad} />
           {/* Below-fold sections are held back so their chunk eval and mount
               cost doesn't land during the preloader. */}
           {BELOW_FOLD.slice(0, mounted).map((Section, i) => (

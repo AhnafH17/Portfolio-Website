@@ -107,7 +107,7 @@ def finish(o, name, mat, parent):
     return o
 
 
-def box(name, xyz, dims, m, parent=None, bevel=.004):
+def box(name, xyz, dims, m, parent=None, bevel=.004, segments=2):
     bpy.ops.mesh.primitive_cube_add(size=1, location=xyz)
     o = bpy.context.object
     for v in o.data.vertices:
@@ -115,7 +115,7 @@ def box(name, xyz, dims, m, parent=None, bevel=.004):
             v.co[axis] *= dims[axis]
     if bevel:
         mod = o.modifiers.new("Machined edge", "BEVEL")
-        mod.width, mod.segments = min(bevel, min(dims)*.48), 3
+        mod.width, mod.segments = min(bevel, min(dims)*.48), segments
         bpy.ops.object.modifier_apply(modifier=mod.name)
         mod = o.modifiers.new("Face normals", "WEIGHTED_NORMAL")
         bpy.ops.object.modifier_apply(modifier=mod.name)
@@ -210,7 +210,7 @@ for z, h in ((.16,.264),(.435,.257),(.625,.105)):
 def monitor(label, loc, width, height, yaw):
     m = group("MON_"+label, loc, root)
     m.rotation_euler.z = radians(yaw)
-    box("Shell", (0,.011,0), (width+.016,.025,height+.016), alloy, m, .006)
+    box("Shell", (0,.011,0), (width+.020,.025,height+.020), alloy, m, .006, 3)
     box("Bezel", (0,-.002,0), (width+.013,.004,height+.013), rubber, m, .002)
     w, h = width/2, height/2
     surface("SCREEN_"+label, [(-w,-.0045,-h),(w,-.0045,-h),(w,-.0045,h),(-w,-.0045,h)],
@@ -238,7 +238,7 @@ rod("Tube", (-.225,0,0),(.225,0,0),.012,coat,bar,32)
 box("Diffuser", (0,-.004,-.010),(.438,.013,.004),glow,bar)
 box("Saddle", (0,.012,-.012),(.046,.061,.015),rubber,bar)
 
-tower = group("PC_Tower", (1.665,.255,.74), root)
+tower = group("PC_Tower", (1.688,.327,.74), root)
 tower.rotation_euler.z = radians(-49)
 box("PSU shroud", (0,0,.053), (.175,.318,.106), coat, tower,.004)
 box("Top", (0,0,.396), (.175,.318,.012), coat, tower)
@@ -285,7 +285,7 @@ for j, widths in enumerate(rowspec):
         width = units*.019
         cx = x0 + width/2
         used = j == 3 or units > 5
-        box("Cap",(cx,y0,.021),(width-.002,.017,.011),keycap if used else rubber,kb,.0027)
+        box("Cap",(cx,y0,.021),(width-.002,.017,.011),keycap if used else rubber,kb,.0023,1)
         label = rows[j-1][i-(j>1)] if (1<=j<=4 and 0<=i-(j>1)<len(rows[j-1])) else ""
         if label:
             font = bpy.data.curves.new("Key legend","FONT")
@@ -482,7 +482,7 @@ for o in baked:
     o.data.uv_layers.active_index = 0
     o.data.uv_layers[0].active_render = True
 # Contact under the casters, feet and cabinet grounds the scene in the room.
-floor_ao = bpy.data.images.new("Floor contact",512,512,alpha=False)
+floor_ao = bpy.data.images.new("Floor contact",256,256,alpha=False)
 floor_ao.colorspace_settings.name = "Non-Color"
 tex = image_node(floor_mat,floor_ao)
 floor_out = floor_mat.node_tree.nodes.new("ShaderNodeGroup")

@@ -17,7 +17,9 @@ export interface Display {
   centre: Vector3;
   normal: Vector3;
   tl: Vector3;
+  tr: Vector3;
   br: Vector3;
+  bl: Vector3;
   width: number;
   height: number;
 }
@@ -43,14 +45,17 @@ export function measureDisplays(scene: Object3D): Display[] {
     };
     const tl = corner(0, 0),
       tr = corner(1, 0),
-      br = corner(1, 1);
+      br = corner(1, 1),
+      bl = corner(0, 1);
     const right = tr.clone().sub(tl),
       up = tr.clone().sub(br);
     return {
       mesh,
       tl,
+      tr,
       br,
-      centre: new Box3().setFromPoints([tl, tr, br, corner(0, 1)]).getCenter(new Vector3()),
+      bl,
+      centre: new Box3().setFromPoints([tl, tr, br, bl]).getCenter(new Vector3()),
       normal: new Vector3().crossVectors(right, up).normalize(),
       width: right.length(),
       height: up.length(),
@@ -107,25 +112,41 @@ export function fitTour(scene: Object3D, displays: Display[], aspect: number, ph
     bounds
   );
   const portrait = aspect < 0.9;
+  // Compose around the desk surface and upper chair on wide displays. The
+  // chair base can run below the frame, like the foreground of a photograph.
+  const above = (height: number) =>
+    furniture
+      .filter((box) => box.max.y > height)
+      .map((box) => new Box3(box.min.clone().setY(Math.max(height, box.min.y)), box.max));
   const hero = framedRoom(
-    furniture,
+    portrait ? furniture : above(0.27),
     aspect,
-    new Vector3(phone ? 0.055 : 0.42, phone ? 0.47 : 0.28, 1),
-    portrait ? 0.97 : 0.66,
-    portrait ? 0.64 : 0.9,
-    portrait ? 0 : 0.3,
+    new Vector3(phone ? 0.055 : 0.3, phone ? 0.47 : 0.32, 1),
+    portrait ? 0.97 : 0.7,
+    portrait ? 0.68 : 0.98,
+    portrait ? 0 : 0.29,
     portrait ? -0.23 : -0.03
   );
-  const wide = framedRoom(furniture, aspect, new Vector3(0.025, 0.16, 1), 0.92, 0.87);
-  const exit = framedRoom(furniture, aspect, new Vector3(0.08, 1.5, 1), 0.75, 0.53, 0, -0.32);
+  const outroBounds = portrait ? furniture : above(0.41);
+  const wide = framedRoom(outroBounds, aspect, new Vector3(0.025, 0.32, 1), 0.92, 0.93);
+  const exit = framedRoom(outroBounds, aspect, new Vector3(0.04, 0.4, 1), 0.92, 0.89, 0, -0.04);
   const screens = displays.map((d) => {
-    // Change lens during the approach on narrow viewports. A long-lens
-    // width fit would put the visitor behind the hood even at a screen hold.
-    const radius = Math.max(d.width / (2 * aspect), d.height / 2) / 0.92;
-    const clearance = portrait ? 0.5 + d.height * 0.35 : d.height + 0.41;
-    const fov = Math.max(49, MathUtils.radToDeg(2 * Math.atan(radius / clearance)));
+    // Keep the housing and some of the desk in frame at each stop. Limit
+    // distance on narrow viewports so the visitor never lands in the chair.
+    const occupancy = portrait ? 0.86 : d.width > d.height ? 0.67 : 0.72;
+    const radius = Math.max(d.width / (2 * aspect), d.height / 2) / occupancy;
+    const clearance = portrait ? 0.54 + d.height * 0.35 : d.height + 0.45;
+    const fov = Math.max(48, MathUtils.radToDeg(2 * Math.atan(radius / clearance)));
     const dist = radius / Math.tan(MathUtils.degToRad(fov / 2));
-    return { eye: d.centre.clone().addScaledVector(d.normal, dist), at: d.centre, fov, shiftX: 0, shiftY: 0 };
+    const direction = d.normal.clone().addScaledVector(UP, 0.085);
+    direction.addScaledVector(d.tr.clone().sub(d.tl).normalize(), -0.06).normalize();
+    return {
+      eye: d.centre.clone().addScaledVector(direction, dist),
+      at: d.centre,
+      fov,
+      shiftX: 0,
+      shiftY: 0.05,
+    };
   });
   const chair = furniture[1],
     hood = bounds('Shoulders');
@@ -146,9 +167,8 @@ function blend(out: Pose, a: Pose, b: Pose, t: number) {
 }
 export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pose) {
   const { hero, screens, wide, exit, arc, shoulder } = tour;
-  let light = 1,
-    panel = -1,
-    opacity = 0;
+  let light = 1;
+  let panel = -1;
   if (p < HOLDS[0][0]) {
     const t = ease((p - 0.08) / (HOLDS[0][0] - 0.08));
     blend(out, hero, screens[0], t);
@@ -158,27 +178,53 @@ export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pos
       .multiplyScalar((1 - t) * (1 - t))
       .addScaledVector(shoulder, 2 * t * (1 - t))
       .addScaledVector(screens[0].eye, t * t);
-    light = 1 - 0.75 * ease((t - 0.85) / 0.15);
+    light = 1 - 0.37 * ease((t - 0.68) / 0.32);
   } else if (p <= HOLDS[2][1]) {
     const index = HOLDS.findIndex(([, end]) => p <= end);
-    const [start, end] = HOLDS[index];
+    const [start] = HOLDS[index];
     if (p >= start) {
       blend(out, screens[index], screens[index], 0);
       panel = index;
-      opacity = ease(Math.min(p - start, end - p) / 0.009);
-      light = 0.25;
+      light = 0.63;
     } else {
       const t = ease((p - HOLDS[index - 1][1]) / (start - HOLDS[index - 1][1]));
       blend(out, screens[index - 1], screens[index], t);
       const arcAmount = Math.sin(Math.PI * t);
       out.eye.z += arc * arcAmount;
       out.eye.y += arc * 0.22 * arcAmount;
-      light = 0.25 + 0.35 * arcAmount;
+      light = 0.63 + 0.23 * arcAmount;
     }
   } else if (p < 0.8) {
     const t = ease((p - HOLDS[2][1]) / (0.8 - HOLDS[2][1]));
     blend(out, screens[2], wide, t);
-    light = 0.25 + 0.75 * t;
+    light = 0.63 + 0.37 * t;
   } else blend(out, wide, exit, ease((p - 0.8) / 0.2));
-  return { light, panel, opacity };
+  return { light, panel };
+}
+
+/** Project a flat link layer through the same four corners as the display. */
+export function panelTransform(corners: Vector3[], width: number, height: number, w: number, h: number) {
+  const [tl, tr, br, bl] = corners;
+  const x0 = ((1 + tl.x) * width) / 2,
+    y0 = ((1 - tl.y) * height) / 2;
+  const x1 = ((1 + tr.x) * width) / 2,
+    y1 = ((1 - tr.y) * height) / 2;
+  const x2 = ((1 + br.x) * width) / 2,
+    y2 = ((1 - br.y) * height) / 2;
+  const x3 = ((1 + bl.x) * width) / 2,
+    y3 = ((1 - bl.y) * height) / 2;
+  const dx1 = x1 - x2,
+    dx2 = x3 - x2,
+    dx3 = x0 - x1 + x2 - x3;
+  const dy1 = y1 - y2,
+    dy2 = y3 - y2,
+    dy3 = y0 - y1 + y2 - y3;
+  const det = dx1 * dy2 - dx2 * dy1;
+  const g = (dx3 * dy2 - dx2 * dy3) / det;
+  const j = (dx1 * dy3 - dx3 * dy1) / det;
+  const a = (x1 - x0 + g * x1) / w,
+    b = (x3 - x0 + j * x3) / h;
+  const d = (y1 - y0 + g * y1) / w,
+    e = (y3 - y0 + j * y3) / h;
+  return 'matrix3d(' + [a, d, 0, g / w, b, e, 0, j / h, 0, 0, 1, 0, x0, y0, 0, 1].join(',') + ')';
 }

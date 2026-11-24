@@ -12,7 +12,7 @@ import { statSync } from 'node:fs';
 const MODELS = (process.argv[2] ? process.argv.slice(2) : ['laptop', 'phone', 'about-workspace', 'desk-hero']);
 const KEEP_STRUCTURE = [
   '--join', 'false', '--flatten', 'false', '--instance', 'false',
-  '--palette', 'false', '--simplify', 'false', '--weld', 'false',
+  '--palette', 'false',
   // The SCREEN meshes' UVs look unused in the file (their placeholder
   // material has no texture) but the site paints the live screen through
   // them; pruning them left the screen texture unmapped.
@@ -22,9 +22,14 @@ const KEEP_STRUCTURE = [
 for (const name of MODELS) {
   const src = `assets/models-src/${name}.glb`;
   const out = `public/models/${name}.glb`;
+  // Keep precision near the visible silhouette while tightening small details
+  // on the desk. The vertex weld preserves UV seams and authored normals.
+  const geometry = name === 'desk-hero'
+    ? ['--weld', 'true', '--simplify', 'true', '--simplify-ratio', '0.65', '--simplify-error', '0.0007', '--simplify-lock-border', 'true']
+    : ['--weld', 'false', '--simplify', 'false'];
   execFileSync('npx', ['gltf-transform', 'optimize', src, out,
     '--compress', 'meshopt', '--texture-compress', 'webp', '--texture-size', '1024',
-    ...KEEP_STRUCTURE], { stdio: 'inherit', shell: true });
+    ...KEEP_STRUCTURE, ...geometry], { stdio: 'inherit', shell: true });
   const kb = (f) => Math.round(statSync(f).size / 1024);
   console.log(`${name}: ${kb(src)}KB -> ${kb(out)}KB`);
 }

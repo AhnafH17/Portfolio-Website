@@ -2332,6 +2332,17 @@ footer span{color:var(--accent-glow)}
   color:rgb(var(--accent-rgb)); opacity:0;
   text-shadow:0 0 18px rgba(var(--accent-rgb),0.55), 0 0 60px rgba(var(--accent-rgb),0.3);
 }
+.pl-loading{
+  position:absolute;z-index:1;left:50%;top:calc(50% + var(--slit, 30vh) * .33);translate:-50% 0;
+  width:min(15.5rem,66vw);display:grid;grid-template-columns:1fr auto;gap:.42rem .65rem;
+  color:var(--gold-bright);font:500 .73rem/1.15 var(--font-body);letter-spacing:.035em;
+}
+.pl-loading-percent{font-variant-numeric:tabular-nums;color:var(--accent-light)}
+.pl-loading-track{grid-column:1/-1;position:relative;height:2px;overflow:hidden;background:var(--steel-dark)}
+.pl-loading-track span{position:absolute;inset:0 auto 0 0;background:var(--accent-glow);transition:width .18s ease-out}
+.pl-loading-track[data-indeterminate=true] span{width:35%;animation:pl-loading-progress 1.3s ease-in-out infinite alternate}
+@keyframes pl-loading-progress{from{transform:translateX(-105%)}to{transform:translateX(290%)}}
+@media (prefers-reduced-motion:reduce){.pl-loading-track[data-indeterminate=true] span{animation:none}.pl-loading-track span{transition:none}}
 .pl-half{ position:absolute; inset:0; pointer-events:none; will-change:transform; }
 .pl-bar{
   position:absolute; left:0; right:0; background:#000;
@@ -2422,15 +2433,13 @@ footer span{color:var(--accent-glow)}
   margin-top:clamp(1.5rem,2.5vw,3rem);padding:.76rem 0;border-bottom:1px solid var(--accent-glow)}
 .dh-work span,.dh-index-toggle span{color:var(--accent-light)}
 .dh-work:focus-visible,.dh-index-toggle:focus-visible,.dh-back:focus-visible,.dh-index a:focus-visible{outline:2px solid var(--accent-light);outline-offset:4px}
-.dh-panel{position:absolute;left:0;top:0;overflow:hidden;line-height:1}
-.dh-panel canvas{width:100%;height:100%;display:block}
-.dh-panel a{position:absolute;display:block;outline-offset:-3px}
-.dh-panel a:hover,.dh-panel a:focus-visible{outline:2px solid var(--accent-light);background:rgba(var(--accent-rgb),.06)}
+.dh-panel{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;line-height:1}
+.dh-panel a{position:absolute;display:block;pointer-events:auto;outline-offset:-2px}
+.dh-panel a:hover,.dh-panel a:focus-visible{outline:2px solid var(--accent-light)}
 .dh-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .dh-index-toggle,.dh-back{border:0;background:transparent;color:#dedbdd;font:500 .8rem/1.2 var(--font-body);cursor:pointer}
 .dh-index-toggle{position:absolute;right:3.4%;bottom:1.5rem;display:flex;gap:.6rem;align-items:center;padding:.75rem .85rem;border:1px solid #ffffff32;border-radius:2px;background:#141416dd}
-.dh-veil{background:linear-gradient(to top,var(--black) 7%,transparent 53%);opacity:0;pointer-events:none}
-.dh-veil::after{content:'';position:absolute;inset:0;background:var(--black);opacity:inherit}
+.dh-veil{background:linear-gradient(to top,var(--black),transparent 65%);opacity:0;pointer-events:none}
 .dh-work-anchor{scroll-margin-top:0;outline:none}
 .dh[data-live=true] .dh-work-anchor{position:absolute;width:1px;height:1px;left:0;pointer-events:none}
 .dh-index{padding:clamp(4rem,8vw,9rem) 6vw;background:var(--black);color:var(--gold-bright)}
@@ -2442,6 +2451,12 @@ footer span{color:var(--accent-glow)}
 .dh-index li a{padding:.9rem 0;display:flex;justify-content:space-between;gap:.75em;font-weight:600}
 .dh-index li span{color:var(--gold-dim);font-weight:400}
 .dh-back{display:block;margin:0 0 2.5rem auto;color:var(--accent-light)}
+/* About advances one viewport into the desk's pin spacer. Its sticky
+   content takes over exactly when the desk pin releases. */
+.dh[data-live=true] + .dv-section{
+  z-index:2;margin-top:-100svh;padding-top:0;
+  box-shadow:0 -1px 0 rgba(var(--accent-rgb),.21),0 -24px 72px #0007;
+}
 @media (max-aspect-ratio:9/10){
   .dh-poster{background-image:url('/images/hero/desk-hero-phone.webp')}
   .dh-intro{top:max(12svh,4.8rem);left:6%;width:90%;transform:none}

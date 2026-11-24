@@ -50,8 +50,9 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 ### Desk hero
 - Regenerate the model with `blender -b -P scripts/build-desk-hero.py`, then `node scripts/optimize-models.mjs desk-hero`.
 - `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
-- `components/desk/screens.ts` supplies the screen artwork and link rectangles from the portfolio data. The visible panel's canvas also supplies the mesh texture.
-- The preloader waits for the first painted frame or the static index, with its existing timeout. Reduced motion and WebGL failures use the index.
+- `components/desk/screens.ts` paints one texture per monitor. The same rectangles position transparent HTML links through the four projected screen corners. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
+- The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+- `DeviceShowcase` covers the final viewport of the desk pin to introduce About Me.
 
 ### Navbar Logo
 - Inline SVG monogram "AH" with gold gradient (the old 828KB `logo-placeholder.svg` is gone)

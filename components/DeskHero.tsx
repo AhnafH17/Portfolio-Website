@@ -17,6 +17,7 @@ import { projectData } from '@/lib/projects';
 import { hasWebGL } from '@/lib/webgl';
 import { CATEGORIES, tags } from './desk/screens';
 import { FIRST_WORK, ease } from './desk/beats';
+import type { ReportDeskLoad } from './desk/loading';
 
 const DeskCanvas = lazy(() => import('./desk/DeskCanvas'));
 gsap.registerPlugin(ScrollTrigger);
@@ -34,7 +35,15 @@ class DeskBoundary extends Component<{ children: ReactNode; onFailure: () => voi
   }
 }
 
-export default function DeskHero({ revealed }: { revealed: boolean }) {
+export default function DeskHero({
+  revealed,
+  skip,
+  reportLoad,
+}: {
+  revealed: boolean;
+  skip: boolean;
+  reportLoad: ReportDeskLoad;
+}) {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const intro = useRef<HTMLDivElement>(null);
@@ -48,10 +57,16 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(true);
   const [list, setList] = useState(false);
-  const showCanvas = enabled && !failed && !list;
+  const showCanvas = enabled && !failed && !skip && !list;
   const live = showCanvas && ready;
-  const onReady = useCallback(() => setReady(true), []);
-  const onFailure = useCallback(() => setFailed(true), []);
+  const onReady = useCallback(() => {
+    setReady(true);
+    reportLoad({ phase: 'ready' });
+  }, [reportLoad]);
+  const onFailure = useCallback(() => {
+    setFailed(true);
+    reportLoad({ phase: 'fallback' });
+  }, [reportLoad]);
 
   useEffect(() => {
     const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -61,6 +76,7 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
       setEnabled(!reduced.matches && available);
       setFailed((previous) => previous || !available);
       setPhone(small.matches);
+      if (reduced.matches || !available) reportLoad({ phase: 'fallback' });
     };
     sync();
     reduced.addEventListener('change', sync);
@@ -80,13 +96,13 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
       io.disconnect();
       document.removeEventListener('visibilitychange', visibility);
     };
-  }, []);
+  }, [reportLoad]);
   useEffect(() => {
-    if (ready || failed || matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (ready || skip || failed || matchMedia('(prefers-reduced-motion: reduce)').matches) {
       root.current!.dataset.deskReady = 'true';
       window.dispatchEvent(new Event('deskready'));
     }
-  }, [ready, failed, enabled]);
+  }, [ready, failed, skip]);
 
   useLayoutEffect(() => {
     if (!live) {
@@ -110,7 +126,7 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
       progress.current = p;
       intro.current!.style.opacity = String(1 - ease((p - 0.073) / 0.055));
       intro.current!.inert = p > 0.12;
-      veil.current!.style.opacity = String(ease((p - 0.81) / 0.19));
+      veil.current!.style.opacity = String(0.42 * ease((p - 0.84) / 0.16));
     };
     const pin = ScrollTrigger.create({
       trigger: stage.current,
@@ -163,6 +179,7 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
                   progress={progress}
                   panels={panels}
                   onReady={onReady}
+                  reportLoad={reportLoad}
                   onFailure={onFailure}
                 />
               </Suspense>
@@ -193,7 +210,6 @@ export default function DeskHero({ revealed }: { revealed: boolean }) {
             role="group"
             aria-labelledby={'desk-monitor-' + cat.monitor}
           >
-            <canvas aria-hidden="true" />
             <div className="dh-sr">
               <h2 id={'desk-monitor-' + cat.monitor}>
                 {cat.title} {cat.titleBold}
