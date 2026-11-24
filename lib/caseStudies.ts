@@ -243,23 +243,26 @@ export const CASE_STUDIES: Partial<Record<ProjectKey, CaseStudy>> = {
 
   aurix: {
     heroAlt: 'AurixLab homepage showing a 3D office scene with the AurixLab name',
-    summary: 'A technical SEO overhaul for a Calgary digital marketing agency, competing in its own crowded local market.',
-    problem: 'An agency that sells digital marketing has to be findable itself. AurixLab needed better visibility and performance in Calgary’s competitive digital marketing space, and its site needed proper technical foundations.',
-    role: 'I ran the SEO overhaul: keyword research, on-page optimisation, structured data and performance work.',
+    summary: 'Front-end development for AurixLab’s own Webflow site: a live client dashboard demo, scroll-drawn services, case study pages, and a phone performance pass.',
+    problem: 'An agency that builds websites is judged on its own. AurixLab’s homepage needed to show the agency’s work and its client dashboard, not just describe them, and it had to stay smooth on mid-range phones, where its 3D hero and scroll animation were stuttering.',
+    role: 'I lead the front end of aurixlab.com in Webflow: designing and coding new sections and pages, and profiling and fixing performance.',
     approach: [
-      { title: 'Find winnable terms', body: 'Extensive keyword research across Calgary-specific digital marketing searches, looking for high-value terms with less competition.' },
-      { title: 'Tighten every page', body: 'Meta titles, descriptions, heading hierarchy and internal linking optimised across the site, with canonical URLs, the sitemap and robots.txt set up properly.' },
-      { title: 'Describe the business to search engines', body: 'Organization, LocalBusiness and Service schema in JSON-LD, mapping each service to the right schema.org type and validating it in Google’s Rich Results Test.' },
-      { title: 'Fix what slowed it down', body: 'Image optimisation, render-blocking resources removed, and CLS and LCP improved.' },
+      { title: 'Show the product, don’t describe it', body: 'A four-device lineup of the client dashboard, and a Try demo button that opens a clickable copy of it, sized to the visitor’s screen, with sample data only.' },
+      { title: 'Make scrolling tell the story', body: 'A services ring that draws itself as you scroll, and a case studies carousel that pops in on the black end of the “Fuelling brands” sequence and plays out in reverse when you scroll back.' },
+      { title: 'Give the work its own pages', body: 'A Webflow CMS template, three case study pages and an overview page, each with its own title, description, canonical URL and Article and Breadcrumb JSON-LD.' },
+      { title: 'Measure on a slow phone first', body: 'Profiled the page with 4× CPU throttling and real finger drags. The hero 3D now pauses off screen, hidden videos no longer load, the particle logo only reacts to taps on itself, and about 300 KB of unused script preloads are gone.' },
     ],
     gallery: [
-      { src: 'images/case/aurix-home.webp', alt: 'AurixLab homepage with a 3D office scene and a Let’s Talk button', caption: 'The site the work was done on.', width: 1440, height: 900 },
-      { src: 'images/case/aurix-phone.webp', alt: 'AurixLab homepage on a phone', caption: 'The same page on a phone.', width: 585, height: 996, tall: true },
+      { src: 'images/case/aurix-dashboard.webp', alt: 'AurixLab client dashboard section: a monitor, laptop, tablet and phone showing a sample dashboard, with a Try demo button', caption: 'The client dashboard section. Every figure on the screens is sample data.', width: 1440, height: 900 },
+      { src: 'images/case/aurix-ring.webp', alt: 'AurixLab services ring reading Everything. Connected. with six service cards around a gold dial', caption: 'The services ring draws itself as you scroll.', width: 1440, height: 740 },
+      { src: 'images/case/aurix-case-studies.webp', alt: 'AurixLab case studies carousel showing the Merch Express spam protection case study', caption: 'The case studies carousel on the homepage.', width: 1440, height: 900 },
+      { src: 'images/case/aurix-phone.webp', alt: 'AurixLab homepage on a phone', caption: 'The homepage on a phone.', width: 585, height: 996, tall: true },
     ],
-    outcome: 'The site reached a 90+ SEO score, with structured data live across its services.',
+    outcome: 'The new homepage is live on aurixlab.com. On a throttled mid-range phone, script work while scrolling the case studies fell from 2.6 s to 0.4 s per pass, and below the hero the page went from ten videos playing to one.',
     metrics: [
-      { big: '90+', label: 'SEO score' },
-      { big: '3', label: 'Schema types live' },
+      { big: '6.5×', label: 'less script work scrolling on a phone' },
+      { big: '10 → 1', label: 'videos playing below the hero' },
+      { big: '4', label: 'new case study pages' },
     ],
   },
 

@@ -62,7 +62,7 @@ const SHORT_DESC: Record<ProjectKey, string> = {
   resizer: 'A browser-based SaaS tool for batch image optimization.',
   cpc: 'Complete website overhaul, security remediation and SEO push.',
   revive: 'Premium program pages for mental wellness and brain stimulation.',
-  aurix: 'Comprehensive SEO overhaul with schema markup and Core Web Vitals.',
+  aurix: 'Front end of the agency’s Webflow site: dashboard demo, case studies, scroll motion.',
   dashboard: 'Live monthly growth reports for agency clients, synced every 30 min.',
   urbandecant: 'A live perfume store with a 3D bottle hero and local payments.',
 };

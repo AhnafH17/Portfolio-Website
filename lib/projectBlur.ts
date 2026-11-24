@@ -3,7 +3,7 @@
    Generated from public/images/projects/*.webp — regenerate if they change:
    node scripts/make-project-blur.mjs */
 export const PROJECT_BLUR: Record<string, string> = {
-  "aurix": 'data:image/webp;base64,UklGRqYAAABXRUJQVlA4IJoAAAAQBACdASoYAA0APt1cpkyopSOiMAgBEBuJZQAOcC0NmvnMU6hppfx3KAD+8uhe1/LqtQd4zlDyxvOtiXMJEiUM6dY8TExpKaA8cNLvMpK9/zq24mJ6JrFdRp8XudMrOwvyEekDk6tYudHub3Mex6LO1s7ByG/PJASRUMIXt5DHyiRRsyY1Bm2+hXK1KyH/zWrRHiyEum183AAA',
+  "aurix": 'data:image/webp;base64,UklGRn4AAABXRUJQVlA4IHIAAADQAwCdASoYAA0APt1cpkyopSOiMAgBEBuJZQC06CHiFIT3TxauYAAA/vLXDGutGeR2ClFyDmueeAqqAoMVdjdul6hZyzT53DUqlQA928jEhA10fiW9/GuiKGZH3Z0XcwUyR37L2l3zLYP3Rrd+PH+2AAA=',
   "bp": 'data:image/webp;base64,UklGRpAAAABXRUJQVlA4IIQAAAAwBACdASoYAA0APt1cpkyopSOiMAgBEBuJZQC7ACHhrqA4DyqhmjuLDqAA/trNkdIPrAZqfhVDyG+8TUn95kBFzSe7G50e2WzbLhyCavz8R+5WXKPHYkDb/oXQ6xwUvDQSzWzquGGS1qiG2OGnABspbNrJRI4F9iOlF+FAFZBuaWrAQAA=',
   "cpc": 'data:image/webp;base64,UklGRqAAAABXRUJQVlA4IJQAAABQBACdASoYAA0APt1apkyopSOiMAgBEBuJQBOmUGVs6R2tnvqXu+7bQyvAAPzYG5hPWKWRVhMwAcne4YXJDb0h2iXzj7L6XmPCSqSEY9oNZ5vBKyT24XeXdKGvPSRdjsM9dcNtcg4dRYq3DqCzPM1XBZCH2odPTtNmetzUlmi6ch9wAdwZCU707W06nNNx5xkphUAA',
   "dashboard": 'data:image/webp;base64,UklGRk4AAABXRUJQVlA4IEIAAABQAwCdASoYAA8APt1cpkyopSOiMAgBEBuJaQDG9CzbZJxQAAD+8J0403bflkpsJR27vUdMMHtCrE1J4Syod1cAAAA=',

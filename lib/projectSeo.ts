@@ -79,9 +79,9 @@ export const projectSeo: Record<ProjectKey, ProjectSeo> = {
     viaAurixLab: true,
   },
   aurix: {
-    title: 'AurixLab Technical SEO: Schema & Core Web Vitals',
-    description: 'How Ahnaf Hussain ran the SEO overhaul for AurixLab, a Calgary agency: keyword research, on-page optimization, JSON-LD schema and Core Web Vitals.',
-    workType: 'CreativeWork',
+    title: 'AurixLab Front End: Webflow & GSAP',
+    description: "Ahnaf Hussain's front-end work on aurixlab.com, a Calgary agency's Webflow site: a client dashboard demo, case study pages, GSAP scroll motion and phone speed.",
+    workType: 'WebSite',
     client: AURIXLAB,
     viaAurixLab: true,
   },

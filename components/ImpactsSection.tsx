@@ -42,7 +42,7 @@ const IMPACTS: Impact[] = [
   { big: '0', text: 'manual reports: live dashboards sync 4 platforms', src: 'Client Dashboard', at: [90.5, 47, 'b'], atMobile: [25, 33] },
   { big: '$220', text: 'saved monthly on tooling, used daily by 11 people', src: 'Mission Control', at: [89, 71, 'l'], atMobile: [75, 33] },
   { big: '3 min', text: 'to a personal follow-up on every quote; replies are up', src: 'Email Automation', at: [89, 88, 'l'], atMobile: [25, 64] },
-  { big: '95+', text: 'SEO score on every site I’ve led', src: 'CPC · Merch Express · AurixLab', at: [52, 85, 'r'], atMobile: [75, 64] },
+  { big: '95+', text: 'SEO score on every site I’ve led', src: 'CPC · Merch Express', at: [52, 85, 'r'], atMobile: [75, 64] },
   { big: '157', text: 'search clicks within weeks of launch', src: 'LeadCraft IT · Vista Preservation', at: [31, 87, 'r'], atMobile: [25, 76] },
   { big: '40+', text: 'pages designed and built from scratch', src: 'CPC Clinics', at: [12, 72, 'r'], atMobile: [75, 76] },
   { big: '18', text: 'collection pages rebuilt, at a 95+ load speed', src: 'Merch Express rebrand', at: [9.5, 46, 'b'], atMobile: [25, 88] },

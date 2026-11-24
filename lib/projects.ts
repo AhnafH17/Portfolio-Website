@@ -431,7 +431,7 @@ export const projectData: Record<ProjectKey, Project> = {
 
   aurix: {
     label: 'Project 08',
-    title: 'AurixLab SEO Optimization',
+    title: 'AurixLab Front End',
     link: 'https://www.aurixlab.com/',
     image: 'images/projects/aurix.webp',
     imagePlaceholder: '',
@@ -439,38 +439,40 @@ export const projectData: Record<ProjectKey, Project> = {
       {
         heading: 'Overview',
         content:
-          "<p>AurixLab is a Calgary-based marketing agency specializing in Shopify customization, promotional products, and digital marketing. I was tasked with a comprehensive SEO overhaul to improve the site's visibility and performance in Calgary's competitive digital marketing landscape.</p>",
+          '<p>AurixLab is a digital marketing agency in Calgary, and aurixlab.com is its shop window. I lead the front end of the site in Webflow: new sections, new pages and the custom code behind them, written in plain JavaScript with GSAP and ScrollTrigger, with no extra frameworks. The work went live on aurixlab.com in November 2026.</p>',
       },
       {
         heading: 'Work Done',
         content:
-          '<ul><li>Conducted extensive <strong>keyword research</strong> targeting Calgary-specific digital marketing search terms</li><li>Optimized all page content: meta titles, meta descriptions, heading hierarchy, and internal linking structures</li><li>Implemented <strong>structured data / schema markup</strong> (JSON-LD) across the site for enhanced search result appearance, including Organization, LocalBusiness, and Service schemas</li><li>Identified and fixed performance bottlenecks: image optimization, render-blocking resource elimination, CLS/LCP improvements</li><li>Set up proper canonical URLs, sitemap, and robots.txt configuration</li></ul>',
+          '<ul><li><strong>Client dashboard section:</strong> a monitor, laptop, tablet and phone that rise in one after another, each showing one part of the agency’s client dashboard. A <strong>Try demo</strong> button slides the devices away and opens a clickable copy of the dashboard, sized to the visitor’s screen, with sample data only</li><li><strong>Services ring:</strong> a scroll-drawn dial, “Everything. Connected.”, where each service card rides the drawing line into place and a comet lights each one as it orbits</li><li><strong>Case studies:</strong> a homepage carousel that pops in on the black end of the “Fuelling brands” scroll, plus a Webflow CMS template, three case study pages and an overview page, each with its own title, description, canonical URL and Article and Breadcrumb JSON-LD</li><li><strong>Phone performance:</strong> profiled the page on throttled phones and fixed what made it stutter: the hero 3D scene kept rendering after it scrolled away, nine hidden videos were still downloading and playing, and the footer particle logo rebuilt itself on every tap</li><li><strong>Going live:</strong> moved the work copy onto aurixlab.com and restored what the copy was missing, including a careers page, service-page JSON-LD and lead tracking</li></ul>',
       },
       {
         heading: 'Challenges & Solutions',
         content:
-          "<ul><li><strong>Competitive Local Market:</strong> Calgary's digital marketing space is competitive. Extensive research was needed to identify high-value, low-competition keyword opportunities</li><li><strong>Schema Complexity:</strong> Implementing comprehensive structured data for a multi-service agency required careful mapping of service types to appropriate schema.org types and validation through Google's Rich Results Test</li></ul>",
+          '<ul><li><strong>Webflow’s limits:</strong> each Embed holds at most 50,000 characters, so the larger features ship as compact builds or as hosted scripts with version numbers, which keeps every change easy to roll back</li><li><strong>Smooth on real phones:</strong> the scroll sections shook on mid-range phones. A scroll-listener hold became CSS sticky, blur and backdrop filters were swapped for opacity and transform, and anything off screen stops animating</li><li><strong>Scrolling both ways:</strong> the case studies exit runs on the scroll position rather than a timer, so scrolling back up plays it out in reverse before “FUTURE” returns</li></ul>',
       },
       {
         heading: 'Results',
         type: 'results',
         items: [
-          { big: '90+', label: 'SEO Score' },
-          { big: 'Faster', label: 'Load Times' },
-          { big: 'Live', label: 'Schema Markup' },
-          { big: 'Higher', label: 'Search Visibility' },
+          { big: '6.5×', label: 'Less Script Work on Phones' },
+          { big: '10 → 1', label: 'Videos Playing Below the Hero' },
+          { big: '4', label: 'New Case Study Pages' },
+          { big: 'Live', label: 'On aurixlab.com' },
         ],
       },
       {
         heading: 'Technologies',
         type: 'tech',
         tags: [
-          'SEO',
-          'Schema.org / JSON-LD',
-          'Google Search Console',
-          'PageSpeed Insights',
-          'Keyword Research',
-          'Core Web Vitals',
+          'Webflow',
+          'Webflow CMS',
+          'JavaScript',
+          'GSAP',
+          'ScrollTrigger',
+          'CSS',
+          'JSON-LD',
+          'Playwright',
         ],
       },
     ],
@@ -618,7 +620,7 @@ export const stripMeta: StripMeta[] = [
   { key: 'data',     num: '05', tags: ['Python', 'ML', 'Anthropic'] },
   { key: 'cpc',      num: '06', tags: ['WordPress', 'SEO', 'Security'] },
   { key: 'bp',       num: '07', tags: ['Shopify', 'API', 'Liquid'] },
-  { key: 'aurix',    num: '08', tags: ['SEO', 'Schema', 'Core Web Vitals'] },
+  { key: 'aurix',    num: '08', tags: ['Webflow', 'GSAP', 'Front End'] },
   { key: 'resizer',  num: '09', tags: ['HTML5', 'Canvas', 'Netlify'] },
   { key: 'dashboard', num: '10', tags: ['Next.js', 'Supabase', 'APIs'] },
   { key: 'urbandecant', num: '11', tags: ['Medusa', 'Next.js', 'Three.js'] },
