@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { ABOUT_STOPS } from './about/stops';
+import { hasWebGL } from '@/lib/webgl';
 
 // Three.js only on the client, and only once this section mounts.
 const WorkspaceCanvas = dynamic(() => import('./about/WorkspaceCanvas'), { ssr: false });
@@ -18,17 +19,17 @@ export default function AboutSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const veilRef = useRef<HTMLDivElement>(null);
   const edgeRef = useRef<HTMLDivElement>(null);
-  const [noWebgl, setNoWebgl] = useState(false);
+  const [noWebgl, setNoWebgl] = useState<boolean | null>(null);
   useEffect(() => {
     // Set after mount: the server can't know, and the first paint shouldn't differ.
-    const id = requestAnimationFrame(() => setNoWebgl(!('WebGLRenderingContext' in window)));
+    const id = requestAnimationFrame(() => setNoWebgl(!hasWebGL()));
     return () => cancelAnimationFrame(id);
   }, []);
 
   return (
     <section id="about" ref={sectionRef} className={`ab3${noWebgl ? ' ab3--plain' : ''}`}>
       <div className="ab3-sticky" aria-hidden="true">
-        {!noWebgl && <WorkspaceCanvas sectionRef={sectionRef} veilRef={veilRef} edgeRef={edgeRef} />}
+        {noWebgl === false && <WorkspaceCanvas sectionRef={sectionRef} veilRef={veilRef} edgeRef={edgeRef} />}
         <div ref={edgeRef} className="ab3-edge" />
         <div ref={veilRef} className="ab3-veil" />
       </div>

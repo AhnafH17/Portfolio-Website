@@ -9,7 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 
-const MODELS = (process.argv[2] ? process.argv.slice(2) : ['laptop', 'phone', 'about-workspace']);
+const MODELS = (process.argv[2] ? process.argv.slice(2) : ['laptop', 'phone', 'about-workspace', 'desk-hero']);
 const KEEP_STRUCTURE = [
   '--join', 'false', '--flatten', 'false', '--instance', 'false',
   '--palette', 'false', '--simplify', 'false', '--weld', 'false',

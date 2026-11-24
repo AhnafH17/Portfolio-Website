@@ -17,7 +17,13 @@ export default function Navbar() {
   const navRef = useRef<HTMLElement>(null);
   // Read inside the scroll handler, which is bound once
   const menuOpenRef = useRef(false);
-  menuOpenRef.current = menuOpen;
+  useEffect(() => {
+    menuOpenRef.current = menuOpen;
+    if (!menuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.setProperty('overflow', 'hidden');
+    return () => { document.body.style.setProperty('overflow', previous); };
+  }, [menuOpen]);
 
   /* Hide on scroll down, reveal on scroll up. The threshold stops the bar
      flickering on the small jitter Lenis produces while easing, and it always
@@ -43,37 +49,21 @@ export default function Navbar() {
 
   // Nav active scroll-spy
   useEffect(() => {
-    const links = navItems.map((i) => i.href.replace('#', ''));
-
-    const handler = (entries: IntersectionObserverEntry[]) => {
-      entries.forEach((en) => {
-        if (en.isIntersecting) {
-          const id = (en.target as HTMLElement).dataset.navId || en.target.id;
-          setActiveHref('#' + id);
-        }
+    // Work is a point inside the desk pin. About and Contact mount lazily.
+    const links = [...navItems].reverse();
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const current = links.find(({ href }) => {
+        const el = document.querySelector(href);
+        return el && el.getBoundingClientRect().top <= 80;
       });
+      setActiveHref(current?.href ?? '#hero');
     };
-
-    const obs = new IntersectionObserver(handler, {
-      threshold: 0.01,
-      rootMargin: '-60px 0px 0px 0px',
-    });
-
-    // showcase: observe the sticky inner div
-    const accSticky = document.getElementById('accSticky');
-    if (accSticky) {
-      accSticky.dataset.navId = 'showcase';
-      obs.observe(accSticky);
-    }
-
-    links
-      .filter((id) => id !== 'showcase')
-      .forEach((id) => {
-        const el = document.getElementById(id);
-        if (el) obs.observe(el);
-      });
-
-    return () => obs.disconnect();
+    const queue = () => { if (!frame) frame = requestAnimationFrame(read); };
+    queue();
+    window.addEventListener('scroll', queue, { passive: true });
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', queue); };
   }, []);
 
   // Reveal observer
@@ -116,15 +106,16 @@ export default function Navbar() {
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const target = document.querySelector(href);
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target instanceof HTMLElement) {
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (window.__lenis) window.__lenis.scrollTo(target, { immediate: reduce });
+      else target.scrollIntoView({ behavior: reduce ? 'instant' : 'smooth', block: 'start' });
+    }
     setMenuOpen(false);
-    document.body.style.overflow = '';
   };
 
   const toggleMenu = () => {
-    const next = !menuOpen;
-    setMenuOpen(next);
-    document.body.style.overflow = next ? 'hidden' : '';
+    setMenuOpen(open => !open);
   };
 
   return (

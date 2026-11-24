@@ -2405,3 +2405,50 @@ footer span{color:var(--accent-glow)}
 /* The colour wave: old colours stay put while the new page is revealed
    through a growing circle (the animation is set in lib/palette.ts). */
 ::view-transition-old(root), ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }
+
+/* Opening desk and the project index used for keyboard navigation, reduced
+   motion and devices without WebGL. The work anchor sits outside the pin. */
+.dh{position:relative;padding:0;background:#101012;color:#f4f3f1}
+.dh-stage{position:relative;isolation:isolate;width:100%;height:100svh;overflow:hidden;background:#101012}
+.dh-poster,.dh-canvas,.dh-veil{position:absolute;inset:0}
+.dh-poster{background:#101012 url('/images/hero/desk-hero-wide.webp') center/cover no-repeat}
+.dh-canvas{opacity:0;pointer-events:none}
+.dh[data-live=true] .dh-canvas{opacity:1}
+.dh-intro{position:absolute;top:46%;left:4.8%;transform:translateY(-50%);width:34%;pointer-events:none}
+.dh-role{font:600 clamp(.66rem,.84vw,1rem)/1.4 var(--font-body);color:#d4cfd0;letter-spacing:.055em;margin:0 0 1.3rem}
+.dh-role span{color:var(--accent-light);padding:0 .32em}
+.dh-intro h1{font:400 clamp(2.8rem,5.1vw,8.6rem)/1.01 var(--font-display);letter-spacing:-.052em;text-transform:uppercase;color:#f7f5f2}
+.dh-work{display:inline-flex;pointer-events:auto;gap:1.2em;align-items:center;color:#f6f4f2;font-weight:600;font-size:.94rem;line-height:1.2;
+  margin-top:clamp(1.5rem,2.5vw,3rem);padding:.76rem 0;border-bottom:1px solid var(--accent-glow)}
+.dh-work span,.dh-index-toggle span{color:var(--accent-light)}
+.dh-work:focus-visible,.dh-index-toggle:focus-visible,.dh-back:focus-visible,.dh-index a:focus-visible{outline:2px solid var(--accent-light);outline-offset:4px}
+.dh-panel{position:absolute;left:0;top:0;overflow:hidden;line-height:1}
+.dh-panel canvas{width:100%;height:100%;display:block}
+.dh-panel a{position:absolute;display:block;outline-offset:-3px}
+.dh-panel a:hover,.dh-panel a:focus-visible{outline:2px solid var(--accent-light);background:rgba(var(--accent-rgb),.06)}
+.dh-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.dh-index-toggle,.dh-back{border:0;background:transparent;color:#dedbdd;font:500 .8rem/1.2 var(--font-body);cursor:pointer}
+.dh-index-toggle{position:absolute;right:3.4%;bottom:1.5rem;display:flex;gap:.6rem;align-items:center;padding:.75rem .85rem;border:1px solid #ffffff32;border-radius:2px;background:#141416dd}
+.dh-veil{background:linear-gradient(to top,var(--black) 7%,transparent 53%);opacity:0;pointer-events:none}
+.dh-veil::after{content:'';position:absolute;inset:0;background:var(--black);opacity:inherit}
+.dh-work-anchor{scroll-margin-top:0;outline:none}
+.dh[data-live=true] .dh-work-anchor{position:absolute;width:1px;height:1px;left:0;pointer-events:none}
+.dh-index{padding:clamp(4rem,8vw,9rem) 6vw;background:var(--black);color:var(--gold-bright)}
+.dh-index section{max-width:68rem;margin:0 auto 3rem;padding:0}
+.dh-index h2{font:400 clamp(1.2rem,3vw,2.8rem)/1.22 var(--font-display)}
+.dh-index p{margin:.75rem 0 1.5rem;color:var(--gold)}
+.dh-index ul{list-style:none}
+.dh-index li{border-top:1px solid var(--steel)}
+.dh-index li a{padding:.9rem 0;display:flex;justify-content:space-between;gap:.75em;font-weight:600}
+.dh-index li span{color:var(--gold-dim);font-weight:400}
+.dh-back{display:block;margin:0 0 2.5rem auto;color:var(--accent-light)}
+@media (max-aspect-ratio:9/10){
+  .dh-poster{background-image:url('/images/hero/desk-hero-phone.webp')}
+  .dh-intro{top:max(12svh,4.8rem);left:6%;width:90%;transform:none}
+  .dh-intro h1{font-size:clamp(2.5rem,10.8vw,5rem);line-height:.97}
+  .dh-role{margin-bottom:.65rem;font-size:clamp(.65rem,2.8vw,.88rem)}
+  .dh-work{margin-top:.65rem;padding:.65rem 0;font-size:.85rem}
+  .dh-index-toggle{bottom:max(.8rem,env(safe-area-inset-bottom));left:5.8%;right:auto}
+  .dh-index li a{display:block}
+  .dh-index li span{display:block;font-size:.85rem}
+}

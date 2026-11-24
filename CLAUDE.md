@@ -24,7 +24,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `app/globals.css` | All CSS — variables, component styles |
 | `app/layout.tsx` | Root layout, loads fonts |
 | `app/page.tsx` | Page composition |
-| `components/HeroSection.tsx` | Hero — role line, giant name behind a cut-out portrait, orbit, CTA; GSAP entrance on reveal |
+| `components/DeskHero.tsx`, `components/desk/` | Opening desk and selected work — one pinned camera tour, three live project displays and the static project index |
 | `components/Navbar.tsx` | Inline SVG monogram logo (no image file) |
 | `components/ShowcaseSection.tsx` | Project showcase — GSAP transitions, CSS bg lines |
 | `components/ContactSection.tsx` | Contact — canvas sparkles + form + dashboard mockup |
@@ -47,15 +47,11 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 
 ## Architecture Decisions
 
-### Hero
-- Portrait is a plain `<picture>`/`<img>` (AVIF + WebP, 400w/542w), NOT `next/image` — Next.js
-  optimization made the photo blurry. One cut-out for every palette (no per-palette grading)
-- Layers (back to front): accent streaks, giant name (`.hx-name`, Greater Theory, skewed
-  gradient text), orbit SVG, portrait, role line + CTA. Sized in vw/vh so it holds to 2K
-- Entrance plays once when `paused` turns false (the preloader's reveal): backdrop, role line,
-  orbit and CTA first; portrait rises from below; as it lands the name slides in behind it
-- The preloader only opens once the portrait has decoded (`heroReady` in `Preloader.tsx`)
-- The source photo is 1024px, so the cut-out is 542×755; on 2K screens it's shown ~1.4× up
+### Desk hero
+- Regenerate the model with `blender -b -P scripts/build-desk-hero.py`, then `node scripts/optimize-models.mjs desk-hero`.
+- `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
+- `components/desk/screens.ts` supplies the screen artwork and link rectangles from the portfolio data. The visible panel's canvas also supplies the mesh texture.
+- The preloader waits for the first painted frame or the static index, with its existing timeout. Reduced motion and WebGL failures use the index.
 
 ### Navbar Logo
 - Inline SVG monogram "AH" with gold gradient (the old 828KB `logo-placeholder.svg` is gone)

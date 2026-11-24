@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { hasWebGL } from '@/lib/webgl';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -16,10 +17,7 @@ function detectMode(): Mode {
   // Respect reduced-motion + missing WebGL → static fallback
   if (typeof window === 'undefined') return null;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // Feature check only: actually creating a context to test cost a whole
-  // WebGL context (and its GPU set-up) just to throw it away.
-  const webgl = 'WebGL2RenderingContext' in window || 'WebGLRenderingContext' in window;
-  if (reduced || !webgl) return 'fallback';
+  if (reduced || !hasWebGL()) return 'fallback';
   return window.matchMedia('(max-width: 768px)').matches ? 'phone' : 'laptop';
 }
 
@@ -33,7 +31,8 @@ export default function DeviceShowcase() {
   // Decided once on mount — we deliberately do NOT hot-swap on resize.
   const [mode, setMode] = useState<Mode>(null);
   useEffect(() => {
-    setMode(detectMode());
+    const frame = requestAnimationFrame(() => setMode(detectMode()));
+    return () => cancelAnimationFrame(frame);
   }, []);
 
   // Only run the WebGL render loop while the hero is on screen.

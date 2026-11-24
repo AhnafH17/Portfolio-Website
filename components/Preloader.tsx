@@ -18,8 +18,7 @@ interface PreloaderProps {
 /* The hands play on every load. The first visit in a session gets the full
    intro (~2.7s); reloads after that play it faster (~2s), and anyone who
    prefers reduced motion gets a ~1.3s version without the hands. Either
-   way the bars only open once the hero underneath is ready (fonts,
-   portrait, card images), so they never reveal a half-loaded page; while
+   way the bars wait for the opening desk or its static project index; while
    it isn't, the gripping hands strain. */
 const SEEN_KEY = 'pl-seen';
 // When the hands come (full / repeat) or the bars open (quick), in s from mount.
@@ -35,12 +34,18 @@ const SAFETY_MS = 7000;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** Resolves when what the hero shows first is in: fonts and the portrait. */
+/** The desk signals its first painted frame (or static fallback). */
 function heroReady(): Promise<void> {
-  const imgs = Array.from(document.querySelectorAll<HTMLImageElement>('#hero img'));
+  const desk = document.querySelector<HTMLElement>('#hero');
+  const frame = desk && !desk.dataset.deskReady
+    ? new Promise<void>(resolve => {
+        const done = () => { window.removeEventListener('deskready', done); clearTimeout(timer); resolve(); };
+        const timer = setTimeout(done, HERO_WAIT_MS);
+        window.addEventListener('deskready', done, {once: true});
+      })
+    : Promise.resolve();
   return Promise.all([
-    document.fonts?.ready,
-    ...imgs.map((img) => img.decode().catch(() => {})),
+    document.fonts?.ready, frame,
   ]).then(() => new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r()))));
 }
 
@@ -221,9 +226,11 @@ export default function Preloader({ onReveal, onDone }: PreloaderProps) {
     exitStarted.current = true;
 
     document.body.style.overflow = '';
-    window.scrollTo(0, 0);
+    const work = location.hash === '#showcase' && document.getElementById('showcase');
+    const revealY = work ? window.scrollY + work.getBoundingClientRect().top : 0;
+    window.scrollTo({top: revealY, behavior: 'instant'});
     if (window.__lenis) {
-      window.__lenis.scrollTo(0, { immediate: true });
+      window.__lenis.scrollTo(revealY, { immediate: true, force: true });
       window.__lenis.start();   // clear isStopped so wheel scrolling works again
     }
 

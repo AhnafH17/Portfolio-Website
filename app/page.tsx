@@ -2,8 +2,7 @@
 
 import { useState, lazy, Suspense, useEffect, useRef } from 'react';
 import Navbar from '@/components/Navbar';
-import CanvasShowcase from '@/components/CanvasShowcase';
-import HeroSection from '@/components/HeroSection';
+import DeskHero from '@/components/DeskHero';
 import CustomCursor from '@/components/CustomCursor';
 import Preloader from '@/components/Preloader';
 import Footer from '@/components/Footer';
@@ -37,11 +36,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!reveal || !siteRef.current) return;
-    /* Opacity only — no scale. The preloader hands off by cross-dissolving a
-       particle portrait onto the real hero photo, so the target must not be
-       moving. Reaches full opacity well before the preloader finishes fading
-       (0.95s), so the photo is solid underneath while the particles resolve
-       onto it and the two never dip to background together. */
+    // Reveal the desk beneath the opening letterbox.
     gsap.set(siteRef.current, { opacity: 0 });
     requestAnimationFrame(() => {
       gsap.to(siteRef.current!, { opacity: 1, duration: 0.5, ease: 'power2.out' });
@@ -137,6 +132,7 @@ export default function Home() {
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(homeGraph()) }} />
+      <noscript><style>{'.pl-root{display:none}[data-site-content]{opacity:1}'}</style></noscript>
       {!preloaderGone && (
         <Preloader
           onReveal={() => setReveal(true)}
@@ -147,11 +143,7 @@ export default function Home() {
       <div ref={siteRef} data-site-content>
         <Navbar />
         <main>
-          {/* Paused while the preloader owns the screen — the hero's starfield
-              and tilt loops are invisible behind it but were still burning
-              frames the particle animation needed. */}
-          <HeroSection paused={!reveal} />
-          <CanvasShowcase />
+          <DeskHero revealed={reveal} />
           {/* Below-fold sections are held back so their chunk eval and mount
               cost doesn't land during the preloader. */}
           {BELOW_FOLD.slice(0, mounted).map((Section, i) => (
