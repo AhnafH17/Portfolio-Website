@@ -1,17 +1,30 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useMemo, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useAccent } from '@/lib/palette';
-import { drawScreen, loadDeskThumbnails, screenLayout } from './screens';
-import { ease, fitTour, HOLDS, measureDisplays, panelTransform, pose, sampleTour } from './beats';
+import { DeskScreen, loadDeskThumbnails, screenLayout, type ScreenState, type Thumbs } from './screens';
+import {
+  ease,
+  fitTour,
+  HOLDS,
+  introAt,
+  measureDisplays,
+  panelTransform,
+  pose,
+  sampleTour,
+  toPin,
+  tourScreens,
+} from './beats';
 
 export interface DeskBindings {
   progress: RefObject<number>;
   panels: RefObject<(HTMLDivElement | null)[]>;
   focusFirstProjectRef: RefObject<boolean>;
   indexButton: RefObject<HTMLButtonElement | null>;
+  /** performance.now() when the preloader opened onto the desk, else null. */
+  introStart: RefObject<number | null>;
   onReady: () => void;
 }
 
@@ -32,15 +45,54 @@ function softGlow() {
   return texture;
 }
 
+interface LiveScreen {
+  screen: DeskScreen;
+  texture: THREE.CanvasTexture;
+  material: THREE.MeshBasicMaterial;
+  /** Upload sources for patches: never uploaded themselves, so three
+   *  copies them into the screen texture with texSubImage2D. */
+  sources: Map<HTMLCanvasElement, THREE.Texture>;
+  last: number;
+}
+
+/** Long side of each screen texture: the screen's pixel size at its hold
+ *  (with headroom for perspective filtering), 1024-2048 px; 1536+ on phones. */
+function textureSizes(
+  displays: ReturnType<typeof measureDisplays>,
+  tour: ReturnType<typeof fitTour>,
+  width: number,
+  height: number,
+  dpr: number,
+  phone: boolean,
+  max: number
+) {
+  const cam = new THREE.PerspectiveCamera(38, width / height, 0.01, 50);
+  return displays.map((d, i) => {
+    const stop = tour.screens[i];
+    cam.fov = stop.fov;
+    cam.position.copy(stop.eye);
+    cam.lookAt(stop.at);
+    cam.updateProjectionMatrix();
+    cam.updateMatrixWorld();
+    const [tl, tr, br, bl] = [d.tl, d.tr, d.br, d.bl].map((c) => c.clone().project(cam));
+    const px = (a: THREE.Vector3, b: THREE.Vector3) => Math.hypot(((a.x - b.x) * width) / 2, ((a.y - b.y) * height) / 2);
+    const long = d.width >= d.height ? Math.max(px(tl, tr), px(bl, br)) : Math.max(px(tl, bl), px(tr, br));
+    const want = Math.ceil((long * dpr * 1.25) / 256) * 256;
+    return Math.min(max, 2048, Math.max(phone ? 1536 : 1024, want));
+  });
+}
+
 export default function DeskModel({
   progress,
   panels,
   focusFirstProjectRef,
   indexButton,
+  introStart,
   onReady,
   source,
 }: DeskBindings & { source: THREE.Group }) {
   const { size, get, gl } = useThree();
+  const dpr = useThree((state) => state.viewport.dpr);
   const accent = useAccent();
   const phone = size.width <= 768;
   const prepared = useMemo(() => {
@@ -95,16 +147,34 @@ export default function DeskModel({
       o.geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     });
     accentMaterial.vertexColors = true;
+    // The intro sweeps the LEDs on from left to right (world x).
+    const sweep = { value: 1e3 };
+    const accentBox = new THREE.Box3();
+    scene.traverse((o) => {
+      if (o instanceof THREE.Mesh && o.material === accentMaterial) accentBox.expandByObject(o);
+    });
     accentMaterial.onBeforeCompile = (shader) => {
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <emissivemap_fragment>',
-        '#include <emissivemap_fragment>\n totalEmissiveRadiance *= vColor.r;'
-      );
+      shader.uniforms.uSweep = sweep;
+      shader.vertexShader =
+        'varying float vSweepX;\n' +
+        shader.vertexShader.replace(
+          '#include <project_vertex>',
+          '#include <project_vertex>\nvSweepX = (modelMatrix * vec4(transformed, 1.0)).x;'
+        );
+      shader.fragmentShader =
+        'uniform float uSweep;\nvarying float vSweepX;\n' +
+        shader.fragmentShader.replace(
+          '#include <emissivemap_fragment>',
+          '#include <emissivemap_fragment>\n totalEmissiveRadiance *= vColor.r * clamp((uSweep - vSweepX) / 0.08, 0.0, 1.0);'
+        );
     };
     return {
       scene,
       displays,
       accentMaterial,
+      sweep,
+      sweepFrom: accentBox.min.x - 0.1,
+      sweepTo: accentBox.max.x + 0.1,
       diffuse,
       bounce,
       glow: softGlow(),
@@ -128,6 +198,13 @@ export default function DeskModel({
   const painted = useRef(false);
   const firstFrame = useRef(0);
   const screenSizes = useRef<ReturnType<typeof screenLayout>[]>([]);
+  const live = useRef<LiveScreen[]>([]);
+  /** Hover/focus and arrival per monitor, kept across texture rebuilds. */
+  const screenState = useRef<ScreenState[]>([0, 1, 2].map(() => ({ hover: -1, arrived: null })));
+  const pointerHover = useRef<[number, number]>([-1, -1]);
+  const focusHover = useRef<[number, number]>([-1, -1]);
+  const settledAt = useRef(-1);
+  const [assets, setAssets] = useState<{ thumbs: Thumbs | null } | null>(null);
   const lastPanel = useRef(-1);
   const lastSettled = useRef(false);
   const overlayBox = useRef('');
@@ -148,106 +225,229 @@ export default function DeskModel({
     world.background = new THREE.Color(bg);
   }, [accent, prepared, get]);
 
-  useLayoutEffect(() => {
+  // The atlas and typefaces load in parallel. The first visible GPU frame
+  // already contains the finished typography and project imagery.
+  useEffect(() => {
     let active = true;
-    const model = modelRef.current;
-    const entries = model.displays.map((display, i) => {
-      const panel = panels.current[i]!;
-      const canvas = document.createElement('canvas');
-      drawScreen(canvas, i, phone, accent, null);
-      const texture = new THREE.CanvasTexture(canvas);
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.flipY = false;
-      texture.anisotropy = Math.min(12, gl.capabilities.getMaxAnisotropy());
-      const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false });
-      display.mesh.material = material;
+    Promise.all([
+      loadDeskThumbnails(),
+      document.fonts.load('400 32px "Greater Theory"').catch(() => []),
+      document.fonts.load('600 18px "DM Sans"').catch(() => []),
+      document.fonts.load('300 18px "DM Sans"').catch(() => []),
+    ]).then(([thumbs]) => {
+      if (active) setAssets({ thumbs });
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  const sizes = useMemo(
+    () =>
+      textureSizes(
+        prepared.displays,
+        tour,
+        size.width,
+        size.height,
+        dpr,
+        phone,
+        gl.capabilities.maxTextureSize
+      ).join(','),
+    [prepared, tour, size, dpr, phone, gl]
+  );
+
+  // Link overlay: the same rectangles as the paint, for keyboard focus.
+  useLayoutEffect(() => {
+    prepared.displays.forEach((_, i) => {
+      const panel = panels.current[i]!;
       const layout = screenLayout(i, phone);
       screenSizes.current[i] = layout;
       panel.style.setProperty('width', layout.w + 'px');
       panel.style.setProperty('height', layout.h + 'px');
       panel.querySelectorAll('a').forEach((link, j) => {
         const { x, y, w, h } = layout.cards[j];
-        Object.assign(link.style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px' });
+        Object.assign(link.style, {
+          left: x + 'px',
+          top: y + 'px',
+          width: w + 'px',
+          height: h + 'px',
+          borderRadius: layout.radius + 'px',
+        });
       });
-      return { canvas, texture, material };
     });
+  }, [prepared, panels, phone]);
 
-    // The atlas and typefaces load in parallel. The first visible GPU frame
-    // already contains the finished typography and project imagery.
-    Promise.all([
-      loadDeskThumbnails(),
-      document.fonts.load('400 32px "Greater Theory"').catch(() => []),
-      document.fonts.load('600 18px "DM Sans"').catch(() => []),
-    ]).then(([thumbs]) => {
-      if (!active) return;
-      entries.forEach(({ canvas, texture }, i) => {
-        drawScreen(canvas, i, phone, accent, thumbs);
-        texture.needsUpdate = true;
-        const meter = document.createElement('canvas');
-        meter.width = meter.height = 8;
-        const ctx = meter.getContext('2d')!;
-        ctx.drawImage(canvas, 0, 0, 8, 8);
-        const pixels = ctx.getImageData(0, 0, 8, 8).data;
-        let sum = 0;
-        for (let k = 0; k < pixels.length; k += 4) {
-          sum += 0.213 * pixels[k] + 0.715 * pixels[k + 1] + 0.072 * pixels[k + 2];
-        }
-        brightness.current[i] = sum / (64 * 255);
-      });
-      painted.current = true;
+  useLayoutEffect(() => {
+    if (!assets) return;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const longSides = sizes.split(',').map(Number);
+    const now = performance.now() / 1000;
+    const entries = prepared.displays.map((display, i): LiveScreen => {
+      const screen = new DeskScreen(i, phone, longSides[i], accent, assets.thumbs, still);
+      screen.paintAll(now, screenState.current[i]);
+      const texture = new THREE.CanvasTexture(screen.canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.flipY = false;
+      texture.anisotropy = gl.capabilities.getMaxAnisotropy();
+      const material = new THREE.MeshBasicMaterial({ map: texture, toneMapped: false, fog: false });
+      display.mesh.material = material;
+      const meter = document.createElement('canvas');
+      meter.width = meter.height = 8;
+      const ctx = meter.getContext('2d')!;
+      ctx.drawImage(screen.canvas, 0, 0, 8, 8);
+      const pixels = ctx.getImageData(0, 0, 8, 8).data;
+      let sum = 0;
+      for (let k = 0; k < pixels.length; k += 4) {
+        sum += 0.213 * pixels[k] + 0.715 * pixels[k + 1] + 0.072 * pixels[k + 2];
+      }
+      brightness.current[i] = sum / (64 * 255);
+      return { screen, texture, material, sources: new Map(), last: 0 };
     });
+    live.current = entries;
+    painted.current = true;
     return () => {
-      active = false;
+      live.current = [];
       entries.forEach(({ material, texture }) => {
         material.dispose();
         texture.dispose();
       });
     };
-  }, [prepared, panels, phone, accent, gl]);
+  }, [assets, sizes, prepared, phone, accent, gl]);
 
+  // Pointer: from any camera position a hover or tap on a monitor raycasts
+  // the three screen meshes only and maps the hit UV to the layout's cards.
   useEffect(() => {
+    const stage = gl.domElement.closest<HTMLElement>('.dh-stage');
+    const root = gl.domElement.closest<HTMLElement>('.dh');
+    if (!stage || !root) return;
     const ray = new THREE.Raycaster();
     const point = new THREE.Vector2();
-    const installations = prepared.displays.map(({ mesh }, index) => {
-      const panel = panels.current[index]!;
-      let hovered: HTMLAnchorElement | null = null;
-      const clear = () => {
-        hovered?.removeAttribute('data-hit');
-        hovered = null;
+    const meshes = prepared.displays.map((d) => d.mesh);
+    const hitAt = (clientX: number, clientY: number) => {
+      if (!ready.current || !live.current.length) return null;
+      const { left, top, width, height } = gl.domElement.getBoundingClientRect();
+      point.set(((clientX - left) / width) * 2 - 1, 1 - ((clientY - top) / height) * 2);
+      ray.setFromCamera(point, get().camera);
+      const hit = ray.intersectObjects(meshes, false)[0];
+      if (!hit?.uv) return null;
+      const index = meshes.indexOf(hit.object as THREE.Mesh);
+      const screen = live.current[index]?.screen;
+      if (!screen) return null;
+      return { index, target: screen.hit(hit.uv.x * screen.layout.w, hit.uv.y * screen.layout.h) };
+    };
+    // Controls layered over the stage keep their own clicks.
+    const own = (event: Event) => {
+      const el = event.target instanceof Element ? event.target : null;
+      return !el || !el.closest('a, button, input, textarea, select, [role="button"]');
+    };
+    let frame = 0;
+    let lastMove: PointerEvent | null = null;
+    const setHover = (index: number, target: number) => {
+      pointerHover.current = [index, target];
+      const settledHere = index >= 0 && settledAt.current === index;
+      stage.style.cursor = index >= 0 && (target >= 0 || !settledHere) ? 'pointer' : '';
+    };
+    const move = (event: PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      lastMove = event;
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        if (!lastMove) return;
+        const hit = own(lastMove) ? hitAt(lastMove.clientX, lastMove.clientY) : null;
+        setHover(hit ? hit.index : -1, hit ? hit.target : -1);
+      });
+    };
+    const leave = () => {
+      lastMove = null;
+      setHover(-1, -1);
+    };
+    // Touch: a tap is a short press that didn't move (a moving finger is
+    // scrolling the page and is left alone). Handled on pointerup, as the
+    // page's touch handling doesn't always let a click through.
+    let down: { x: number; y: number; time: number } | null = null;
+    let tapped = 0;
+    const press = (event: PointerEvent) => {
+      down = event.pointerType === 'touch' ? { x: event.clientX, y: event.clientY, time: event.timeStamp } : null;
+    };
+    const cancel = () => {
+      down = null;
+    };
+    const release = (event: PointerEvent) => {
+      if (event.pointerType !== 'touch' || !down || !own(event)) return;
+      const still = Math.hypot(event.clientX - down.x, event.clientY - down.y) <= 10;
+      const short = event.timeStamp - down.time < 600;
+      down = null;
+      if (still && short && activate(event.clientX, event.clientY, false)) tapped = event.timeStamp;
+    };
+    const open = (event: MouseEvent) => {
+      if (!own(event) || event.button > 1) return;
+      // The tap was already handled on pointerup.
+      if (tapped && event.timeStamp - tapped < 800) {
+        event.preventDefault();
+        return;
+      }
+      if (activate(event.clientX, event.clientY, event.button === 1 || event.metaKey || event.ctrlKey, event.button))
+        event.preventDefault();
+    };
+    const activate = (clientX: number, clientY: number, newTab: boolean, button = 0) => {
+      const hit = hitAt(clientX, clientY);
+      if (!hit) return false;
+      const { screen } = live.current[hit.index];
+      if (hit.target >= 0) {
+        const href = '/projects/' + screen.keyAt(hit.target, performance.now() / 1000);
+        if (newTab) window.open(href, '_blank', 'noopener');
+        else window.location.assign(href);
+        return true;
+      }
+      if (button !== 0 || settledAt.current === hit.index) return true;
+      // An empty part of a monitor: glide to that monitor's stop.
+      const [start, end] = HOLDS[hit.index];
+      const y =
+        root.getBoundingClientRect().top +
+        window.scrollY +
+        Math.round(stage.clientHeight * tourScreens(phone)) * toPin((start + end) / 2, phone);
+      if (window.__lenis) window.__lenis.scrollTo(y, { duration: 1.6 });
+      else window.scrollTo({ top: y, behavior: 'smooth' });
+      return true;
+    };
+    // Keyboard focus on an overlay link highlights the same card.
+    const focusers = panels.current.map((panel, index) => {
+      const focus = (event: FocusEvent) => {
+        const links = [...panel!.querySelectorAll('a')];
+        const j = links.indexOf(event.target as HTMLAnchorElement);
+        focusHover.current = j >= 0 ? [index, j] : [-1, -1];
       };
-      const hitsScreen = (event: MouseEvent) => {
-        const { left, top, width, height } = gl.domElement.getBoundingClientRect();
-        point.set(((event.clientX - left) / width) * 2 - 1, 1 - ((event.clientY - top) / height) * 2);
-        ray.setFromCamera(point, get().camera);
-        return ray.intersectObject(prepared.scene, true)[0]?.object === mesh;
+      const blur = () => {
+        focusHover.current = [-1, -1];
       };
-      const pick = (event: PointerEvent) => {
-        const link = event.target instanceof Element ? event.target.closest('a') : null;
-        if (link === hovered && hovered?.hasAttribute('data-hit') && panel.dataset.settled === 'true') return;
-        clear();
-        if (link && hitsScreen(event)) {
-          hovered = link;
-          link.setAttribute('data-hit', '');
-        }
-      };
-      const activate = (event: MouseEvent) => {
-        if (event.detail && !hitsScreen(event)) event.preventDefault();
-      };
-      panel.addEventListener('pointermove', pick);
-      panel.addEventListener('pointerleave', clear);
-      panel.addEventListener('click', activate);
-      panel.addEventListener('auxclick', activate);
+      panel!.addEventListener('focusin', focus);
+      panel!.addEventListener('focusout', blur);
       return () => {
-        clear();
-        panel.removeEventListener('pointermove', pick);
-        panel.removeEventListener('pointerleave', clear);
-        panel.removeEventListener('click', activate);
-        panel.removeEventListener('auxclick', activate);
+        panel!.removeEventListener('focusin', focus);
+        panel!.removeEventListener('focusout', blur);
       };
     });
-    return () => installations.forEach((remove) => remove());
-  }, [prepared, panels, gl, get]);
+    stage.addEventListener('pointermove', move);
+    stage.addEventListener('pointerleave', leave);
+    stage.addEventListener('pointerdown', press);
+    stage.addEventListener('pointerup', release);
+    stage.addEventListener('pointercancel', cancel);
+    stage.addEventListener('click', open);
+    stage.addEventListener('auxclick', open);
+    return () => {
+      cancelAnimationFrame(frame);
+      stage.style.cursor = '';
+      focusers.forEach((remove) => remove());
+      stage.removeEventListener('pointermove', move);
+      stage.removeEventListener('pointerleave', leave);
+      stage.removeEventListener('pointerdown', press);
+      stage.removeEventListener('pointerup', release);
+      stage.removeEventListener('pointercancel', cancel);
+      stage.removeEventListener('click', open);
+      stage.removeEventListener('auxclick', open);
+    };
+  }, [prepared, panels, gl, get, phone]);
 
   useEffect(
     () => () => {
@@ -259,13 +459,75 @@ export default function DeskModel({
     [prepared]
   );
 
+  const patchAt = useMemo(() => new THREE.Vector2(), []);
+  const corner = useMemo(() => new THREE.Vector3(), []);
+  /** Advance each monitor's UI: ~30 fps when it fills a good part of the
+   *  view, a few fps when small, nothing when off screen or still dark.
+   *  Only the patches that changed are copied into the texture. */
+  const animateScreens = (cam: THREE.Camera, power: number[]) => {
+    const now = performance.now();
+    live.current.forEach((entry, i) => {
+      const [pi, pt] = pointerHover.current;
+      const [fi, ft] = focusHover.current;
+      const state = screenState.current[i];
+      const hover = pi === i ? pt : fi === i ? ft : -1;
+      const hoverChanged = hover !== state.hover;
+      state.hover = hover;
+      if (power[i] < 0.05 && !hoverChanged) return;
+      const d = modelRef.current.displays[i];
+      let minX = Infinity,
+        maxX = -Infinity,
+        minY = Infinity,
+        maxY = -Infinity,
+        behind = false;
+      for (const c of [d.tl, d.tr, d.br, d.bl]) {
+        corner.copy(c).project(cam);
+        if (corner.z > 1) behind = true;
+        minX = Math.min(minX, corner.x);
+        maxX = Math.max(maxX, corner.x);
+        minY = Math.min(minY, corner.y);
+        maxY = Math.max(maxY, corner.y);
+      }
+      const visible = !behind && maxX > -1 && minX < 1 && maxY > -1 && minY < 1;
+      const area = ((Math.min(maxX, 1) - Math.max(minX, -1)) * (Math.min(maxY, 1) - Math.max(minY, -1))) / 4;
+      const fps = !visible ? 0 : area > 0.12 ? 30 : 8;
+      // Hover changes land on the next frame whatever the rate.
+      if (!hoverChanged && (!fps || now - entry.last < 1000 / fps - 4)) return;
+      entry.last = now;
+      const patches = entry.screen.update(now / 1000, state);
+      patches.forEach((p, k) => {
+        let src = entry.sources.get(p.canvas);
+        if (!src) {
+          src = new THREE.Texture(p.canvas);
+          entry.sources.set(p.canvas, src);
+        }
+        // Rebuild mipmaps once, after the last patch of this frame.
+        entry.texture.generateMipmaps = k === patches.length - 1;
+        gl.copyTextureToTexture(src, entry.texture, null, patchAt.set(p.x, p.y));
+      });
+      entry.texture.generateMipmaps = true;
+    });
+  };
+
   useFrame(({ camera, clock, scene: world }, dt) => {
     const model = modelRef.current;
     const rig = rigRef.current;
     const cam = camera as THREE.PerspectiveCamera;
     const p = progress.current;
-    const { light, panel, settled } = sampleTour(tour, p, rig.pose);
+    const { light: tourLight, panel, settled } = sampleTour(tour, p, rig.pose);
     const { eye, at, fov, shiftX, shiftY } = rig.pose;
+    // Power-on after the preloader: the tour pose is offset closer and
+    // higher and eases home, so scrolling during the intro never jumps.
+    const start = introStart.current;
+    const intro = introAt(start === null ? null : (performance.now() - start) / 1000);
+    const light = tourLight * intro.room;
+    if (!intro.done) {
+      const away = 1 - intro.camera;
+      const reach = eye.distanceTo(at);
+      eye.lerp(at, 0.16 * away);
+      eye.y += reach * 0.1 * away;
+      model.sweep.value = THREE.MathUtils.lerp(model.sweepFrom, model.sweepTo, intro.sweep);
+    } else model.sweep.value = 1e3;
     const idle = 1 - ease((p - 0.08) / 0.03);
     const phase = (clock.elapsedTime * Math.PI) / 6;
     if (idle) {
@@ -290,8 +552,8 @@ export default function DeskModel({
     const fog = world.fog as THREE.Fog | null;
     if (fog) {
       const dist = eye.distanceTo(at);
-      fog.near = dist * light + 0.4;
-      fog.far = dist + 2 + light * 8;
+      fog.near = dist * tourLight + 0.4;
+      fog.far = dist + 2 + tourLight * 8;
     }
     world.environmentIntensity = 0.25 * light;
     if (fill.current) fill.current.intensity = 0.21 * light;
@@ -303,17 +565,16 @@ export default function DeskModel({
     lights.current.forEach((l, i) => {
       const [start, end] = HOLDS[i];
       const active = ease((p - start + 0.045) / 0.045) * (1 - ease((p - end) / 0.045));
-      const exposure = Math.min(1, 0.22 + light * 0.78 + active);
+      const exposure = Math.min(1, 0.22 + tourLight * 0.78 + active) * intro.screens[i];
       const material = model.displays[i].mesh.material as THREE.MeshBasicMaterial;
       material.color.setScalar(exposure);
-      if (l) l.intensity = (2 + brightness.current[i] * 16) * exposure * light;
+      if (l) l.intensity = (2 + brightness.current[i] * 16) * exposure * tourLight;
     });
 
     if (lastPanel.current !== panel) {
       if (lastPanel.current >= 0) {
         const prev = panels.current[lastPanel.current]!;
         if (prev.contains(document.activeElement)) indexButton.current?.focus({ preventScroll: true });
-        prev.querySelector('[data-hit]')?.removeAttribute('data-hit');
         prev.setAttribute('hidden', '');
         prev.setAttribute('inert', '');
       }
@@ -352,6 +613,11 @@ export default function DeskModel({
         });
       }
     }
+    settledAt.current = settled ? panel : -1;
+    if (settled && screenState.current[panel].arrived === null) {
+      screenState.current[panel].arrived = performance.now() / 1000;
+    }
+    animateScreens(cam, intro.screens);
     if (painted.current && !ready.current) {
       ready.current = true;
       // R3F renders immediately after this callback. Open the letterbox

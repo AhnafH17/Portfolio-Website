@@ -1,8 +1,9 @@
 export type DeskQuality = 'full' | 'light';
 
 export const DESK_BUDGETS = {
-  full: { dpr: 1.75, fps: 60, environment: 128 },
-  light: { dpr: 1, fps: 30, environment: 64 },
+  full: { dpr: 2, fps: 60, environment: 256 },
+  // Phones read the monitor UIs at their holds; below ~1.6x the text goes soft.
+  light: { dpr: 1.6, fps: 30, environment: 64 },
 } satisfies Record<DeskQuality, { dpr: number; fps: number; environment: number }>;
 
 export function deskDevicePreferences() {

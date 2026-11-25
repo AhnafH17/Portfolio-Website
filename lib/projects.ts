@@ -431,7 +431,7 @@ export const projectData: Record<ProjectKey, Project> = {
 
   aurix: {
     label: 'Project 08',
-    title: 'AurixLab Front End',
+    title: 'AurixLab',
     link: 'https://www.aurixlab.com/',
     image: 'images/projects/aurix.webp',
     imagePlaceholder: '',

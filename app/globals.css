@@ -63,8 +63,8 @@
 }
 
 /* ============================================================
-   COLOR PALETTES — one is picked at random on each page load
-   (see inline script in layout.tsx that sets data-palette).
+   COLOR PALETTES — crimson is active; amber (gold) is kept inactive
+   (lib/palette.ts ACTIVE_PALETTE, applied by the inline script in layout.tsx).
    Var names kept legacy (--gold* = text) for compatibility.
    --accent-rgb is the bright accent as an "r,g,b" triplet so
    rgba(var(--accent-rgb), a) works for glows/borders.
@@ -81,17 +81,7 @@
   --steel:#596A77; --steel-dark:#384857; --wine:#4A121D; --silver:#C2CAD0;
 }
 
-/* 02 — Deep Teal */
-[data-palette="teal"]{
-  --black:#04100e; --black-deep:#000103; --black-card:rgba(8,22,20,0.97);
-  --gold:#C7CBB8; --gold-dim:#8BA594; --gold-bright:#e2e2d2;
-  --gold-hover:rgba(185,185,160,0.08);
-  --accent:#1B7774; --accent-glow:#2BB2A9; --accent-rgb:43,178,169; --accent-light:#659E85;
-  --gold-border:rgba(var(--accent-rgb),0.14); --gold-border-hover:rgba(var(--accent-rgb),0.34);
-  --steel:#659E85; --steel-dark:#0F3029; --wine:#0F3029; --silver:#B9B9A0;
-}
-
-/* 03 — Amber Forest */
+/* 02 — Amber Forest (inactive; set ACTIVE_PALETTE to 'amber' to use) */
 [data-palette="amber"]{
   --black:#04140d; --black-deep:#020B0C; --black-card:rgba(6,20,16,0.97);
   --gold:#bcd0b2; --gold-dim:#83A588; --gold-bright:#dce8d2;
@@ -99,16 +89,6 @@
   --accent:#996F3C; --accent-glow:#DA9626; --accent-rgb:218,150,38; --accent-light:#e8b45a;
   --gold-border:rgba(var(--accent-rgb),0.14); --gold-border-hover:rgba(var(--accent-rgb),0.34);
   --steel:#0D382C; --steel-dark:#041F14; --wine:#430B03; --silver:#83A588;
-}
-
-/* 04 — Neon Violet */
-[data-palette="purple"]{
-  --black:#1a0b36; --black-deep:#10061f; --black-card:rgba(30,14,58,0.97);
-  --gold:#E3C2EE; --gold-dim:#b48fd6; --gold-bright:#f1ddf8;
-  --gold-hover:rgba(214,162,228,0.08);
-  --accent:#8B56B5; --accent-glow:#FF01FF; --accent-rgb:255,1,255; --accent-light:#D08AE3;
-  --gold-border:rgba(var(--accent-rgb),0.12); --gold-border-hover:rgba(var(--accent-rgb),0.30);
-  --steel:#8B56B5; --steel-dark:#320B70; --wine:#320B70; --silver:#D6A2E4;
 }
 
 html{scroll-behavior:smooth;font-size:16px}
@@ -2325,25 +2305,97 @@ footer span{color:var(--accent-glow)}
 
 /* ══ Preloader: the words in a letterbox slit, then two hands pull it open
    (components/Preloader.tsx sets --edge / --art-* per screen) ══ */
-.pl-root{ position:fixed; inset:0; z-index:99999; background:var(--black); overflow:hidden; --rim:0; }
+.pl-root{
+  position:fixed; inset:0; z-index:99999; background:var(--black); overflow:hidden; --rim:0;
+  /* The frame's scale and the slit, worked out as layout() in Preloader.tsx
+     does (which then sets the same values inline), so the slit opens from the
+     first paint, before any script has arrived. */
+  --pl-vh:1vh; --pl-s:max(calc(100vw / 1672), calc(60 * var(--pl-vh) / 941)); --slit:calc(var(--pl-s) * 295);
+}
+@supports (height:1dvh){ .pl-root{ --pl-vh:1dvh; } }
+.pl-top{ --edge:calc(50 * var(--pl-vh) - var(--pl-s) * 147.5); --art-top:calc(50 * var(--pl-vh) - var(--pl-s) * 496.5); }
+.pl-bottom{ --edge:calc(50 * var(--pl-vh) + var(--pl-s) * 147.5); --art-top:calc(50 * var(--pl-vh) - var(--pl-s) * 47.5); }
+.pl-half{ --art-w:calc(var(--pl-s) * 1672); --art-split:calc(var(--pl-s) * 449); --art-rest:calc(var(--pl-s) * 492); }
+@media (max-width:768px){
+  .pl-root{ --pl-s:max(calc(100vw / 522), calc(60 * var(--pl-vh) / 902)); --slit:calc(var(--pl-s) * 231); }
+  .pl-top{ --edge:calc(50 * var(--pl-vh) - var(--pl-s) * 115.5); --art-top:calc(50 * var(--pl-vh) - var(--pl-s) * 453.5); }
+  .pl-bottom{ --edge:calc(50 * var(--pl-vh) + var(--pl-s) * 115.5); --art-top:calc(50 * var(--pl-vh) - var(--pl-s) * 34.5); }
+  .pl-half{ --art-w:calc(var(--pl-s) * 522); --art-split:calc(var(--pl-s) * 419); --art-rest:calc(var(--pl-s) * 483); }
+}
+/* Shut on a hairline of light, then open to the slit; the name arrives whole
+   as it opens, out of a blur, settling from wide tracking. `translate` and
+   `scale` here, because GSAP owns `transform` later. */
+.pl-top{ animation:pl-open-top .6s cubic-bezier(.65,0,.35,1) .05s backwards; }
+.pl-bottom{ animation:pl-open-bottom .6s cubic-bezier(.65,0,.35,1) .05s backwards; }
+@keyframes pl-open-top{ from{ translate:0 calc(var(--slit) / 2 - 1px); } }
+@keyframes pl-open-bottom{ from{ translate:0 calc(1px - var(--slit) / 2); } }
 .pl-name{
-  position:absolute; left:0; right:0; top:50%; translate:0 -50%; text-align:center; white-space:nowrap;
+  position:absolute; left:0; right:0; top:50%; margin-top:-.5em; text-align:center; /* line-height 1: centred without a transform, which GSAP owns */ white-space:nowrap;
   font-family:'Greater Theory', var(--font-display); font-weight:400; text-transform:uppercase;
   font-size:min(7.4vw, calc(var(--slit, 30vh) * 0.4)); line-height:1; letter-spacing:0.04em;
-  color:rgb(var(--accent-rgb)); opacity:0;
+  color:rgb(var(--accent-rgb));
   text-shadow:0 0 18px rgba(var(--accent-rgb),0.55), 0 0 60px rgba(var(--accent-rgb),0.3);
+  animation:pl-name-in .65s cubic-bezier(.33,1,.68,1) .2s backwards;
 }
-.pl-loading{
-  position:absolute;z-index:1;left:50%;top:calc(50% + var(--slit, 30vh) * .33);translate:-50% 0;
-  width:min(15.5rem,66vw);display:grid;grid-template-columns:1fr auto;gap:.42rem .65rem;
-  color:var(--gold-bright);font:500 .73rem/1.15 var(--font-body);letter-spacing:.035em;
+@keyframes pl-name-in{ from{ opacity:0; filter:blur(14px); letter-spacing:.32em; scale:1.06; } }
+@media (prefers-reduced-motion:reduce){
+  .pl-top,.pl-bottom{ animation-duration:.39s; }
+  .pl-name{ animation-duration:.42s; animation-delay:.13s; }
 }
-.pl-loading-percent{font-variant-numeric:tabular-nums;color:var(--accent-light)}
-.pl-loading-track{grid-column:1/-1;position:relative;height:2px;overflow:hidden;background:var(--steel-dark)}
-.pl-loading-track span{position:absolute;inset:0 auto 0 0;background:var(--accent-glow);transition:width .18s ease-out}
-.pl-loading-track[data-indeterminate=true] span{width:35%;animation:pl-loading-progress 1.3s ease-in-out infinite alternate}
-@keyframes pl-loading-progress{from{transform:translateX(-105%)}to{transform:translateX(290%)}}
-@media (prefers-reduced-motion:reduce){.pl-loading-track[data-indeterminate=true] span{animation:none}.pl-loading-track span{transition:none}}
+/* The loader shows only while there's real waiting (data-waiting): the bars
+   draw back and a big line drawing of the desk traces itself in the opened
+   slit, the name above it (Preloader.tsx places all three), its front-edge
+   LED filling as the progress bar. Reduced motion: a plain bar. */
+.pl-loading,.pl-sketch{
+  position:absolute;left:50%;translate:-50% 0;display:grid;
+  color:var(--gold-bright);font:500 clamp(.78rem,.8vw,1.15rem)/1.15 var(--font-body);letter-spacing:.035em;
+  opacity:0;transition:opacity .45s ease-out;
+}
+.pl-loading[data-waiting=true],.pl-sketch[data-waiting=true]{opacity:1}
+.pl-loading{z-index:1;top:calc(50% + var(--slit, 30vh) * .22);width:min(15.5rem,66vw);gap:.55rem}
+.pl-sketch[data-waiting=true]{transition-delay:.4s} /* once the name has stepped up out of its way */
+.pl-sketch{top:50%;width:min(72vw, max(980px, 86vh), 140vh);gap:clamp(.6rem, 1.8vh, 1.5rem);--pl-line:1.1}
+@media (max-width:768px){ .pl-sketch{width:90vw;--pl-line:1.7} }
+.pl-loading-label{text-align:center;white-space:nowrap}
+.pl-loading-percent{display:inline-block;min-width:3.2ch;margin-left:.65em;text-align:left;font-variant-numeric:tabular-nums;color:var(--accent-light)}
+.pl-loading-track{position:relative;height:2px;overflow:hidden;background:var(--steel-dark)}
+.pl-loading-track span{position:absolute;inset:0 auto 0 0;background:var(--accent-glow)}
+.pl-sketch-art{display:block;width:100%;height:auto;overflow:visible}
+/* Each stroke: hidden, then drawing (accent, glowing), then settled (dim). */
+.pl-sketch-art .t{fill:none;stroke:var(--gold-dim);stroke-opacity:.6;stroke-width:var(--pl-line);stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:1;stroke-dashoffset:1;transition:stroke .8s ease,stroke-opacity .8s ease}
+.pl-sketch-art .t.dim{stroke-opacity:.32}
+.pl-sketch-art .t.solid{fill:var(--black);fill-opacity:0}
+.pl-sketch-art .t[data-s=on]{stroke:var(--accent-glow);stroke-opacity:1;filter:url(#pl-glow);transition:none}
+.pl-sketch-art .pl-sk-lit[data-lit=true] .t{stroke:var(--accent-glow);stroke-opacity:1;filter:url(#pl-glow)}
+.pl-sketch-art .pl-sk-ui[data-lit=true] .t{stroke-opacity:.7;filter:none}
+.pl-sk-ui[data-lit=true] .t:nth-child(2){transition-delay:.18s}
+.pl-sk-ui[data-lit=true] .t:nth-child(3){transition-delay:.36s}
+.pl-sk-blades{transform-box:fill-box;transform-origin:center}
+.pl-sk-fan[data-lit=true] .pl-sk-blades{animation:pl-spin 1.4s linear infinite}
+@keyframes pl-spin{to{rotate:360deg}}
+/* The pen */
+.pl-head{fill:var(--accent-light);filter:url(#pl-head-glow);opacity:0;transition:opacity .25s}
+/* The screens powering on: scan lines, a band sweeping down, a cursor */
+.pl-sk-scr{opacity:0;transition:opacity .6s ease}
+.pl-sk-screens[data-lit=true] .pl-sk-scr{opacity:1}
+.pl-sk-lines{fill:url(#pl-scanlines);opacity:.28}
+.pl-sk-scanline{fill:rgb(var(--accent-rgb))}
+.pl-sk-band{fill:url(#pl-band)}
+.pl-sk-band-edge{stop-color:rgb(var(--accent-rgb));stop-opacity:0}
+.pl-sk-band-mid{stop-color:rgb(var(--accent-rgb));stop-opacity:.4}
+.pl-sk-screens[data-lit=true] .pl-sk-band{animation:pl-band 1.5s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes pl-band{to{transform:translateY(var(--h))}}
+.pl-sk-cursor{fill:var(--accent-light)}
+.pl-sk-screens[data-lit=true] .pl-sk-cursor{animation:pl-blink 1s steps(1) infinite}
+@keyframes pl-blink{50%{opacity:0}}
+/* The LED strip on the desk's front edge: the progress bar */
+.pl-sketch-art .pl-led-track,.pl-sketch-art .pl-led{fill:none;stroke-linecap:round;stroke-width:calc(var(--pl-line) * 2)}
+.pl-sketch-art .pl-led-track{stroke:rgba(var(--accent-rgb),.16)}
+.pl-sketch-art .pl-led{stroke:var(--accent-glow);stroke-dasharray:1;stroke-dashoffset:1;filter:url(#pl-glow)}
+@media (prefers-reduced-motion:reduce){
+  .pl-sk-fan[data-lit=true] .pl-sk-blades,.pl-sk-screens[data-lit=true] .pl-sk-band,.pl-sk-screens[data-lit=true] .pl-sk-cursor{animation:none}
+}
 .pl-half{ position:absolute; inset:0; pointer-events:none; will-change:transform; }
 .pl-bar{
   position:absolute; left:0; right:0; background:#000;
@@ -2360,60 +2412,6 @@ footer span{color:var(--accent-glow)}
 }
 .pl-top .pl-art{ top:var(--art-top, 0); height:var(--art-split, 50vh); }
 .pl-bottom .pl-art{ top:var(--art-top, 50vh); height:var(--art-rest, 50vh); }
-
-/* ══ The Return key: a keycap in the corner (components/ReturnKey.tsx).
-   Pressing it spreads the next palette across the page (lib/palette.ts). ══ */
-.rk{
-  position:fixed; left:1.5rem; bottom:1.5rem; z-index:950;
-  width:68px; height:58px; padding:0 0 6px; border:none; background:none; cursor:pointer;
-  color:var(--accent-light); -webkit-tap-highlight-color:transparent; touch-action:manipulation;
-  animation:rkIn .7s cubic-bezier(.2,1.3,.4,1) 1.5s both;
-}
-.rk-cap{
-  position:relative; display:grid; place-items:center; width:100%; height:100%; border-radius:10px;
-  background:linear-gradient(165deg, #2a2f38 0%, #191d24 46%, #12151a 100%);
-  border:1px solid rgba(255,255,255,0.09); border-bottom-color:rgba(0,0,0,0.6);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.14),
-    inset 0 -3px 6px rgba(0,0,0,0.45),
-    0 6px 0 #07090c,
-    0 7px 0 rgba(var(--accent-rgb),0.5),
-    0 14px 22px rgba(0,0,0,0.5);
-  transition:transform .2s cubic-bezier(.3,1.7,.5,1), box-shadow .2s cubic-bezier(.3,1.7,.5,1);
-}
-.rk-cap::after{ /* the backlight bleeding out from under the cap */
-  content:''; position:absolute; inset:auto 12% -9px; height:9px; border-radius:50%;
-  background:rgba(var(--accent-rgb),0.55); filter:blur(6px); z-index:-1;
-}
-.rk-cap svg{ width:26px; height:26px; filter:drop-shadow(0 0 6px rgba(var(--accent-rgb),0.75)); }
-.rk:hover .rk-cap{ transform:translateY(1px); }
-.rk:active .rk-cap, .rk.is-down .rk-cap{
-  transform:translateY(5px); transition-duration:.05s;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.1),
-    inset 0 -2px 4px rgba(0,0,0,0.45),
-    0 1px 0 #07090c,
-    0 2px 0 rgba(var(--accent-rgb),0.7),
-    0 4px 8px rgba(0,0,0,0.5);
-}
-.rk:focus-visible{ outline:2px solid var(--accent-light); outline-offset:5px; border-radius:12px; }
-.rk-hint{
-  position:absolute; left:0; right:0; bottom:10px; text-align:center;
-  font-family:var(--font-body); font-weight:600; font-size:.64rem; letter-spacing:.03em;
-  color:var(--gold-bright); pointer-events:none;
-}
-.rk-cap svg{ translate:0 -.32rem; }
-@keyframes rkIn{ from{ opacity:0; transform:translateY(18px); } to{ opacity:1; transform:none; } }
-@media (max-width:768px){
-  /* Bottom right on phones: their content is left-aligned. */
-  .rk{ left:auto; right:1rem; bottom:1rem; width:60px; height:52px; }
-  .rk-cap svg{ width:23px; height:23px; }
-}
-@media (prefers-reduced-motion:reduce){ .rk{ animation:none; } }
-
-/* The colour wave: old colours stay put while the new page is revealed
-   through a growing circle (the animation is set in lib/palette.ts). */
-::view-transition-old(root), ::view-transition-new(root){ animation:none; mix-blend-mode:normal; }
 
 /* Opening desk and the project index used for keyboard navigation, reduced
    motion and devices without WebGL. The work anchor sits outside the pin. */
@@ -2432,8 +2430,9 @@ footer span{color:var(--accent-glow)}
 .dh-work span,.dh-index-toggle span{color:var(--accent-light)}
 .dh-work:focus-visible,.dh-index-toggle:focus-visible,.dh-skip:focus-visible,.dh-back:focus-visible,.dh-index a:focus-visible{outline:2px solid var(--accent-light);outline-offset:4px}
 .dh-panel{position:absolute;left:0;top:0;transform-origin:0 0;pointer-events:none;line-height:1}
-.dh-panel a{position:absolute;display:block;pointer-events:auto;outline-offset:-2px}
-.dh-panel a[data-hit],.dh-panel a:focus-visible{outline:2px solid var(--accent-light)}
+/* Keyboard and screen-reader targets only: pointer hits are raycast onto the painted cards (DeskModel). */
+.dh-panel a{position:absolute;display:block;pointer-events:none;outline-offset:2px}
+.dh-panel a:focus-visible{outline:2px solid var(--accent-light)}
 .dh-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
 .dh-index-toggle,.dh-back{border:0;background:transparent;color:#dedbdd;font:500 .8rem/1.2 var(--font-body);cursor:pointer}
 .dh-actions{position:absolute;right:3.4%;bottom:1.5rem;display:flex;gap:.8rem;align-items:center}
@@ -2453,11 +2452,14 @@ footer span{color:var(--accent-glow)}
 .dh-index li a{padding:.9rem 0;display:flex;justify-content:space-between;gap:.75em;font-weight:600}
 .dh-index li span{color:var(--gold-dim);font-weight:400}
 .dh-back{display:block;margin:0 0 2.5rem auto;color:var(--accent-light)}
-/* About advances one viewport into the desk's pin spacer. Its sticky
-   content takes over exactly when the desk pin releases. */
-.dh[data-live=true] + .dv-section{
-  z-index:2;margin-top:-100svh;padding-top:0;
-  box-shadow:0 -1px 0 rgba(var(--accent-rgb),.21),0 -24px 72px #0007;
+/* About advances one viewport into the desk's pin spacer: it rises while
+   the camera pulls back from the last monitor, and its sticky content takes
+   over exactly when the desk pin releases. A soft shade leads it in, so the
+   desk darkens into it with no hard edge. */
+.dh[data-live=true] + .dv-section{z-index:2;margin-top:-100svh;padding-top:0}
+.dh[data-live=true] + .dv-section::before{
+  content:'';position:absolute;left:0;right:0;bottom:100%;height:34svh;pointer-events:none;
+  background:linear-gradient(to top,var(--black),rgba(var(--accent-rgb),.035) 70%,transparent);
 }
 @media (max-aspect-ratio:9/10){
   .dh-poster{background-image:url('/images/hero/desk-hero-phone.webp')}
@@ -2469,5 +2471,6 @@ footer span{color:var(--accent-glow)}
   .dh-index li span{display:block;font-size:.85rem}
 }
 @media (max-width:768px){
-  .dh-actions{bottom:max(.8rem,env(safe-area-inset-bottom));left:5.8%;right:auto;gap:.45rem}
+  .dh-actions{left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));gap:.5rem}
+  .dh-actions > *{flex:1 1 0;justify-content:center;white-space:nowrap}
 }

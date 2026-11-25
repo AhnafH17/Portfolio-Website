@@ -6,6 +6,7 @@ in +Y. The glTF exporter converts this to Y-up with the visitor on +Z.
 from pathlib import Path
 from math import cos, sin, pi, radians, atan2
 import bpy
+import bmesh
 import numpy as np
 from mathutils import Vector
 
@@ -31,20 +32,23 @@ def material(name, hexcode, roughness, metallic=0):
     return m
 
 
-laminate = material("MAT_Laminate", "39383b", .35)
-coat = material("MAT_PowderCoat", "303135", .6, .28)
-alloy = material("MAT_Anodised", "525357", .35, .8)
+# Finishes are told apart by roughness as much as colour: semi-gloss black
+# laminate that catches the screens, matte powder coat, anodised alloy
+# edges, fully rough cloth.
+laminate = material("MAT_Laminate", "1f1f22", .3)
+coat = material("MAT_PowderCoat", "2b2c30", .68)
+alloy = material("MAT_Anodised", "5c5e64", .3, .85)
 rubber = material("MAT_Rubber", "242426", .84)
-cloth = material("MAT_Fleece", "414044", .95)
-padcloth = material("MAT_PadCloth", "312f32", .95)
+cloth = material("MAT_Fleece", "414044", 1)
+padcloth = material("MAT_PadCloth", "312f32", 1)
 weave = material("MAT_ChairMesh", "48484a", .84)
 keycap = material("MAT_Keycaps", "38373a", .53)
 legend = material("MAT_KeyLegends", "a7a7a7", .7)
 glass = material("MAT_SmokedGlass", "28292c", .16, .62)
-window = material("MAT_TemperedGlass", "626469", .12, .45)
-window.node_tree.nodes.get("Principled BSDF").inputs["Alpha"].default_value = .25
+window = material("MAT_TemperedGlass", "8a8d94", .05)
+window.node_tree.nodes.get("Principled BSDF").inputs["Alpha"].default_value = .16
 screen = material("MAT_Screen", "161619", .46)
-skin = material("MAT_Hand", "ac7b64", .64)
+skin = material("MAT_Hand", "8c604c", .55)
 glow = material("MAT_Accent_Emissive", "cc182c", .4)
 emitter = glow.node_tree.nodes.get("Principled BSDF")
 emitter.inputs["Emission Color"].default_value = color("cc182c")
@@ -300,8 +304,9 @@ for j, widths in enumerate(rowspec):
             bpy.ops.object.convert(target="MESH")
         x0 += width
 mouse = group("MOUSE",(.853,.12,.750),root)
-ellipsoid("Mouse body",(0,0,.023),(.065,.11,.046),glass,mouse)
-rod("Scroll wheel",(-.004,.025,.043),(.004,.025,.043),.009,rubber,mouse)
+# A dome with near-vertical flanks; its lower half sinks out of sight into the pad.
+ellipsoid("Mouse body",(0,0,.004),(.068,.122,.080),glass,mouse,32,16)
+rod("Scroll wheel",(-.004,.030,.035),(.004,.030,.035),.009,rubber,mouse)
 book = group("NOTEBOOK",(1.30,.139,.752),root)
 book.rotation_euler.z = radians(-9)
 box("Page block",(0,0,0),(.138,.195,.014),coat,book)
@@ -394,26 +399,189 @@ def sleeve(points, radii):
     faces.append(tuple(range((len(pts)-1)*(n+1),len(verts)-1)))
     surface("Gathered sleeve",verts,faces,cloth,upper,uv,True)
 
+# The right sleeve runs on to a ribbed cuff that covers the wrist and the
+# back of the hand's heel, so no bare wrist shows between cloth and skin.
 sleeve([(.176,.10,.429),(.216,.114,.414),(.247,.142,.366),(.26,.19,.313),
         (.276,.226,.267),(.277,.247,.241),(.288,.277,.246),(.284,.313,.244),
-        (.30,.365,.257),(.306,.408,.259),(.315,.466,.273),(.316,.49,.273),
-        (.317,.505,.273)], [.067,.084,.077,.067,.064,.074,.063,.066,.058,.058,.046,.043,.040])
+        (.30,.365,.257),(.306,.408,.263),(.316,.45,.278),(.324,.482,.293),
+        (.330,.504,.298),(.335,.520,.300),(.338,.532,.302)],
+       [.067,.084,.077,.067,.064,.074,.063,.066,.058,.056,.048,.042,.036,.032,.029])
 sleeve([(-.18,.097,.424),(-.219,.117,.398),(-.24,.175,.335),(-.24,.211,.28),
         (-.225,.246,.248),(-.21,.285,.24),(-.185,.324,.249),(-.154,.391,.257),
         (-.117,.458,.267),(-.085,.518,.275),(-.066,.554,.276)],
        [.070,.082,.07,.069,.067,.067,.061,.052,.049,.045,.039])
-# A single exposed right wrist, tapered fingers curved over the mouse buttons.
-hand = group("Right hand",(.325,.548,.328),person)
-ellipsoid("Wrist",(-.004,-.018,-.002),(.061,.078,.043),skin,hand)
-palm = ellipsoid("Palm",(.007,.028,.01),(.082,.1,.051),skin,hand)
-palm.rotation_euler.y = -.15
-for i,(dx,reach) in enumerate([(-.022,.059),(-.002,.064),(.017,.056),(.034,.042)]):
-    knuckle=(dx+.006,.054,.015-i*.0015)
-    mid=(dx+.009,.054+reach*.53,.025-i*.002)
-    tip=(dx+.011,.054+reach,.006-i*.003)
-    tube("Finger",[knuckle,mid,tip],.0087-i*.0006,skin,hand)
-    ellipsoid("Fingertip",tip,(.016,.017,.014),skin,hand,10,6)
-tube("Thumb",[(-.023,.022,.003),(-.039,.044,-.004),(-.032,.069,-.012)],.010,skin,hand)
+# The right hand rests on the mouse in a relaxed palm grip. Volumes are laid
+# out in world metres around the wrist W, then fused by a voxel remesh into
+# one skin, smoothed and decimated, so knuckles and webbing read as one hand.
+W = Vector((.845,.020,.778))
+MOUSE_C, MOUSE_R = Vector((.853,.12,.754)), Vector((.034,.061,.040))
+
+
+def mouse_distance(p):
+    # Approximate signed distance to the mouse shell (ellipsoid bound).
+    q = Vector([(p[i]-MOUSE_C[i])/MOUSE_R[i] for i in range(3)])
+    k = Vector([q[i]/MOUSE_R[i] for i in range(3)])
+    return q.length*(q.length-1)/max(k.length,1e-6)
+
+
+def limb(points, radii, flat=.88):
+    """Elliptical tube through points, wider than tall, with knuckle bulges."""
+    verts, faces, n = [], [], 14
+    pts = [Vector(p) for p in points]
+    for j,(p,r) in enumerate(zip(pts,radii)):
+        t = (pts[min(j+1,len(pts)-1)]-pts[max(j-1,0)]).normalized()
+        x = t.cross(Vector((0,0,1))).normalized()
+        z = x.cross(t)
+        for i in range(n):
+            a = 2*pi*i/n
+            verts.append(p + r*cos(a)*x + r*flat*sin(a)*z)
+            if j < len(pts)-1:
+                k = j*n+i
+                faces.append((k,(k+1)%n+j*n,(k+1)%n+j*n+n,k+n))
+    faces.append(tuple(reversed(range(n))))
+    faces.append(tuple(range(len(verts)-n,len(verts))))
+    return surface("Hand part",[v-W for v in verts],faces,skin,hand)
+
+
+def blob(centre, dims):
+    return ellipsoid("Hand part",Vector(centre)-W,dims,skin,hand,16,10)
+
+
+hand = group("Right hand",W-Vector((.51,-.49,.448)),person)
+yaw, pitch, roll = radians(10), radians(22), radians(9)
+fwd = Vector((sin(yaw)*cos(pitch), cos(yaw)*cos(pitch), sin(pitch)))
+side = Vector((cos(yaw)*cos(roll), -sin(yaw)*cos(roll), -sin(roll)))
+up = side.cross(fwd).normalized()
+# Back of the hand: wrist inside the cuff, widening across the palm to the
+# knuckle line. Each ring is (distance along fwd, lateral shift, half width,
+# half thickness).
+palm_pts, palm_r = [], []
+for s, lat, w, d in [(-.030,0,.026,.017),(0,0,.028,.018),(.020,.002,.032,.019),
+                     (.045,.004,.037,.017),(.065,.005,.040,.015),(.080,.006,.040,.0135),
+                     (.088,.006,.036,.012)]:
+    palm_pts.append(W+fwd*s+side*lat)
+    palm_r.append((w,d))
+verts, faces, n = [], [], 18
+for j,(p,(w,d)) in enumerate(zip(palm_pts,palm_r)):
+    for i in range(n):
+        a = 2*pi*i/n
+        # Flatter on the back of the hand, a fuller pad underneath.
+        dz = d*sin(a)*(1 if sin(a) > 0 else 1.12)
+        verts.append(p + w*cos(a)*side + dz*up)
+        if j < len(palm_pts)-1:
+            k = j*n+i
+            faces.append((k,(k+1)%n+j*n,(k+1)%n+j*n+n,k+n))
+faces.append(tuple(reversed(range(n))))
+faces.append(tuple(range(len(verts)-n,len(verts))))
+surface("Hand part",[v-W for v in verts],faces,skin,hand)
+# Thenar and hypothenar pads under the palm, and the MCP knuckle ridge.
+blob(W+fwd*.032-side*.017-up*.007,(.030,.044,.024))
+blob(W+fwd*.030+side*.020-up*.006,(.026,.046,.022))
+# Fingers: (lateral offset at the knuckle line, set back, splay degrees,
+# phalanx lengths, joint radii from knuckle to tip, flex limits in degrees:
+# knuckle max, then min and max at the two finger joints). Ring and little
+# fingers curl more, the little finger resting against the mouse's flank.
+fingers = [(-.026,.000,-5,(.037,.022,.0175),(.0094,.0086,.0073,.0061),(40,8,55)),
+           (-.009,-.002,-1,(.040,.026,.0195),(.0098,.0090,.0076,.0064),(40,8,55)),
+           (.008,.002,3,(.038,.024,.0185),(.0092,.0084,.0071,.0059),(40,16,58)),
+           (.022,.010,6,(.030,.018,.016),(.0081,.0073,.0062,.0052),(24,30,62))]
+for lat, back, splay, lengths, radii, (knuckle_max, curl_lo, curl_hi) in fingers:
+    knuckle = W+fwd*(.086-back)+side*lat+up*.002
+    blob(knuckle+up*.002,(radii[0]*2.2,radii[0]*2.1,radii[0]*2.0))
+    heading = Vector((sin(yaw+radians(splay)),cos(yaw+radians(splay)),0)).normalized()
+    axis = heading.cross(Vector((0,0,1))).normalized()
+    angle, joints = -pitch, [knuckle]
+    for k,(length, r) in enumerate(zip(lengths,radii[1:])):
+        # Flex each joint just far enough for its end to rest on the shell,
+        # or on the pad for a finger that curls off the mouse's flank.
+        lo, hi = (0, knuckle_max) if k == 0 else (curl_lo, curl_hi)
+        best = None
+        for f in range(lo,hi+1):
+            a = angle+radians(f)
+            d = heading*cos(a)*1 + Vector((0,0,-sin(a)))
+            end = joints[-1]+d.normalized()*length
+            if min(mouse_distance(end), end.z-.746)-r <= .0012:
+                best = (a,end)
+                break
+        angle, end = best or (angle+radians(hi),
+                              joints[-1]+(heading*cos(angle+radians(hi))+Vector((0,0,-sin(angle+radians(hi))))).normalized()*length)
+        joints.append(end)
+    # Sample the bones with a bulge at each knuckle.
+    pts, rs = [], []
+    for k in range(3):
+        a, b = joints[k], joints[k+1]
+        for t in (0,.25,.5,.75):
+            pts.append(a.lerp(b,t))
+            base = radii[k]+(radii[k+1]-radii[k])*t
+            rs.append(base*(1.07 if t == 0 and k else .97 if t == .5 else 1))
+    pts.append(joints[-1])
+    rs.append(radii[-1])
+    limb(pts,rs)
+    blob(joints[-1]-(joints[-1]-joints[-2]).normalized()*.001,(radii[-1]*2,radii[-1]*2,radii[-1]*1.8))
+# Thumb along the mouse's left flank, lower than the fingers.
+thumb = [W+fwd*.012-side*.020-up*.010, W+fwd*.040-side*.036-up*.017,
+         W+fwd*.064-side*.044-up*.021, W+fwd*.086-side*.045-up*.022]
+limb(thumb,[.0125,.0108,.0098,.0086])
+blob(thumb[-1],(.0162,.0166,.0148))
+
+
+def fuse_hand():
+    parts = [o for o in hand.children if o.name.startswith("Hand part")]
+    bpy.ops.object.select_all(action="DESELECT")
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    o = bpy.context.object
+    o.name = "Hand skin"
+    parts = o.data.copy()
+    # Even quads (about 2k triangles) shade smoothly where a decimated
+    # voxel mesh leaves long facets across the back of the hand. QuadriFlow
+    # needs a clean manifold and sometimes gives up on a seed, so try a few
+    # voxel sizes and seeds.
+    for attempt in range(24):
+        o.data = parts.copy()
+        for mod, opts in (("REMESH", {"mode": "VOXEL", "voxel_size": .0011+.00003*(attempt//4)}),
+                          ("SMOOTH", {"factor": .6, "iterations": 6})):
+            m = o.modifiers.new(mod.title(), mod)
+            for k, v in opts.items():
+                setattr(m, k, v)
+            bpy.ops.object.modifier_apply(modifier=m.name)
+        bm = bmesh.new()
+        bm.from_mesh(o.data)
+        islands, seen = [], set()
+        for f in bm.faces:
+            if f.index in seen:
+                continue
+            stack, island = [f], []
+            seen.add(f.index)
+            while stack:
+                g = stack.pop()
+                island.append(g)
+                for e in g.edges:
+                    for h in e.link_faces:
+                        if h.index not in seen:
+                            seen.add(h.index)
+                            stack.append(h)
+            islands.append(island)
+        keep = set(max(islands, key=len))
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f not in keep], context="FACES")
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bm.to_mesh(o.data)
+        bm.free()
+        bpy.ops.object.quadriflow_remesh(target_faces=1000, seed=attempt%4+1)
+        if len(o.data.polygons) < 1400:
+            break
+    assert len(o.data.polygons) < 1400, "QuadriFlow could not remesh the hand"
+    m = o.modifiers.new("Relax", "SMOOTH")
+    m.factor, m.iterations = .4, 2
+    bpy.ops.object.modifier_apply(modifier=m.name)
+    for f in o.data.polygons:
+        f.use_smooth = True
+    return o
+
+
+fuse_hand()
 
 wall = group("WALL",parent=root)
 box("Backdrop",(.9,1.02,3),(30,.05,6),material("MAT_Wall","141416",.9),wall,0)
@@ -441,7 +609,7 @@ for items in buckets.values():
 
 # A genuine shared second-UV AO atlas. Only baked meshes get AO materials,
 # so a steel part elsewhere cannot accidentally sample the chair's atlas.
-baked = [o for g in (desk,chair,person) for o in g.children_recursive
+baked = [o for g in (desk,chair,person,pad) for o in g.children_recursive
          if o.type=="MESH" and o.data.materials[0] != glow]
 atlas = bpy.data.images.new("Desk chair and hoodie AO",1024,1024,alpha=False)
 atlas.colorspace_settings.name = "Non-Color"
@@ -473,7 +641,7 @@ bpy.ops.mesh.select_all(action="SELECT")
 bpy.ops.uv.smart_project(angle_limit=radians(70),island_margin=.003,area_weight=.6)
 bpy.ops.object.mode_set(mode="OBJECT")
 scene.render.engine = "CYCLES"
-scene.cycles.samples = 24
+scene.cycles.samples = 64
 scene.world = bpy.data.worlds.new("Bake world")
 scene.world.color = (.8,.8,.8)
 bpy.ops.object.bake(type="AO",margin=3,use_clear=True,uv_layer="AO")
@@ -497,8 +665,9 @@ def triangles(objects):
     return sum(len(p.vertices)-2 for o in objects if o.type=="MESH" for p in o.data.polygons)
 
 person_tris = triangles(person.children_recursive)
+hand_tris = triangles(hand.children_recursive)
 scene_tris = triangles(scene.objects)
-assert person_tris < 6000 and scene_tris < 60000, (person_tris, scene_tris)
-print(f"Desk: {scene_tris} triangles, including {person_tris} for the seated figure")
+assert hand_tris < 2500 and person_tris < 6000 and scene_tris < 60000, (hand_tris, person_tris, scene_tris)
+print(f"Desk: {scene_tris} triangles, including {person_tris} for the seated figure ({hand_tris} hand)")
 bpy.ops.export_scene.gltf(filepath=str(OUT),export_format="GLB",export_yup=True,
                           export_texcoords=True,export_materials="EXPORT",export_animations=False)

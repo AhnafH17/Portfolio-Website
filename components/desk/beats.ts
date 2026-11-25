@@ -7,12 +7,45 @@ export const HOLDS = [
   [0.56, 0.69],
 ] as const;
 export const FIRST_WORK = (HOLDS[0][0] + HOLDS[0][1]) / 2;
-export const tourScreens = (phone: boolean) => (phone ? 4.4 : 4.8);
-export const aboutOverlapStart = (phone: boolean) => 1 - 1 / tourScreens(phone);
+/** The beats above are timed against this much scroll, in screens. */
+const BEAT_SCREENS = (phone: boolean) => (phone ? 4.4 : 4.8);
+/** About starts rising as the camera leaves the last monitor, so the
+ *  pull-back and its entrance happen together (beat units). */
+export const ABOUT_RISE = HOLDS[2][1] + 0.012;
+/** The pin ends one screen after About starts rising: About then fills it. */
+export const tourScreens = (phone: boolean) => ABOUT_RISE * BEAT_SCREENS(phone) + 1;
+/** Pin progress (0-1) to beat progress, and back. */
+export const toBeat = (pin: number, phone: boolean) => (pin * tourScreens(phone)) / BEAT_SCREENS(phone);
+export const toPin = (beat: number, phone: boolean) => (beat * BEAT_SCREENS(phone)) / tourScreens(phone);
+/** Where About starts rising, in pin progress. */
+export const aboutOverlapStart = (phone: boolean) => toPin(ABOUT_RISE, phone);
 export const ease = (v: number) => {
   const t = MathUtils.clamp(v, 0, 1);
   return t * t * (3 - 2 * t);
 };
+
+/** The scene powering on as the preloader opens, `seconds` after the reveal
+ *  (null: not revealed yet, so the room is dark). The desk LED sweeps on,
+ *  the screens follow left to right, the room lights come up, and the
+ *  camera eases out of a closer, higher pose. */
+export function introAt(seconds: number | null) {
+  const s = seconds ?? 0;
+  const ramp = (start: number, length: number) => MathUtils.clamp((s - start) / length, 0, 1);
+  const screens = [0, 1, 2].map((i) => {
+    const r = ramp(0.62 + i * 0.15, 0.24);
+    // A short stutter as each panel catches, then a clean ramp.
+    const flicker = r > 0.06 && r < 0.42 && Math.sin(s * 96 + i * 2.3) < -0.15 ? 0.3 : 1;
+    return ease(r) * flicker;
+  });
+  const settle = ramp(0, 1.85);
+  return {
+    sweep: seconds === null ? 0 : ease(ramp(0.12, 0.62)),
+    screens,
+    room: 0.05 + 0.95 * ease(ramp(0.55, 0.95)),
+    camera: 1 - (1 - settle) ** 3,
+    done: s >= 1.9,
+  };
+}
 const UP = new Vector3(0, 1, 0);
 export interface Display {
   mesh: Mesh;
@@ -120,14 +153,16 @@ export function fitTour(scene: Object3D, displays: Display[], aspect: number, ph
     furniture
       .filter((box) => box.max.y > height)
       .map((box) => new Box3(box.min.clone().setY(Math.max(height, box.min.y)), box.max));
+  // On tall screens the three monitors span the width under the name; the
+  // desk and figure follow below and the chair base leaves the frame.
   const hero = framedRoom(
-    portrait ? furniture : above(0.27),
+    portrait ? furniture.slice(3, 6) : above(0.27),
     aspect,
     new Vector3(phone ? 0.055 : 0.3, phone ? 0.47 : 0.32, 1),
-    portrait ? 0.97 : 0.7,
-    portrait ? 0.68 : 0.98,
+    portrait ? 0.95 : 0.7,
+    portrait ? 4 : 0.98,
     portrait ? 0 : 0.29,
-    portrait ? -0.23 : -0.03
+    portrait ? -0.14 : -0.03
   );
   const outroBounds = above(portrait ? 0.28 : 0.53);
   const wide = framedRoom(outroBounds, aspect, new Vector3(0.035, 0.33, 1), 0.94, 0.94);
@@ -156,7 +191,10 @@ export function fitTour(scene: Object3D, displays: Display[], aspect: number, ph
     hood.max.y + displays[0].height * 0.5,
     chair.max.z
   );
-  return { hero, screens, wide, shoulder, overlap: aboutOverlapStart(phone), arc: displays[1].width * 0.31 };
+  // The pull-back ends with About three quarters up: its heading is already
+  // on screen while the camera settles.
+  const rise = 1 / BEAT_SCREENS(phone);
+  return { hero, screens, wide, shoulder, pullEnd: ABOUT_RISE + rise * 0.72, riseEnd: ABOUT_RISE + rise, arc: displays[1].width * 0.31 };
 }
 
 function blend(out: Pose, a: Pose, b: Pose, t: number) {
@@ -167,7 +205,7 @@ function blend(out: Pose, a: Pose, b: Pose, t: number) {
   out.shiftY = MathUtils.lerp(a.shiftY, b.shiftY, t);
 }
 export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pose) {
-  const { hero, screens, wide, overlap, arc, shoulder } = tour;
+  const { hero, screens, wide, pullEnd, riseEnd, arc, shoulder } = tour;
   let light = 1;
   let panel = -1;
   if (p < HOLDS[0][0]) {
@@ -196,9 +234,10 @@ export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pos
       light = 0.63 + 0.23 * arcAmount;
     }
   } else {
-    const t = ease((p - HOLDS[2][1]) / (overlap - HOLDS[2][1]));
+    const t = ease((p - HOLDS[2][1]) / (pullEnd - HOLDS[2][1]));
     blend(out, screens[2], wide, t);
-    light = 0.63 + 0.37 * t;
+    // The room brightens on the way out, then dims back under About.
+    light = (0.63 + 0.37 * t) * (1 - 0.35 * ease((p - ABOUT_RISE) / (riseEnd - ABOUT_RISE)));
   }
   // Pointer targets track the screen during arrival and departure. Only
   // settled monitors are added to the normal keyboard tab order.

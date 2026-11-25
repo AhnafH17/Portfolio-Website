@@ -79,7 +79,7 @@ export const projectSeo: Record<ProjectKey, ProjectSeo> = {
     viaAurixLab: true,
   },
   aurix: {
-    title: 'AurixLab Front End: Webflow & GSAP',
+    title: 'AurixLab: Webflow Front End & GSAP',
     description: "Ahnaf Hussain's front-end work on aurixlab.com, a Calgary agency's Webflow site: a client dashboard demo, case study pages, GSAP scroll motion and phone speed.",
     workType: 'WebSite',
     client: AURIXLAB,

@@ -50,11 +50,12 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 ### Desk hero
 - Regenerate the model with `blender -b -P scripts/build-desk-hero.py`, then `node scripts/optimize-models.mjs desk-hero`.
 - `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
-- `components/desk/screens.ts` paints one texture per monitor. The same rectangles position transparent HTML links through the four projected screen corners. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
+- `components/desk/screens.ts` paints one animated texture per monitor (only changed regions are redrawn; 30 fps near, 8 fps far, none off screen). Pointer and touch raycast the three SCREEN_* meshes from any camera position and hit-test the same card rectangles; clicking empty screen scrolls to that monitor's hold. The HTML links over the screens are for keyboard and screen readers only. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
 - The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
-- Phones and lower-capability devices use a 30 fps, 1× pixel-ratio budget. Desktop starts with a 60 fps, 1.75× budget and drops to the lighter profile after sustained slow frames. Save Data and devices reporting at most 2 GB of memory use the static index.
+- Phones and lower-capability devices use a 30 fps, 1.6× pixel-ratio budget (`components/desk/quality.ts`). Desktop starts with a 60 fps, 2× budget and drops to the lighter profile after sustained slow frames. Save Data and devices reporting at most 2 GB of memory use the static index.
 - Pointer targets follow the monitors near each stop. Keyboard users can focus a settled monitor, open the static list, or skip directly to About Me.
-- `DeviceShowcase` covers the final viewport of the desk pin to introduce About Me.
+- About rises in during the pull-back from the last monitor (beats.ts), not after it.
+- Loader: `DESK_MODEL_BYTES` in `components/desk/loadModel.ts` must match `public/models/desk-hero.glb` after a re-export (the loader's progress uses it when the server sends no size).
 
 ### Navbar Logo
 - Inline SVG monogram "AH" with gold gradient (the old 828KB `logo-placeholder.svg` is gone)
@@ -111,12 +112,11 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - **Mobile cards**: `onClick={() => { handleSelect(mobilePair + i); onOpenModal(meta.key); }}` — both switch + open
 
 ## Palette
-- The site starts crimson. Four palettes exist (crimson, teal, amber, purple); the Return key
-  (`components/ReturnKey.tsx`) and a sent contact message step through them with a colour wave
-  (`nextPalette` in `lib/palette.ts`, View Transitions). The choice lasts the session.
-- `?theme=red|teal|amber|purple` (aliases: crimson, green, gold, magenta) forces one for the session.
+- Crimson only. Gold (`amber`) stays defined in `app/globals.css` but inactive: switch
+  `ACTIVE_PALETTE` in `lib/palette.ts` (and the matching value in the inline script in
+  `app/layout.tsx`) to `'amber'` to turn it on. There is no theme switcher and no `?theme`.
 - Anything drawn in the accent outside CSS must follow changes: `useAccent()` in React scenes,
-  `onPaletteChange()` in canvas loops. Don't read the accent once at mount.
+  `onPaletteChange()` in canvas loops. Don't read the accent once at mount (nothing fires the change now, but a palette switch may come back).
 - Every palette passes WCAG AA for body, dim, small-accent and placeholder text; keep it that way
   when changing tokens (crimson's `--accent-glow` was lifted to #F23D50 for that).
 

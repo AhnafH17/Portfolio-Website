@@ -58,12 +58,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Set the palette before first paint (no flash): crimson, or the colour
-            the visitor chose this session with the Return key, or one forced
-            with ?theme=red|teal|amber|purple (kept for the session). */}
+        {/* Set the palette before first paint (no flash). Keep in step with
+            ACTIVE_PALETTE in lib/palette.ts. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var p=['crimson','teal','amber','purple'],d=document.documentElement,c='crimson';try{var a={red:'crimson',crimson:'crimson',teal:'teal',green:'teal',amber:'amber',gold:'amber',purple:'purple',magenta:'purple'};var q=(new URLSearchParams(location.search).get('theme')||'').toLowerCase();if(a[q]){c=a[q];sessionStorage.setItem('theme',c);}else{var s=sessionStorage.getItem('theme');if(p.indexOf(s)>=0)c=s;}}catch(e){}d.setAttribute('data-palette',c);})();`,
+            __html: `document.documentElement.setAttribute('data-palette','crimson');`,
           }}
         />
         {/* The display face: the preloader's name and the hero's are set in

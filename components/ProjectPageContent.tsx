@@ -8,7 +8,6 @@ import { Project, StripMeta, projectData } from '@/lib/projects';
 import { CASE_STUDIES, CASE_STUDY_ORDER, type CaseImage, type CaseStudy } from '@/lib/caseStudies';
 import { readAccent } from '@/lib/accent';
 import { onPaletteChange } from '@/lib/palette';
-import ReturnKey from '@/components/ReturnKey';
 
 // Simple Icons CDN slug mapping — https://simpleicons.org
 const ICONS: Record<string, string> = {
@@ -91,8 +90,6 @@ export default function ProjectPageContent({ project, meta }: Props) {
 
   return (
     <>
-    {/* Outside .proj-page: its entrance transform would break position:fixed. */}
-    <ReturnKey />
     <div className="proj-page">
 
       {/* ── HERO ── */}

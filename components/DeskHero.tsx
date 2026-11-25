@@ -16,7 +16,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { projectData } from '@/lib/projects';
 import { hasWebGL } from '@/lib/webgl';
 import { CATEGORIES, tags } from './desk/screens';
-import { aboutOverlapStart, FIRST_WORK, ease, tourScreens } from './desk/beats';
+import { ABOUT_RISE, aboutOverlapStart, FIRST_WORK, ease, toBeat, toPin, tourScreens } from './desk/beats';
 import type { ReportDeskLoad } from './desk/loading';
 import { deskDevicePreferences, type DeskQuality } from './desk/quality';
 
@@ -57,6 +57,7 @@ export default function DeskHero({
   const restoreTourFocus = useRef(false);
   const panels = useRef<(HTMLDivElement | null)[]>([]);
   const progress = useRef(0);
+  const introStart = useRef<number | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [phone, setPhone] = useState(false);
   const [quality, setQuality] = useState<DeskQuality>('full');
@@ -116,6 +117,23 @@ export default function DeskHero({
     }
   }, [ready, failed, skip, staticDevice]);
 
+  // The preloader opens onto a dark room: the scene powers on (DeskModel,
+  // introAt in beats.ts), then the name and links rise in once the screens
+  // are lit. Played once; a return from the project index finds it lit.
+  useEffect(() => {
+    if (!revealed || !live || introStart.current !== null) return;
+    introStart.current = performance.now();
+    const lines = intro.current!.querySelectorAll<HTMLElement>('.dh-role, h1, .dh-work');
+    const rise = gsap.fromTo(
+      lines,
+      { y: 26, opacity: 0 },
+      { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.09, delay: 1.05, clearProps: 'transform,opacity' }
+    );
+    return () => {
+      rise.progress(1);
+    };
+  }, [revealed, live]);
+
   useLayoutEffect(() => {
     if (!live) {
       progress.current = 0;
@@ -140,11 +158,13 @@ export default function DeskHero({
     const distance = () => Math.round(stage.current!.clientHeight * tourScreens(phone));
     const overlap = aboutOverlapStart(phone);
     const workAnchor = work.current!;
-    const apply = (p: number) => {
+    const apply = (pin: number) => {
+      const p = toBeat(pin, phone);
       progress.current = p;
       intro.current!.style.opacity = String(1 - ease((p - 0.073) / 0.055));
       intro.current!.inert = p > 0.12;
-      veil.current!.style.opacity = String(0.35 * ease((p - overlap) / (1 - overlap)));
+      // The room darkens back as About rises over it.
+      veil.current!.style.opacity = String(0.6 * ease((pin - overlap) / (1 - overlap)));
     };
     const pin = ScrollTrigger.create({
       trigger: stage.current,
@@ -157,7 +177,7 @@ export default function DeskHero({
       refreshPriority: 1,
       onUpdate: (self) => apply(self.progress),
       onRefresh: (self) => {
-        workAnchor.style.top = (self.end - self.start) * FIRST_WORK + 'px';
+        workAnchor.style.top = (self.end - self.start) * toPin(FIRST_WORK, phone) + 'px';
         apply(self.progress);
       },
     });
@@ -223,6 +243,7 @@ export default function DeskHero({
                   panels={panels}
                   focusFirstProjectRef={focusFirstProjectRef}
                   indexButton={indexButton}
+                  introStart={introStart}
                   onReady={onReady}
                   reportLoad={reportLoad}
                   onFailure={onFailure}
@@ -285,7 +306,18 @@ export default function DeskHero({
           </div>
         ))}
         {live && (
-          <div className="dh-actions">
+          <div
+            className="dh-actions"
+            onFocus={(event) => {
+              // Reached by Tab from further down the page: the stage has
+              // scrolled away or About covers it, so bring the desk back.
+              if (stage.current!.contains(event.relatedTarget as Node | null)) return;
+              const box = stage.current!.getBoundingClientRect();
+              if (Math.abs(box.top) <= 1 && progress.current < ABOUT_RISE) return;
+              if (window.__lenis) window.__lenis.scrollTo(root.current!, { immediate: true, force: true });
+              else root.current!.scrollIntoView({ behavior: 'instant' });
+            }}
+          >
             <button
               className="dh-index-toggle"
               ref={indexButton}

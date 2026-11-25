@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { SOCIAL } from '@/lib/site';
-import { nextPalette, onPaletteChange } from '@/lib/palette';
+import { onPaletteChange } from '@/lib/palette';
 
 /* Contact as a "transmission console": the form on the left, and on the
    right a panel of real details only (availability, the email address with a
@@ -91,10 +91,6 @@ export default function ContactSection() {
       if (!data.success) throw new Error(data.message || 'Something went wrong.');
       setState('sent');
       formRef.current?.reset();
-      // The site ends on the visitor's keypress: Send is a Return key too,
-      // and a sent message sets off the same colour wave from the button.
-      const r = sendRef.current?.getBoundingClientRect();
-      if (r) nextPalette(r.left + r.width / 2, r.top + r.height / 2);
     } catch {
       setState('error');
     }
