@@ -1,51 +1,23 @@
 import { Box3, MathUtils, Mesh, Object3D, Vector3 } from 'three';
 import { CATEGORIES } from './screens';
+import { above, framedRoom, FURNITURE, heroPose, isPortrait, panelTransform, type Box, type HeroPose } from './heroPose';
+import { ABOUT_RISE, BEAT_SCREENS, ease, HOLDS } from './timeline';
 
-export const HOLDS = [
-  [0.2, 0.3],
-  [0.38, 0.48],
-  [0.56, 0.69],
-] as const;
-export const FIRST_WORK = (HOLDS[0][0] + HOLDS[0][1]) / 2;
-/** The beats above are timed against this much scroll, in screens. */
-const BEAT_SCREENS = (phone: boolean) => (phone ? 4.4 : 4.8);
-/** About starts rising as the camera leaves the last monitor, so the
- *  pull-back and its entrance happen together (beat units). */
-export const ABOUT_RISE = HOLDS[2][1] + 0.012;
-/** The pin ends one screen after About starts rising: About then fills it. */
-export const tourScreens = (phone: boolean) => ABOUT_RISE * BEAT_SCREENS(phone) + 1;
-/** Pin progress (0-1) to beat progress, and back. */
-export const toBeat = (pin: number, phone: boolean) => (pin * tourScreens(phone)) / BEAT_SCREENS(phone);
-export const toPin = (beat: number, phone: boolean) => (beat * BEAT_SCREENS(phone)) / tourScreens(phone);
-/** Where About starts rising, in pin progress. */
-export const aboutOverlapStart = (phone: boolean) => toPin(ABOUT_RISE, phone);
-export const ease = (v: number) => {
-  const t = MathUtils.clamp(v, 0, 1);
-  return t * t * (3 - 2 * t);
-};
+// The timing lives in timeline.ts and the camera maths in heroPose.ts (no
+// three.js there, for the page's first bundle and the preloader).
+export {
+  ABOUT_RISE,
+  aboutOverlapStart,
+  ease,
+  FIRST_WORK,
+  HOLDS,
+  introAt,
+  toBeat,
+  toPin,
+  tourScreens,
+} from './timeline';
+export { panelTransform };
 
-/** The scene powering on as the preloader opens, `seconds` after the reveal
- *  (null: not revealed yet, so the room is dark). The desk LED sweeps on,
- *  the screens follow left to right, the room lights come up, and the
- *  camera eases out of a closer, higher pose. */
-export function introAt(seconds: number | null) {
-  const s = seconds ?? 0;
-  const ramp = (start: number, length: number) => MathUtils.clamp((s - start) / length, 0, 1);
-  const screens = [0, 1, 2].map((i) => {
-    const r = ramp(0.62 + i * 0.15, 0.24);
-    // A short stutter as each panel catches, then a clean ramp.
-    const flicker = r > 0.06 && r < 0.42 && Math.sin(s * 96 + i * 2.3) < -0.15 ? 0.3 : 1;
-    return ease(r) * flicker;
-  });
-  const settle = ramp(0, 1.85);
-  return {
-    sweep: seconds === null ? 0 : ease(ramp(0.12, 0.62)),
-    screens,
-    room: 0.05 + 0.95 * ease(ramp(0.55, 0.95)),
-    camera: 1 - (1 - settle) ** 3,
-    done: s >= 1.9,
-  };
-}
 const UP = new Vector3(0, 1, 0);
 export interface Display {
   mesh: Mesh;
@@ -108,64 +80,17 @@ interface Pose {
 export function pose(): Pose {
   return { eye: new Vector3(), at: new Vector3(), fov: 38, shiftX: 0, shiftY: 0 };
 }
-function framedRoom(
-  boxes: Box3[],
-  aspect: number,
-  direction: Vector3,
-  fillX: number,
-  fillY: number,
-  shiftX = 0,
-  shiftY = 0
-): Pose {
-  const dir = direction.normalize();
-  const right = new Vector3().crossVectors(UP, dir).normalize();
-  const up = new Vector3().crossVectors(dir, right);
-  const box = new Box3();
-  boxes.forEach((b) => box.union(b));
-  const at = box.getCenter(new Vector3());
-  const v = Math.tan(MathUtils.degToRad(38 / 2)),
-    h = v * aspect;
-  let distance = 0;
-  // The tightest horizontal/vertical half-extent sets the distance. Account
-  // for corner depth so a chair close to the lens still clears the edge.
-  for (const b of boxes)
-    for (const x of [b.min.x, b.max.x])
-      for (const y of [b.min.y, b.max.y])
-        for (const z of [b.min.z, b.max.z]) {
-          const p = new Vector3(x, y, z).sub(at);
-          distance = Math.max(
-            distance,
-            p.dot(dir) + Math.max(Math.abs(p.dot(right)) / (h * fillX), Math.abs(p.dot(up)) / (v * fillY))
-          );
-        }
-  return { eye: at.clone().addScaledVector(dir, distance), at, fov: 38, shiftX, shiftY };
-}
+const toBox = (b: Box3): Box => [b.min.toArray(), b.max.toArray()];
+const toPose = (p: HeroPose): Pose => ({ ...p, eye: new Vector3(...p.eye), at: new Vector3(...p.at) });
 
 export function fitTour(scene: Object3D, displays: Display[], aspect: number, phone: boolean) {
   const bounds = (name: string) => new Box3().setFromObject(scene.getObjectByName(name)!, true);
-  const furniture = ['DESK', 'CHAIR', 'PERSON', 'MON_Left', 'MON_Centre', 'MON_Right', 'PC_Tower'].map(
-    bounds
-  );
-  const portrait = aspect < 0.9;
-  // Compose around the desk surface and upper chair on wide displays. The
-  // chair base can run below the frame, like the foreground of a photograph.
-  const above = (height: number) =>
-    furniture
-      .filter((box) => box.max.y > height)
-      .map((box) => new Box3(box.min.clone().setY(Math.max(height, box.min.y)), box.max));
-  // On tall screens the three monitors span the width under the name; the
-  // desk and figure follow below and the chair base leaves the frame.
-  const hero = framedRoom(
-    portrait ? furniture.slice(3, 6) : above(0.27),
-    aspect,
-    new Vector3(phone ? 0.055 : 0.3, phone ? 0.47 : 0.32, 1),
-    portrait ? 0.95 : 0.7,
-    portrait ? 4 : 0.98,
-    portrait ? 0 : 0.29,
-    portrait ? -0.14 : -0.03
-  );
-  const outroBounds = above(portrait ? 0.28 : 0.53);
-  const wide = framedRoom(outroBounds, aspect, new Vector3(0.035, 0.33, 1), 0.94, 0.94);
+  const furniture = FURNITURE.map(bounds);
+  const portrait = isPortrait(aspect);
+  // The opening view: the same function the preloader's drawing uses.
+  const hero = toPose(heroPose(furniture.map(toBox), aspect, phone));
+  const outroBounds = above(furniture.map(toBox), portrait ? 0.28 : 0.53);
+  const wide = toPose(framedRoom(outroBounds, aspect, [0.035, 0.33, 1], 0.94, 0.94));
   const screens = displays.map((d) => {
     // Keep the housing and some of the desk in frame at each stop. Limit
     // distance on narrow viewports so the visitor never lands in the chair.
@@ -244,31 +169,4 @@ export function sampleTour(tour: ReturnType<typeof fitTour>, p: number, out: Pos
   const nearPanel =
     panel >= 0 ? panel : HOLDS.findIndex(([start, end]) => p >= start - 0.021 && p <= end + 0.021);
   return { light, panel: nearPanel, settled: nearPanel >= 0 && panel === nearPanel };
-}
-
-/** Project a flat link layer through the same four corners as the display. */
-export function panelTransform(corners: Vector3[], width: number, height: number, w: number, h: number) {
-  const [tl, tr, br, bl] = corners;
-  const x0 = ((1 + tl.x) * width) / 2,
-    y0 = ((1 - tl.y) * height) / 2;
-  const x1 = ((1 + tr.x) * width) / 2,
-    y1 = ((1 - tr.y) * height) / 2;
-  const x2 = ((1 + br.x) * width) / 2,
-    y2 = ((1 - br.y) * height) / 2;
-  const x3 = ((1 + bl.x) * width) / 2,
-    y3 = ((1 - bl.y) * height) / 2;
-  const dx1 = x1 - x2,
-    dx2 = x3 - x2,
-    dx3 = x0 - x1 + x2 - x3;
-  const dy1 = y1 - y2,
-    dy2 = y3 - y2,
-    dy3 = y0 - y1 + y2 - y3;
-  const det = dx1 * dy2 - dx2 * dy1;
-  const g = (dx3 * dy2 - dx2 * dy3) / det;
-  const j = (dx1 * dy3 - dx3 * dy1) / det;
-  const a = (x1 - x0 + g * x1) / w,
-    b = (x3 - x0 + j * x3) / h;
-  const d = (y1 - y0 + g * y1) / w,
-    e = (y3 - y0 + j * y3) / h;
-  return 'matrix3d(' + [a, d, 0, g / w, b, e, 0, j / h, 0, 0, 1, 0, x0, y0, 0, 1].join(',') + ')';
 }

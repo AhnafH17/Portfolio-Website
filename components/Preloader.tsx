@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
 import type { DeskLoad } from './desk/loading';
+import { loadOutline, OutlineDrawing } from './desk/outline';
+import { handover, INTRO_END } from './desk/timeline';
+import { onPaletteChange } from '@/lib/palette';
 
 declare global {
   interface Window { __lenis?: import('lenis').default; }
@@ -13,7 +16,7 @@ interface PreloaderProps {
   onSkip: () => void;
   /** Start revealing the site — fires as the bars are pulled apart. */
   onReveal: () => void;
-  /** The bars are gone and the preloader can be removed from the tree.
+  /** The handover is over and the preloader can be removed from the tree.
    *  Kept separate from onReveal: unmounting on reveal kills the exit. */
   onDone: () => void;
 }
@@ -26,14 +29,11 @@ const WAIT_MS = 900;
 /** Mounted this long after navigation, the page's code came in slowly, so the
  *  model is still to come: the drawing starts at once. */
 const LATE_MOUNT_MS = 1500;
-/* While waiting, sizes as shares of the drawing's width: the name's height,
-   the gap under it, and the dark margin kept above and below inside the
-   opened slit. */
-const NAME_K = 0.05, GAP_K = 0.04, PAD_K = 0.055;
 /** How long a finished drawing is held before the hands come. */
 const HOLD_MS = 280;
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+const frame = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
 
 /* The letterbox: two black bars with the name glowing in the slit between
    them. Once it has been read, two hands (manga-style illustrations,
@@ -82,184 +82,54 @@ function progressFor(load: DeskLoad): { to: number; creep: number } {
     default: return { to: 1, creep: 0 };
   }
 }
-/** The drawing is fully traced at this progress; the rest is the screens. */
-const TRACED = 0.9;
-const SCREENS = [
-  { clip: 'M104,26 H162 V124 H104 Z', x: 104, y: 26, w: 58, h: 98, cursor: [141, 32] },
-  { clip: 'M206,50 H394 V124 H206 Z', x: 206, y: 50, w: 188, h: 74, cursor: [256, 56] },
-  { clip: 'M406,60 L506,68 V122 L406,126 Z', x: 406, y: 60, w: 100, h: 66, cursor: [452, 67] },
-];
 
-/* While the desk is still on its way, the same setup (three monitors, light
-   bar, desk, tower, the hooded figure in the chair) traces itself in thin
-   strokes, big, in the opened slit. One stroke at a time draws behind a
-   glowing accent pen and settles to a dim line once it's done; the desk's
-   front edge is its LED strip, which fills as the progress bar. Details light
-   up as stages are reached: the light bar, then the tower fan (spinning), and
-   while the scene renders the screens power on one by one, scanning, with a
-   cursor blinking. Every stroke with class "t" is traced in document order,
-   each for its share of the total length, so the pen moves at one speed. */
-function DeskSketch({ active, to, creep, lit, percentRef }: {
-  active: boolean; to: number; creep: number; lit: number;
-  percentRef: React.RefObject<HTMLSpanElement | null>;
-}) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const state = useRef({ p: 0 });
-  const paint = useRef<() => void>(() => {});
-
-  useEffect(() => {
-    const svg = svgRef.current!;
-    const strokes = Array.from(svg.querySelectorAll<SVGPathElement>('.t'));
-    const head = svg.querySelector<SVGCircleElement>('.pl-head')!;
-    const led = svg.querySelector<SVGPathElement>('.pl-led')!;
-    const bar = svg.closest('[role=progressbar]');
-    const lengths = strokes.map((el) => el.getTotalLength() || 1);
-    const total = lengths.reduce((a, b) => a + b, 0);
-    let run = 0;
-    // Each stroke's span of progress, overlapping the next a little.
-    const spans = lengths.map((length) => {
-      const from = (run / total) * TRACED;
-      run += length;
-      return [from, Math.min(TRACED, (run / total) * TRACED + 0.012)];
-    });
-    paint.current = () => {
-      const { p } = state.current;
-      let tip = -1;
-      strokes.forEach((el, i) => {
-        const [from, until] = spans[i];
-        const local = Math.min(1, Math.max(0, (p - from) / (until - from)));
-        el.style.strokeDashoffset = String(1 - local);
-        el.style.opacity = local > 0 ? '' : '0';
-        const s = local <= 0 ? '' : local < 1 ? 'on' : 'done';
-        if (el.dataset.s !== s) el.dataset.s = s;
-        if (el.classList.contains('solid')) el.style.fillOpacity = String(local * local);
-        if (s === 'on') tip = i;
-      });
-      if (tip >= 0) {
-        const [from, until] = spans[tip];
-        const point = strokes[tip].getPointAtLength(((p - from) / (until - from)) * lengths[tip]);
-        head.setAttribute('cx', String(point.x));
-        head.setAttribute('cy', String(point.y));
-      }
-      head.style.opacity = tip >= 0 ? '1' : '0';
-      led.style.strokeDashoffset = String(1 - p);
-      const percent = Math.round(p * 100);
-      if (percentRef.current) percentRef.current.textContent = percent + '%';
-      bar?.setAttribute('aria-valuenow', String(percent));
-    };
-    paint.current();
-  }, [percentRef]);
-
-  useEffect(() => {
-    if (!active) return;
-    const s = state.current;
-    if (creep) {
-      // Close a share of the gap every frame (time constant `creep`).
-      const tick = (_time: number, delta: number) => {
-        if (s.p < to) s.p += (to - s.p) * (1 - Math.exp(-delta / 1000 / creep));
-        paint.current();
-      };
-      gsap.ticker.add(tick);
-      return () => gsap.ticker.remove(tick);
-    }
-    const tween = gsap.to(s, {
-      p: Math.max(to, s.p), duration: to >= 1 ? 0.45 : 0.8, ease: 'power2.out', onUpdate: () => paint.current(),
-    });
-    return () => { tween.kill(); };
-  }, [active, to, creep]);
-
-  const t = { className: 't', pathLength: 1 };
-  const solid = { className: 't solid', pathLength: 1 };
-  return (
-    <svg ref={svgRef} className="pl-sketch-art" viewBox="0 0 600 232" aria-hidden="true">
-      <defs>
-        <filter id="pl-glow" filterUnits="userSpaceOnUse" x="-10" y="-10" width="620" height="252">
-          <feGaussianBlur stdDeviation="2.2" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="pl-head-glow" x="-4" y="-4" width="9" height="9">
-          <feGaussianBlur stdDeviation="2.6" result="b" />
-          <feMerge><feMergeNode in="b" /><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <pattern id="pl-scanlines" width="6" height="3" patternUnits="userSpaceOnUse">
-          <rect className="pl-sk-scanline" width="6" height="0.7" />
-        </pattern>
-        <linearGradient id="pl-band" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" className="pl-sk-band-edge" />
-          <stop offset="0.75" className="pl-sk-band-mid" />
-          <stop offset="1" className="pl-sk-band-edge" />
-        </linearGradient>
-        {SCREENS.map((sc, i) => <clipPath key={i} id={`pl-scr-${i}`}><path d={sc.clip} /></clipPath>)}
-      </defs>
-      {/* Desk: top, front face, leg, drawer unit */}
-      <path {...t} d="M40,150 L70,136 H530 L560,150" />
-      <path {...t} d="M40,150 V157 H560 V150" />
-      <path {...t} d="M54,157 V220 M44,220 H64" />
-      <path {...t} d="M430,157 V220 H548 V157 M430,180 H548 M430,200 H548" />
-      <path {...t} className="t dim" d="M482,169 H496 M482,190 H496 M482,210 H496" />
-      {/* Monitors: portrait left, wide centre, angled right */}
-      <path {...t} d="M104,26 H162 V124 H104 Z" />
-      <path {...t} d="M133,124 V134 M121,135 H145" />
-      <path {...t} d="M206,50 H394 V124 H206 Z" />
-      <path {...t} d="M300,124 V134 M280,135 H320" />
-      <path {...t} d="M406,60 L506,68 V122 L406,126 Z" />
-      <path {...t} d="M456,124 V134 M442,135 H470" />
-      <g className="pl-sk-lit" data-lit={lit >= 1}>
-        <path {...t} d="M238,42 H362 M300,42 V50" />
-      </g>
-      {/* Tower, its fan ring and vents */}
-      <path {...t} d="M512,70 H566 V148 H512 Z M566,70 L574,65 V143 L566,148" />
-      <g className="pl-sk-lit pl-sk-fan" data-lit={lit >= 2}>
-        <path {...t} d="M524,98 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0" />
-        <g className="pl-sk-blades">
-          <path {...t} d="M534,98 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0 M539,93 V85 M543.3,100.5 L550,104.5 M534.7,100.5 L528,104.5" />
-        </g>
-      </g>
-      <path {...t} className="t dim" d="M520,126 H558 M520,132 H558 M520,138 H558" />
-      {/* Pad, keyboard, mouse */}
-      <path {...t} className="t dim" d="M232,139 H372 L378,147 H226 Z" />
-      <path {...t} d="M252,141 H328 L331,145 H249 Z" />
-      <path {...t} d="M350,142 a3.5,2.2 0 1,0 7,0 a3.5,2.2 0 1,0 -7,0" />
-      {/* The screens power on while the scene renders, left to right: faint
-          scan lines, a band sweeping down, and a blinking cursor */}
-      <g className="pl-sk-screens" data-lit={lit >= 3}>
-        {SCREENS.map((sc, i) => (
-          <g key={i} className="pl-sk-scr" clipPath={`url(#pl-scr-${i})`} style={{ transitionDelay: `${i * 0.18}s` }}>
-            <rect className="pl-sk-lines" x={sc.x} y={sc.y} width={sc.w} height={sc.h} />
-            <rect className="pl-sk-band" x={sc.x} y={sc.y - 16} width={sc.w} height={16}
-              style={{ '--h': `${sc.h + 16}px`, animationDelay: `${i * 0.18}s` } as React.CSSProperties} />
-            <rect className="pl-sk-cursor" x={sc.cursor[0]} y={sc.cursor[1]} width={3.2} height={6} />
-          </g>
-        ))}
-      </g>
-      <g className="pl-sk-lit pl-sk-ui" data-lit={lit >= 3}>
-        <path {...t} d="M112,36 H138 M112,46 H154 M112,60 H154 M112,70 H146 M112,84 H154 M112,94 H146 M112,108 H154" />
-        <path {...t} d="M216,60 H252 M216,69 H300 M216,80 h40 v34 h-40 Z M262,80 h40 v34 h-40 Z M308,80 h40 v34 h-40 Z M354,80 h32 v34 h-32 Z" />
-        <path {...t} d="M414,71 H448 M414,79 H482 M414,90 h26 v26 h-26 Z M446,91 h26 v25 h-26 Z M478,92 h20 v23 h-20 Z" />
-      </g>
-      {/* The figure, then the chair in front of it */}
-      <path {...solid} d="M160,172 C160,152 168,143 180,139 C178,120 184,103 196,100 C208,103 214,120 212,139 C224,143 232,152 232,172 Z" />
-      <path {...t} className="t dim" d="M196,102 C194,116 194,128 196,139" />
-      <path {...solid} d="M166,156 Q166,148 174,148 H218 Q226,148 226,156 V196 Q226,204 218,204 H174 Q166,204 166,196 Z" />
-      <path {...t} d="M196,204 V214 M172,222 L196,214 L220,222 M196,214 V224" />
-      {/* The LED strip on the desk's front edge: the progress bar */}
-      <path className="pl-led-track" d="M40,153.5 H560" />
-      <path className="pl-led" pathLength={1} d="M40,153.5 H560" />
-      {/* The pen: a glowing point at the tip of the stroke being drawn */}
-      <circle className="pl-head" r="2.4" cx="40" cy="150" />
-    </svg>
-  );
+/** The hero's box on screen: the drawing is projected for exactly this view. */
+function stageBox() {
+  const stage = document.querySelector('.dh-stage');
+  const r = stage?.getBoundingClientRect();
+  return r && r.width && r.height
+    ? { left: r.left, top: r.top, width: r.width, height: r.height }
+    : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
 }
 
+/** The hero heading's two words (content boxes), where the name lands. */
+function headingWords() {
+  const h1 = document.getElementById('desk-name');
+  if (!h1) return null;
+  const words = [...h1.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
+  if (words.length !== 2) return null;
+  const range = document.createRange();
+  const rects = words.map((n) => {
+    range.selectNodeContents(n);
+    return range.getBoundingClientRect();
+  });
+  return rects.every((r) => r.width && r.height) ? { h1, rects } : null;
+}
+
+/* While the desk is still on its way, it draws itself in thin strokes, in
+   place: the lines are the real model's edges and contours, projected with
+   the hero camera (components/desk/outline.ts), so each sits exactly where
+   that part of the 3D desk will render. The bars draw back around the
+   desk, the name moves to where the hero heading will be, and the drawing
+   traces part by part behind a glowing pen; its LED strip is the progress
+   bar, the light bar and fan light up as stages are reached, and the
+   screens glow while the scene warms up. When the hands pull the bars
+   apart, the drawing hands over in place: the room lights up under the
+   lines while they dissolve, the drawn LED gives way to the real one, and
+   the name settles into the heading. */
 export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderProps) {
   const rootRef       = useRef<HTMLDivElement>(null);
   const nameRef       = useRef<HTMLDivElement>(null);
+  const wordRefs      = useRef<(HTMLSpanElement | null)[]>([]);
   const topRef        = useRef<HTMLDivElement>(null);
   const botRef        = useRef<HTMLDivElement>(null);
   const progressRef   = useRef<HTMLDivElement>(null);
+  const outlineRef    = useRef<HTMLDivElement>(null);
+  const drawing       = useRef<OutlineDrawing | null>(null);
   const handsRef      = useRef<(fallback: boolean) => void>(() => {});
   const startedAt     = useRef(0);
   const handTimeline  = useRef<gsap.core.Timeline | null>(null);
+  const exitTimeline  = useRef<gsap.core.Timeline | null>(null);
   const artReady      = useRef<Promise<boolean> | null>(null);
   const quick         = useRef(false);
   const repeat        = useRef(false);
@@ -267,12 +137,88 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
   const art           = useRef<Art>(ARTS.desk);
   const exitStarted   = useRef(false);
   const waitingRef    = useRef(false);
-  /** How far each bar has drawn back to open the slit for the drawing. */
-  const opened        = useRef(0);
+  /** How far each bar has moved to open the slit around the drawing. */
+  const opened        = useRef({ top: 0, bot: 0 });
   const opening       = useRef<gsap.core.Tween | null>(null);
   const percentRef    = useRef<HTMLSpanElement>(null);
+  const progress      = useRef({ p: 0 });
+  const litRef        = useRef(0);
+  const tickRef       = useRef<(() => void) | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [plain, setPlain] = useState(false);
+
+  /** Project the drawing for the hero's current view. */
+  const layoutDrawing = () => {
+    const d = drawing.current, el = outlineRef.current;
+    if (!d || !el) return;
+    const box = stageBox();
+    Object.assign(el.style, { left: box.left + 'px', top: box.top + 'px', width: box.width + 'px', height: box.height + 'px' });
+    d.layout(box.width, box.height);
+    d.setProgress(progress.current.p);
+  };
+
+  /** Each word's transform (origin top-left) that lays it over the hero
+   *  heading's matching word: same font, so a uniform scale fits it. */
+  const nameTargets = () => {
+    const words = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
+    const heading = headingWords();
+    if (!heading || words.length !== 2) return null;
+    const saved = words.map((w) => w.style.transform);
+    words.forEach((w) => (w.style.transform = 'none'));
+    const range = document.createRange();
+    const result = words.map((w, i) => {
+      range.selectNodeContents(w);
+      const text = range.getBoundingClientRect();
+      const box = w.getBoundingClientRect();
+      const target = heading.rects[i];
+      const scale = target.height / text.height;
+      return {
+        x: target.left - box.left - scale * (text.left - box.left),
+        y: target.top - box.top - scale * (text.top - box.top),
+        scale,
+      };
+    });
+    words.forEach((w, i) => (w.style.transform = saved[i]));
+    return { h1: heading.h1, words, result };
+  };
+
+  /** Open the slit around the desk, move the name to the heading's place,
+   *  and put the label under the LED strip. */
+  const placeWaiting = (duration: number) => {
+    const root = rootRef.current, top = topRef.current, bot = botRef.current, label = progressRef.current;
+    const d = drawing.current;
+    if (!root || !top || !bot || !label || !d) return;
+    finishEntrance();
+    const vh = window.innerHeight;
+    const { s, imgTop } = geo.current;
+    const a = art.current;
+    const { top: stageTop, left: stageLeft } = stageBox();
+    // The slit runs from just above the monitors to just under the desk;
+    // the chair's base can stay under the bottom bar, like the edge of a
+    // photograph. Each bar keeps some height for its hand to grip.
+    const topEdge = Math.min(vh * 0.45, Math.max(vh * 0.05, stageTop + d.box.top - vh * 0.045));
+    const botEdge = Math.max(vh * 0.55, Math.min(vh * 0.93, stageTop + d.box.deskBottom + vh * 0.03));
+    const open = (opened.current = { top: imgTop + a.top * s - topEdge, bot: botEdge - (imgTop + a.bot * s) });
+    const to = { duration, ease: 'power3.inOut' };
+    opening.current = gsap.to(top, { ...to, y: -open.top });
+    gsap.to(bot, { ...to, y: open.bot });
+    const targets = nameTargets();
+    if (targets) {
+      root.dataset.named = 'true';
+      targets.words.forEach((w, i) => gsap.to(w, { ...to, ...targets.result[i], transformOrigin: '0 0' }));
+    }
+    Object.assign(label.style, { left: '0', top: '0', translate: 'none' });
+    // Centred under the strip, kept clear of the screen's edges.
+    const half = label.offsetWidth / 2 + 16;
+    const x = Math.min(window.innerWidth - half, Math.max(half, stageLeft + d.box.ledX));
+    label.style.transform = `translate(${x}px, ${stageTop + d.box.ledY + vh * 0.018}px) translateX(-50%)`;
+  };
+
+  /** The CSS entrance never fights a tween: it ends where the tweens start. */
+  const finishEntrance = () => {
+    for (const el of [nameRef.current, topRef.current, botRef.current])
+      el?.getAnimations().forEach((animation) => animation.finish());
+  };
 
   useEffect(() => {
     startedAt.current = performance.now();
@@ -291,6 +237,7 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     setPlain(quick.current);
     // The art loads while the name shows (~120KB); the hands only come in
     // if it has.
+    let alive = true;
     if (!quick.current) {
       const { prefix } = pickArt();
       const srcs = POSES.flatMap((pose) => [`${pose}-top`, `${pose}-bottom`].map((n) => `/images/preloader/${prefix}${n}.webp`));
@@ -300,10 +247,24 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
         img.src = src;
         return img.decode().then(() => true, () => false);
       })).then((ok) => ok.every(Boolean));
+      // The drawing: laid out for the hero's view as soon as it arrives, so
+      // it is ready whether or not there's any waiting to fill.
+      loadOutline().then((data) => {
+        if (!alive || !data || !outlineRef.current || exitStarted.current) return;
+        drawing.current = new OutlineDrawing(outlineRef.current, data);
+        layoutDrawing();
+        drawing.current.setLit(litRef.current);
+        if (waitingRef.current && !handTimeline.current) placeWaiting(0.8);
+      });
     }
+    const offPalette = onPaletteChange(() => drawing.current?.recolour());
 
     return () => {
+      alive = false;
+      offPalette();
       handTimeline.current?.kill();
+      exitTimeline.current?.kill();
+      if (tickRef.current) gsap.ticker.remove(tickRef.current);
       document.body.style.overflow = '';
       window.__lenis?.start();
     };
@@ -313,8 +274,9 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
   useEffect(() => {
     if (!finished) {
       const safety = setTimeout(onSkip, LOAD_TIMEOUT_MS);
-      // Still loading once the name has landed: the bars draw back, the name
-      // steps up, and the drawing takes the space under it.
+      // Still loading once the name has landed: the bars draw back around
+      // the desk, the name moves to the heading's place, and the drawing
+      // traces itself where the desk will be.
       const wait = setTimeout(() => {
         if (exitStarted.current || waitingRef.current) return;
         waitingRef.current = true;
@@ -353,7 +315,9 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
         el.style.setProperty('--art-split', `${a.split * s}px`);
         el.style.setProperty('--art-rest', `${(a.h - a.split) * s}px`);
       }
-      if (waitingRef.current && !quick.current && !handTimeline.current && !exitStarted.current) placeWaiting(0);
+      if (exitStarted.current) return;
+      layoutDrawing();
+      if (waitingRef.current && !quick.current && !handTimeline.current) placeWaiting(0);
     };
     layout();
     window.addEventListener('resize', layout);
@@ -362,35 +326,6 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     // of waiting for this code to arrive.
     return () => window.removeEventListener('resize', layout);
   }, []);
-
-  /** Open the slit around the drawing: the name above it, the label under
-   *  it, the whole group centred, and the bars drawn back just enough. */
-  const placeWaiting = (duration: number) => {
-    const root = rootRef.current, name = nameRef.current, sketch = progressRef.current;
-    const top = topRef.current, bot = botRef.current;
-    if (!root || !name || !sketch || !top || !bot) return;
-    finishEntrance();
-    const vh = window.innerHeight;
-    const width = sketch.offsetWidth;
-    const font = parseFloat(getComputedStyle(name).fontSize) || 1;
-    const nameH = Math.min(font, width * NAME_K);
-    const gap = width * GAP_K;
-    const total = nameH + gap + sketch.offsetHeight;
-    const from = vh / 2 - total / 2;
-    sketch.style.top = `${from + nameH + gap}px`;
-    const slit = parseFloat(getComputedStyle(root).getPropertyValue('--slit')) || vh * 0.3;
-    const open = (opened.current = Math.max(0, (total + 2 * width * PAD_K - slit) / 2));
-    const to = { duration, ease: 'power3.inOut' };
-    gsap.to(name, { ...to, y: from + nameH / 2 - vh / 2, scale: nameH / font });
-    opening.current = gsap.to(top, { ...to, y: -open });
-    gsap.to(bot, { ...to, y: open });
-  };
-
-  /** The CSS entrance never fights a tween: it ends where the tweens start. */
-  const finishEntrance = () => {
-    for (const el of [nameRef.current, topRef.current, botRef.current])
-      el?.getAnimations().forEach((animation) => animation.finish());
-  };
 
   /** The first frame has painted before any hand animation is started. */
   const startHands = async (fallback: boolean) => {
@@ -407,15 +342,19 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     const pending = opening.current;
     if (pending?.isActive()) await new Promise<void>((done) => { pending.eventCallback('onComplete', () => done()); });
     if (waitingRef.current) await sleep(HOLD_MS);
+    // What the desk's arrival set off (its pin, the heading's layout) has
+    // settled before anything moves.
+    await frame();
+    await frame();
     if (exitStarted.current) return;
     const top = topRef.current!, bot = botRef.current!;
     const q = (el: HTMLElement, sel: string) => el.querySelector<HTMLElement>(sel)!;
     finishEntrance();
+    // Drawn bright and shown dim now, so the handover is opacity only.
+    drawing.current?.prepareHandover();
+    performance.mark('pl-hands');
     const tl = gsap.timeline({ onComplete: () => triggerExit(true) });
     handTimeline.current = tl;
-    // A finished drawing stays: the hands reach in over it, and it hands
-    // over to the scene as the bars come away (see triggerExit).
-    if (!waitingRef.current) tl.to(progressRef.current, { opacity: 0, duration: 0.18 }, 0);
     const open = opened.current;
     if (repeat.current) tl.timeScale(REPEAT_SPEED);
     // The name dims as the hands come out of the dark.
@@ -430,8 +369,8 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     tl.set([q(top, '.pl-mid'), q(bot, '.pl-mid')], { opacity: 0 }, 0.6);
     tl.to(rootRef.current, { '--rim': 1, duration: 0.07, yoyo: true, repeat: 1 }, 0.56);
     // A beat of strain: the bars give a little, toward each other, shaking.
-    tl.to(top, { y: 6 - open, duration: 0.14, ease: 'power2.out' }, 0.6);
-    tl.to(bot, { y: open - 6, duration: 0.14, ease: 'power2.out' }, 0.6);
+    tl.to(top, { y: 6 - open.top, duration: 0.14, ease: 'power2.out' }, 0.6);
+    tl.to(bot, { y: open.bot - 6, duration: 0.14, ease: 'power2.out' }, 0.6);
     tl.to([top, bot], { x: () => gsap.utils.random(-3, 3), duration: 0.045, repeat: 3, yoyo: true, ease: 'none' }, 0.62);
   };
 
@@ -439,6 +378,7 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
   const triggerExit = (gripped = false) => {
     if (exitStarted.current) return;
     exitStarted.current = true;
+    performance.mark('pl-exit');
 
     document.body.style.overflow = '';
     const work = location.hash === '#showcase' && document.getElementById('showcase');
@@ -450,24 +390,57 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     }
 
     const top = topRef.current, bot = botRef.current, root = rootRef.current;
+    const label = progressRef.current, outline = outlineRef.current;
+    // Reduced motion: no bars moving, the loader just fades.
+    if (quick.current) {
+      onReveal();
+      exitTimeline.current = gsap.timeline({ onComplete: onDone }).to(root, { opacity: 0, duration: 0.4, ease: 'power1.out' });
+      return;
+    }
     const { s, imgTop, vh } = geo.current;
     // Far enough that each half (bar, hand and all) is past the screen edge.
     const { split } = art.current;
     const outTop = -(imgTop + split * s) - 40;
     const outBot = vh - (imgTop + split * s) + 40;
+    // In place only onto the live desk, seen from its opening camera.
+    const desk = load.phase === 'ready' && !work && drawing.current !== null;
+    const name = work ? null : nameTargets();
+    const start = performance.now();
+    handover.start = start;
+    handover.name = name !== null;
+    if (desk) drawing.current!.prepareHandover();
 
     onReveal();
+    const pull = gripped ? (repeat.current ? 0.62 : 0.75) : 0.65;
     const tl = gsap.timeline({ onComplete: onDone });
-    // The slit stops being a backdrop: the site shows through the gap.
-    tl.to(nameRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
-    // A finished drawing lingers over the dark room and fades as the scene
-    // powers on under it (its LED sweeps on in the same moment).
-    if (waitingRef.current && !quick.current) tl.to(progressRef.current, { opacity: 0, duration: 0.6, ease: 'power2.out' }, 0.05);
-    else tl.to(progressRef.current, { opacity: 0, duration: 0.15 }, 0);
+    exitTimeline.current = tl;
+    // The name flies into the hero heading (transforms only), then hands
+    // over to it: the heading fades in where the name has landed.
+    if (name) {
+      gsap.killTweensOf(name.words);
+      tl.set(nameRef.current, { zIndex: 3 }, 0);
+      tl.to(nameRef.current, { opacity: 1, duration: 0.25, ease: 'power2.out' }, 0);
+      name.words.forEach((w, i) => tl.to(w, { ...name.result[i], transformOrigin: '0 0', duration: 0.75, ease: 'power3.inOut' }, 0.05));
+      tl.fromTo(name.h1, { opacity: 0 }, { opacity: 1, duration: 0.32, ease: 'power1.inOut', immediateRender: true }, 0.66);
+      tl.to(nameRef.current, { opacity: 0, duration: 0.32, ease: 'power1.inOut' }, 0.66);
+      tl.set(name.h1, { clearProps: 'opacity' }, desk ? INTRO_END : 1);
+    } else tl.to(nameRef.current, { opacity: 0, duration: 0.3, ease: 'power2.out' }, 0);
+    // (Its CSS fade-in transition would otherwise hold this back.)
+    if (label) label.style.transition = 'none';
+    tl.to(label, { opacity: 0, duration: 0.25, ease: 'power2.out' }, 0);
+    if (desk && outline) {
+      // The drawing stays over the dark room and dissolves into the scene
+      // as it powers on (outlineAt / introAt in timeline.ts).
+      outline.dataset.handover = 'true';
+      if (!waitingRef.current) tl.fromTo(outline, { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0);
+      const tick = (tickRef.current = () => drawing.current?.handover((performance.now() - start) / 1000));
+      tick();
+      gsap.ticker.add(tick);
+      tl.call(() => gsap.ticker.remove(tick), [], INTRO_END);
+    } else tl.to(outline, { opacity: 0, duration: waitingRef.current ? 0.4 : 0.15 }, 0);
     tl.set(root, { background: 'transparent' }, 0.05);
     gsap.killTweensOf([top, bot], 'x');
     tl.set([top, bot], { x: 0 }, 0);
-    const pull = gripped ? (repeat.current ? 0.62 : 0.75) : quick.current ? 0.55 : 0.65;
     tl.to(top, { y: outTop, duration: pull, ease: 'power4.inOut' }, 0.05);
     tl.to(bot, { y: outBot, duration: pull, ease: 'power4.inOut' }, 0.05);
   };
@@ -475,6 +448,42 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
   useEffect(() => { handsRef.current = startHands; });
 
   const { to, creep } = progressFor(load);
+  // Light bar, then fan, then the screens: each lights as its stage arrives.
+  const lit = load.phase === 'rendering' || finished ? 3
+    : to >= 0.6 ? 2
+    : to >= 0.3 ? 1 : 0;
+  useEffect(() => {
+    litRef.current = lit;
+    drawing.current?.setLit(lit);
+  }, [lit]);
+
+  // The tracing follows the load: a tween to each known stage, or a creep
+  // toward it while the amount is unknown.
+  useEffect(() => {
+    if (!waiting || plain) return;
+    const state = progress.current;
+    const bar = progressRef.current;
+    const paint = () => {
+      drawing.current?.setProgress(state.p);
+      const percent = Math.round(state.p * 100);
+      if (percentRef.current) percentRef.current.textContent = percent + '%';
+      bar?.setAttribute('aria-valuenow', String(percent));
+    };
+    if (creep) {
+      // Close a share of the gap every frame (time constant `creep`).
+      const tick = (_time: number, delta: number) => {
+        if (state.p < to) state.p += (to - state.p) * (1 - Math.exp(-delta / 1000 / creep));
+        paint();
+      };
+      gsap.ticker.add(tick);
+      return () => gsap.ticker.remove(tick);
+    }
+    const tween = gsap.to(state, {
+      p: Math.max(to, state.p), duration: to >= 1 ? 0.45 : 0.8, ease: 'power2.out', onUpdate: paint,
+    });
+    return () => { tween.kill(); };
+  }, [waiting, plain, to, creep]);
+
   // The plain bar (reduced motion) shows the same progress, without easing.
   const percent = Math.round(to * 100);
   const counting = load.phase === 'starting' || load.phase === 'downloading';
@@ -485,23 +494,21 @@ export default function Preloader({ load, onSkip, onReveal, onDone }: PreloaderP
     ready: 'Desk ready',
     fallback: 'Opening the portfolio',
   }[load.phase];
-  // Light bar, then fan, then the screens: each lights as its stage arrives.
-  const lit = load.phase === 'rendering' || finished ? 3
-    : to >= 0.6 ? 2
-    : to >= 0.3 ? 1 : 0;
 
   return (
-    <div ref={rootRef} className="pl-root">
-      {/* The name, glowing in the slit */}
-      <div ref={nameRef} className="pl-name">Ahnaf Hussain</div>
+    <div ref={rootRef} className="pl-root" data-waiting={waiting}>
+      <div ref={outlineRef} className="pl-outline" aria-hidden="true" />
+      {/* The name, glowing in the slit; its words fly into the hero heading */}
+      <div ref={nameRef} className="pl-name">
+        <span ref={(el) => { wordRefs.current[0] = el; }} className="pl-word">Ahnaf</span>{' '}
+        <span ref={(el) => { wordRefs.current[1] = el; }} className="pl-word">Hussain</span>
+      </div>
       <div ref={progressRef} className={plain ? 'pl-loading' : 'pl-sketch'} data-waiting={waiting}
         role="progressbar" aria-label="Loading the portfolio" aria-valuenow={plain ? percent : undefined}>
-        {plain ? (
+        {plain && (
           <div className="pl-loading-track">
             <span style={{width: percent + '%'}} />
           </div>
-        ) : (
-          <DeskSketch active={waiting} to={to} creep={creep} lit={lit} percentRef={percentRef} />
         )}
         <div className="pl-loading-label" aria-live="polite">
           {label}

@@ -17,6 +17,7 @@ import {
   toPin,
   tourScreens,
 } from './beats';
+import { INTRO_END } from './timeline';
 
 export interface DeskBindings {
   progress: RefObject<number>;
@@ -26,6 +27,26 @@ export interface DeskBindings {
   /** performance.now() when the preloader opened onto the desk, else null. */
   introStart: RefObject<number | null>;
   onReady: () => void;
+}
+
+/** What the first frames would otherwise do on the main thread while the
+ *  page is on screen: texture uploads, shader programs (compiled in
+ *  parallel where the browser supports KHR_parallel_shader_compile) and
+ *  two real frames. Runs while the preloader still covers the desk. */
+async function warmUp(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera) {
+  const textures = new Set<THREE.Texture>();
+  scene.traverse((o) => {
+    const material = (o as THREE.Mesh).material;
+    if (!material) return;
+    for (const m of Array.isArray(material) ? material : [material])
+      for (const value of Object.values(m))
+        if (value instanceof THREE.Texture && !value.isRenderTargetTexture) textures.add(value);
+  });
+  textures.forEach((texture) => gl.initTexture(texture));
+  await gl.compileAsync(scene, camera);
+  gl.render(scene, camera);
+  await new Promise((done) => requestAnimationFrame(done));
+  gl.render(scene, camera);
 }
 
 function softGlow() {
@@ -196,6 +217,9 @@ export default function DeskModel({
   const brightness = useRef<number[]>([1, 1, 1]);
   const ready = useRef(false);
   const painted = useRef(false);
+  /** Warm-up (see warmUp): nothing is drawn until it's done. */
+  const warm = useRef<'idle' | 'running' | 'done'>('idle');
+  const introEnded = useRef(false);
   const firstFrame = useRef(0);
   const screenSizes = useRef<ReturnType<typeof screenLayout>[]>([]);
   const live = useRef<LiveScreen[]>([]);
@@ -509,33 +533,36 @@ export default function DeskModel({
     });
   };
 
-  useFrame(({ camera, clock, scene: world }, dt) => {
+  useFrame(({ camera, scene: world }, dt) => {
     const model = modelRef.current;
     const rig = rigRef.current;
     const cam = camera as THREE.PerspectiveCamera;
     const p = progress.current;
     const { light: tourLight, panel, settled } = sampleTour(tour, p, rig.pose);
     const { eye, at, fov, shiftX, shiftY } = rig.pose;
-    // Power-on after the preloader: the tour pose is offset closer and
-    // higher and eases home, so scrolling during the intro never jumps.
+    // Power-on after the preloader, in place: the camera holds the hero
+    // pose the preloader's drawing was projected with, while the room, the
+    // LED sweep and the screens come up under the dissolving lines.
     const start = introStart.current;
-    const intro = introAt(start === null ? null : (performance.now() - start) / 1000);
+    const seconds = start === null ? null : (performance.now() - start) / 1000;
+    const intro = introAt(seconds);
     const light = tourLight * intro.room;
-    if (!intro.done) {
-      const away = 1 - intro.camera;
-      const reach = eye.distanceTo(at);
-      eye.lerp(at, 0.16 * away);
-      eye.y += reach * 0.1 * away;
-      model.sweep.value = THREE.MathUtils.lerp(model.sweepFrom, model.sweepTo, intro.sweep);
-    } else model.sweep.value = 1e3;
+    model.sweep.value = intro.done ? 1e3 : THREE.MathUtils.lerp(model.sweepFrom, model.sweepTo, intro.sweep);
+    if (intro.done && !introEnded.current) {
+      introEnded.current = true;
+      performance.mark('desk-intro-end');
+    }
     const idle = 1 - ease((p - 0.08) / 0.03);
-    const phase = (clock.elapsedTime * Math.PI) / 6;
+    // The idle drift and breathing start from rest when the handover ends,
+    // so the opening frames sit exactly under the drawing.
+    const drift = seconds === null ? 0 : Math.max(0, seconds - INTRO_END);
+    const phase = (drift * Math.PI) / 6;
     if (idle) {
       const dist = eye.distanceTo(at);
       eye.x += Math.sin(phase) * 0.01047 * dist * idle;
       eye.y += Math.sin(phase * 2) * 0.01047 * dist * idle;
     }
-    model.shoulders.scale.y = 1 + 0.006 * Math.sin((clock.elapsedTime * Math.PI) / 2) * idle;
+    model.shoulders.scale.y = 1 + 0.006 * Math.sin((drift * Math.PI) / 2) * idle;
     model.fan.rotation.z += Math.min(dt, 0.1) * 0.8 * Math.PI;
     cam.position.copy(eye);
     cam.lookAt(at);
@@ -618,13 +645,26 @@ export default function DeskModel({
       screenState.current[panel].arrived = performance.now() / 1000;
     }
     animateScreens(cam, intro.screens);
-    if (painted.current && !ready.current) {
+    if (painted.current && warm.current === 'idle') {
+      warm.current = 'running';
+      // The screens' first updates (canvas work, patch uploads) happen now.
+      animateScreens(cam, [1, 1, 1]);
+      const done = () => {
+        warm.current = 'done';
+      };
+      warmUp(gl, world, cam).then(done, done);
+    }
+    if (warm.current === 'done' && !ready.current) {
       ready.current = true;
-      // R3F renders immediately after this callback. Open the letterbox
-      // on the next frame, after the desk has been presented.
+      // "Ready" means warmed up and presented: the letterbox opens on the
+      // next frame.
       firstFrame.current = requestAnimationFrame(onReady);
     }
   });
+  // Drawing is held back until the warm-up has done the first frames' work.
+  useFrame(({ gl: renderer, scene: world, camera }) => {
+    if (warm.current === 'done') renderer.render(world, camera);
+  }, 1);
 
   return (
     <>

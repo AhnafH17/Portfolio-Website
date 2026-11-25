@@ -16,7 +16,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { projectData } from '@/lib/projects';
 import { hasWebGL } from '@/lib/webgl';
 import { CATEGORIES, tags } from './desk/screens';
-import { ABOUT_RISE, aboutOverlapStart, FIRST_WORK, ease, toBeat, toPin, tourScreens } from './desk/beats';
+import { ABOUT_RISE, aboutOverlapStart, ease, FIRST_WORK, handover, toBeat, toPin, tourScreens } from './desk/timeline';
 import type { ReportDeskLoad } from './desk/loading';
 import { deskDevicePreferences, type DeskQuality } from './desk/quality';
 
@@ -117,17 +117,20 @@ export default function DeskHero({
     }
   }, [ready, failed, skip, staticDevice]);
 
-  // The preloader opens onto a dark room: the scene powers on (DeskModel,
-  // introAt in beats.ts), then the name and links rise in once the screens
-  // are lit. Played once; a return from the project index finds it lit.
+  // The preloader opens onto a dark room: the scene powers on under its
+  // line drawing (DeskModel, introAt in timeline.ts, on the preloader's
+  // clock), and the role and link rise in as the name lands in the heading
+  // (the preloader carries it there; otherwise the heading rises too).
+  // Played once; a return from the project index finds it lit.
   useEffect(() => {
     if (!revealed || !live || introStart.current !== null) return;
-    introStart.current = performance.now();
-    const lines = intro.current!.querySelectorAll<HTMLElement>('.dh-role, h1, .dh-work');
+    introStart.current = handover.start ?? performance.now();
+    const lines = intro.current!.querySelectorAll<HTMLElement>(handover.name ? '.dh-role, .dh-work' : '.dh-role, h1, .dh-work');
+    const since = (performance.now() - introStart.current) / 1000;
     const rise = gsap.fromTo(
       lines,
       { y: 26, opacity: 0 },
-      { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.09, delay: 1.05, clearProps: 'transform,opacity' }
+      { y: 0, opacity: 1, duration: 0.9, ease: 'power3.out', stagger: 0.09, delay: Math.max(0, 0.7 - since), clearProps: 'transform,opacity' }
     );
     return () => {
       rise.progress(1);

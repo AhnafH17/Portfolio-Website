@@ -11,6 +11,7 @@ import { homeGraph, jsonLd } from '@/lib/schema';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { DeskLoad } from '@/components/desk/loading';
+import { INTRO_END } from '@/components/desk/timeline';
 
 const DeviceShowcase = lazy(() => import('@/components/DeviceShowcase'));
 const AboutSection = lazy(() => import('@/components/AboutSection'));
@@ -55,9 +56,9 @@ export default function Home() {
       gsap.to(siteRef.current!, { opacity: 1, duration: 0.5, ease: 'power2.out' });
     });
 
-    // Held until the cross-dissolve is over — mounting sections mid-fade is
-    // the one thing that would visibly stutter it.
-    const mount = setTimeout(() => setMounted(1), 1200);
+    // Held until the desk's power-on handover is over — mounting sections
+    // mid-handover is the one thing that would visibly stutter it.
+    const mount = setTimeout(() => setMounted(1), INTRO_END * 1000 + 300);
     return () => clearTimeout(mount);
   }, [reveal]);
 

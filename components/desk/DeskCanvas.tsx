@@ -10,6 +10,7 @@ import { loadDeskThumbnails } from './screens';
 import { DESK_BUDGETS, type DeskQuality } from './quality';
 import { loadDeskModel } from './loadModel';
 import type { ReportDeskLoad } from './loading';
+import { INTRO_END } from './timeline';
 import {
   deskEnvironment,
   HEMI_SCALE,
@@ -211,11 +212,13 @@ function RenderBudget({
   active,
   ready,
   quality,
+  introStart,
   onSlow,
 }: {
   active: boolean;
   ready: boolean;
   quality: DeskQuality;
+  introStart: DeskBindings['introStart'];
   onSlow: () => void;
 }) {
   const get = useThree((state) => state.get);
@@ -238,9 +241,11 @@ function RenderBudget({
         get().advance(clock, false);
         next = next ? Math.max(next + interval, time + interval * 0.5) : time + interval;
         previous = time;
-        // Ignore model/shader warmup and isolated long frames. Drop quality
-        // after two sustained windows of expensive or infrequent draws.
-        if (ready && quality === 'full') {
+        // Ignore model/shader warmup, the power-on (a switch now would
+        // rebuild every shader mid-handover) and isolated long frames. Drop
+        // quality after two sustained windows of expensive or infrequent draws.
+        const began = introStart.current;
+        if (ready && quality === 'full' && began !== null && time - began > INTRO_END * 1000) {
           observed += elapsed;
           frames++;
           cpu += performance.now() - start;
@@ -255,7 +260,7 @@ function RenderBudget({
     };
     frame = requestAnimationFrame(step);
     return () => cancelAnimationFrame(frame);
-  }, [active, ready, get, quality, onSlow]);
+  }, [active, ready, get, quality, introStart, onSlow]);
   return null;
 }
 
@@ -318,7 +323,7 @@ export default function DeskCanvas({
         <Room resolution={DESK_BUDGETS[quality].environment} />
         <DeskModel source={source} {...bindings} />
         <DeskLook quality={quality} />
-        <RenderBudget active={active} ready={ready} quality={quality} onSlow={onSlow} />
+        <RenderBudget active={active} ready={ready} quality={quality} introStart={bindings.introStart} onSlow={onSlow} />
       </Canvas>
       {full && (
         // A very light vignette holds the eye on the lit desk.

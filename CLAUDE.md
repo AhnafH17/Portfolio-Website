@@ -48,10 +48,14 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 ## Architecture Decisions
 
 ### Desk hero
-- Regenerate the model with `blender -b -P scripts/build-desk-hero.py`, then `node scripts/optimize-models.mjs desk-hero`.
+- Regenerate the model with `blender -b -P scripts/build-desk-hero.py`, then `node scripts/optimize-models.mjs desk-hero`, then `node scripts/make-desk-outline.mjs` (the preloader's line drawing, below).
 - `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
+- The opening camera is `heroPose()` in `components/desk/heroPose.ts` (no three.js), used by both `fitTour` and the preloader; scroll timing and the power-on clock live in `components/desk/timeline.ts`, so DeskHero's first bundle carries no three.js. Change the framing there, then regenerate the outline.
 - `components/desk/screens.ts` paints one animated texture per monitor (only changed regions are redrawn; 30 fps near, 8 fps far, none off screen). Pointer and touch raycast the three SCREEN_* meshes from any camera position and hit-test the same card rectangles; clicking empty screen scrolls to that monitor's hold. The HTML links over the screens are for keyboard and screen readers only. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
-- The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+- The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+- Preloader drawing = the real model: `scripts/make-desk-outline.mjs` writes `public/models/desk-outline.json` (furniture boxes, screen corners, LED strip, fan, and per view (wide / phone) the hard edges and contours with hidden lines removed, ~16 KB gz). `components/desk/outline.ts` projects it with the hero camera into per-part canvases, so every line sits on the desk's pixels. Re-run the script after any model or hero-framing change.
+- Handover is in place: the camera never moves; on the clock in `timeline.ts` (`handover.start`, set when the bars start to open) the room lights up while the lines dissolve part by part, the drawn LED gives way where the real sweep has lit, the screens power on, and the name's words fly into the `#desk-name` heading (transforms) and cross-fade. Only opacity/transform change during it; the idle drift starts after `INTRO_END`.
+- `ready` means warmed up: DeskModel uploads textures, runs `compileAsync` and renders two frames (nothing draws before that) while the loader still shows "Powering the screens". Quality never downgrades during the power-on, and below-fold sections mount after it.
 - Phones and lower-capability devices use a 30 fps, 1.6× pixel-ratio budget (`components/desk/quality.ts`). Desktop starts with a 60 fps, 2× budget and drops to the lighter profile after sustained slow frames. Save Data and devices reporting at most 2 GB of memory use the static index.
 - Pointer targets follow the monitors near each stop. Keyboard users can focus a settled monitor, open the static list, or skip directly to About Me.
 - About rises in during the pull-back from the last monitor (beats.ts), not after it.
