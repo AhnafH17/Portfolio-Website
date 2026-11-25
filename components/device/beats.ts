@@ -17,11 +17,9 @@ export const BEATS = {
   // object together. The laptop doesn't need this: its screen is face-down on
   // the keyboard until the lid opens.
   wakePhone: [0.14, 0.435] as const,
-  read: [0.54, 0.89] as const,  // device is LOCKED; content scrolls inside the screen
-  // The ending: the camera eases toward the keyboard and Return is pressed;
-  // the terminal holds "✓ deployed" while About rises over the scene.
-  focus: [0.89, 0.945] as const,
-  press: [0.94, 0.98] as const,
+  // Device is LOCKED, front-on; content scrolls inside the screen to the end,
+  // then About rises over the scene. No camera move, no key press.
+  read: [0.54, 1.0] as const,
 };
 
 // ── Pose constants (tweak to taste) ──────────────────────────────────────

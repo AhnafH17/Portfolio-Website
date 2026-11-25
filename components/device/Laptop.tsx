@@ -33,13 +33,10 @@ const DEVICE_H = 2.3;
 const FIT = 0.94;       // leave a small margin around the device
 const Y_FACTOR = -0.82; // vertical centring as a fraction of scale
 
-// The ending (see BEATS). DeviceCanvas sets the camera to CAM_BASE.
+// DeviceCanvas sets the camera to CAM_BASE; it stays there for the whole section.
 const CAM_BASE = [0, 0.25, 6.4] as const;
 const CAM_FOV = 34;
 const CAM_DIST = Math.hypot(...CAM_BASE);
-const KEY_FOCUS = 0.6;   // how far toward the key the camera eases
-const KEY_VIEW = new THREE.Vector3(0, 1.3, 2.2);   // where it looks at the key from
-const KEY_TRAVEL = 0.0075;  // how far the key sinks
 
 export default function Laptop({ progress }: { progress: { current: number } }) {
   const root = useRef<THREE.Group>(null);
@@ -143,30 +140,11 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     // Scroll the editor via texture offset (no redraw, no re-upload).
     content.render(read);
 
-    // The ending, all inside this scene: the camera eases toward the keyboard,
-    // the real Return key lights up and sinks, and the terminal reports the
-    // deploy and holds it while About rises over the scene (DeviceShowcase).
-    const focus = easeInOut(phase(p, BEATS.focus)) * KEY_FOCUS;
-    const press = phase(p, BEATS.press);
-    const down = Math.sin(Math.PI * Math.min(1, press * 2));   // down and back up
-    if (r.key) r.key.position.y = r.keyY - down * KEY_TRAVEL;
-    const lit = press > 0 ? 1 - 0.6 * phase(p, [BEATS.press[1], 1]) : 0;
-    r.keyGlow.forEach((m) => { m.emissiveIntensity = lit * 2.2; });
-    // `git push` types itself as the camera reaches the keys, then the press
-    // runs it.
-    live.ending(press > 0.5 ? 1 : 0.999 * phase(p, [BEATS.focus[0], BEATS.press[0] - 0.01]));
-
-    const camera = state.camera;
-    if (focus > 0) {
-      (r.key ?? r.lid).getWorldPosition(cam.key);
-      cam.pos.copy(cam.base).lerp(cam.look.copy(cam.key).add(KEY_VIEW), focus);
-      cam.look.set(0, cam.base.y, 0).lerp(cam.key, focus);
-      camera.position.copy(cam.pos);
-      camera.lookAt(cam.look);
-    } else {
-      camera.position.copy(cam.base);
-      camera.rotation.set(0, 0, 0);
-    }
+    // No key-press ending: the terminal keeps its loop and the camera never
+    // leaves its resting pose; About rises over the scene (DeviceShowcase).
+    live.ending(0);
+    state.camera.position.copy(cam.base);
+    state.camera.rotation.set(0, 0, 0);
   });
 
   return (

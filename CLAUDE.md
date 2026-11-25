@@ -40,7 +40,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 | `lib/handoff.ts` + `components/handoff/` | Section-to-section handoffs (one overlay, one loop): Impacts→Testimonials particles, Testimonials→Contact CRT switch-off + transmission |
 | `lib/coreHandoff.ts` | The About core cube's live position, for its flight into Impacts |
 | `components/about/stops.ts` | The About tour: each camera stop and the words shown there. The section is 3D only; the same words sit in the HTML, visually hidden |
-| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (it presses at the end of the laptop section, then the camera pushes through the screen; see BEATS in `components/device/beats.ts`) |
+| `scripts/build-laptop.py` | Laptop model: the AH monogram on the lid (`LOGO`, Greater Theory like the navbar, MAT_Accent), Return key as its own node `KEY_Return` (no longer animated; the section has no key-press ending) |
 | `lib/caseStudies.ts` | Full case studies for all 11 projects (problem, role, approach, images, result), rendered by `ProjectPageContent`; images in `public/images/case/`. Facts only: a figure belongs to the project it was measured on, and dashboard images are labelled demo data |
 | `lib/projectBlur.ts` | Inlined blurred previews of the project thumbnails (no empty cards); regenerate with `node scripts/make-project-blur.mjs` when a thumbnail changes |
 | `assets/about-workspace/` | Monitor UI texture + accent UVs, drawn by `scripts/make-about-screen.py` |
@@ -107,7 +107,7 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 ### About Tour
 - Pinned, centred; the camera tours six stops as you scroll (`components/about/stops.ts`). Each stop's words are real HTML over the canvas (`.ab3-say`, no panel), on the side the structure leaves free (`side` per stop; phones: text band on top, structure below). The camera frames each structure into the free part of the screen, measured from where the words land. Text in/out is a pure function of scroll. No hover effects on the structures.
 - Reduced motion / no WebGL: the same HTML as a plain page.
-- Laptop → About is a stack-up: after the Return key press and "✓ deployed" (terminal text driven by scroll, `ending(t)` in screenTexture.ts), `.ab3` rises over the pinned laptop scene (`margin-top:-100svh`); the laptop darkens and scales back by scroll and stops rendering once covered. The core stop's words clear, then the cube flies into Impacts.
+- Laptop → About is a stack-up: the laptop stays front-on with its code scrolling (no camera move to the keyboard, no Return key press), then `.ab3` rises over the pinned laptop scene (`margin-top:-100svh`); the laptop darkens and scales back by scroll and stops rendering once covered. The core stop's words clear, then the cube flies into Impacts.
 - Device scenes size the device to the resting camera's view (`restingView` in deviceModel.ts), never the live camera, so scrolling back up can't shrink it. Everything in the laptop/phone ending must be a function of scroll progress.
 
 ### Showcase Click Behavior
