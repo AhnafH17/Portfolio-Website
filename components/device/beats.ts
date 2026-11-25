@@ -1,26 +1,27 @@
 // ─────────────────────────────────────────────────────────────────────────
 // Scroll choreography for the 3D device hero.
-// Everything is a function of one scroll progress value `p` in [0, 1].
+// Everything is a function of one scroll progress value `p` in [0, 1]: the
+// device's part of the section's track. After p = 1 the About section rises
+// over the pinned device (DeviceShowcase drives that from the same scroll).
 // Tune the numbers here to re-time the animation — no other file needs edits.
 // ─────────────────────────────────────────────────────────────────────────
 
 export const BEATS = {
   // p-ranges for each beat (start, end)
-  spin: [0.0, 0.26] as const,   // rotate 180° (back → front)
-  open: [0.22, 0.46] as const,  // laptop lid opens / phone stands up → docked
-  wake: [0.36, 0.54] as const,  // screen powers on + real content fades in
+  spin: [0.0, 0.28] as const,   // rotate 180° (back → front)
+  open: [0.24, 0.5] as const,   // laptop lid opens / phone stands up → docked
+  wake: [0.39, 0.59] as const,  // screen powers on + real content fades in
   // The phone wakes earlier than the laptop. Mid-spin its front face is edge-on
   // beside the bright titanium rail, and an unlit screen there is a featureless
   // void — the two read as separate slabs. Lighting it while it turns ties the
   // object together. The laptop doesn't need this: its screen is face-down on
   // the keyboard until the lid opens.
-  wakePhone: [0.13, 0.40] as const,
-  read: [0.5, 0.82] as const,   // device is LOCKED; content scrolls inside the screen
-  // The ending: the camera eases toward the keyboard, Return is pressed, then
-  // it pushes through the screen into the About section.
-  focus: [0.82, 0.87] as const,
-  press: [0.865, 0.9] as const,
-  dive: [0.9, 0.985] as const,
+  wakePhone: [0.14, 0.435] as const,
+  read: [0.54, 0.89] as const,  // device is LOCKED; content scrolls inside the screen
+  // The ending: the camera eases toward the keyboard and Return is pressed;
+  // the terminal holds "✓ deployed" while About rises over the scene.
+  focus: [0.89, 0.945] as const,
+  press: [0.94, 0.98] as const,
 };
 
 // ── Pose constants (tweak to taste) ──────────────────────────────────────
@@ -51,11 +52,6 @@ export function phase(p: number, [start, end]: readonly [number, number]): numbe
 /** easeInOutCubic */
 export function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-/** Accelerates into the screen. */
-export function easeIn(t: number): number {
-  return t * t * t;
 }
 
 /** easeOutCubic */

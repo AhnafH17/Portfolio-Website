@@ -52,7 +52,8 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
 - `components/desk/beats.ts` measures the display corners and fits the tour. The work anchor lands on the first screen hold.
 - The opening camera is `heroPose()` in `components/desk/heroPose.ts` (no three.js), used by both `fitTour` and the preloader; scroll timing and the power-on clock live in `components/desk/timeline.ts`, so DeskHero's first bundle carries no three.js. Change the framing there, then regenerate the outline.
 - `components/desk/screens.ts` paints one animated texture per monitor (only changed regions are redrawn; 30 fps near, 8 fps far, none off screen). Pointer and touch raycast the three SCREEN_* meshes from any camera position and hit-test the same card rectangles; clicking empty screen scrolls to that monitor's hold. The HTML links over the screens are for keyboard and screen readers only. Regenerate the thumbnail atlas with `node scripts/make-desk-thumbnails.mjs` after editing a project image.
-- The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+- The preloader reports model transfer and rendering before starting the hands. Its timeout, reduced-motion mode, and WebGL failures all reveal the static index.
+
 - Preloader drawing = the real model: `scripts/make-desk-outline.mjs` writes `public/models/desk-outline.json` (furniture boxes, screen corners, LED strip, fan, and per view (wide / phone) the hard edges and contours with hidden lines removed, ~16 KB gz). `components/desk/outline.ts` projects it with the hero camera into per-part canvases, so every line sits on the desk's pixels. Re-run the script after any model or hero-framing change.
 - Handover is in place: the camera never moves; on the clock in `timeline.ts` (`handover.start`, set when the bars start to open) the room lights up while the lines dissolve part by part, the drawn LED gives way where the real sweep has lit, the screens power on, and the name's words fly into the `#desk-name` heading (transforms) and cross-fade. Only opacity/transform change during it; the idle drift starts after `INTRO_END`.
 - `ready` means warmed up: DeskModel uploads textures, runs `compileAsync` and renders two frames (nothing draws before that) while the loader still shows "Powering the screens". Quality never downgrades during the power-on, and below-fold sections mount after it.
@@ -104,10 +105,10 @@ Next.js 15 App Router, TypeScript, React 19. Personal portfolio for Ahnaf Hussai
   Khronos PBR Neutral to match)
 
 ### About Tour
-- The section is 3D only: pinned, centred, the camera tours six stops as you scroll, with words on panels in the scene (`components/about/stops.ts` holds both; `drawSign` paints the panels, rebuilt on palette change)
-- Stops are framed from each node's measured box and the screen size, so they fit any aspect ratio. Views come from the front right: labels face +Z and tops catch the light there
-- The same words are real HTML in `.ab3-copy`: visually hidden normally, shown under reduced motion or without WebGL
-- Laptop → About is one move: Return key presses, terminal shows `git push`, camera pushes through the screen into `.dv-fade`, and `.ab3-veil` lifts on the far side. The core stop holds, its panel clears, then the cube flies into Impacts as the scene's bottom edge dissolves
+- Pinned, centred; the camera tours six stops as you scroll (`components/about/stops.ts`). Each stop's words are real HTML over the canvas (`.ab3-say`, no panel), on the side the structure leaves free (`side` per stop; phones: text band on top, structure below). The camera frames each structure into the free part of the screen, measured from where the words land. Text in/out is a pure function of scroll. No hover effects on the structures.
+- Reduced motion / no WebGL: the same HTML as a plain page.
+- Laptop → About is a stack-up: after the Return key press and "✓ deployed" (terminal text driven by scroll, `ending(t)` in screenTexture.ts), `.ab3` rises over the pinned laptop scene (`margin-top:-100svh`); the laptop darkens and scales back by scroll and stops rendering once covered. The core stop's words clear, then the cube flies into Impacts.
+- Device scenes size the device to the resting camera's view (`restingView` in deviceModel.ts), never the live camera, so scrolling back up can't shrink it. Everything in the laptop/phone ending must be a function of scroll progress.
 
 ### Showcase Click Behavior
 - **Small cards (right panel)**: `onClick={() => handleSelect(idx)}` — switches displayed project only

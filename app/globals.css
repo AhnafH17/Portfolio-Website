@@ -1585,8 +1585,9 @@ footer span{color:var(--accent-glow)}
 /* ───────────────────────── 3D Device Showcase (About hero) ───────────────────────── */
 .dv-section{
   position:relative;
-  /* Tall scroll track — drives the pinned animation. ~4 viewport heights. */
-  height:460vh;
+  /* Tall scroll track: the device's part (330vh), then the screen in which
+     About rises over it (DeviceShowcase), then the pinned screen itself. */
+  height:530vh;
   background:radial-gradient(120% 80% at 50% 0%, var(--black) 0%, var(--black-deep) 70%);
 }
 .dv-sticky{
@@ -1630,6 +1631,8 @@ footer span{color:var(--accent-glow)}
   margin-bottom:0.9rem;
 }
 .dv-fade{ position:absolute; inset:0; z-index:5; opacity:0; pointer-events:none; background:var(--black-deep); }
+/* Settles back a little as About covers it (DeviceShowcase sets the scale). */
+.dv-canvas{ transform-origin:50% 50%; }
 .dv-title{
   font-family:var(--font-display);
   font-weight:800;
@@ -1682,7 +1685,7 @@ footer span{color:var(--accent-glow)}
 }
 
 @media (max-width:768px){
-  .dv-section{ height:370vh; }
+  .dv-section{ height:448vh; }   /* the phone's part is 248vh */
   /* The phone's back (and its logo) sits right under the hint here. */
   .dv-hint{ display:none; }
 }
@@ -1771,22 +1774,90 @@ footer span{color:var(--accent-glow)}
 .ab3-sticky{ position:sticky; top:0; height:100vh; height:100svh; overflow:hidden; }
 .ab3-canvas{ position:absolute; inset:0; }
 .ab3-canvas canvas{ display:block; }
-/* The laptop's push through the screen lands in this same dark. */
-.ab3-veil{ position:absolute; inset:0; background:var(--black-deep); pointer-events:none; }
+/* About stacks up over the laptop the way it does over the desk: it starts a
+   screen early, inside the laptop's track, and rises over the pinned scene
+   (DeviceShowcase darkens it underneath); its own pin takes over exactly when
+   the laptop's releases. A soft shade leads its edge in. Not for the static
+   laptop fallback, which has no pinned scene to cover. */
+.dv-section:not(.dv-section--static) + .ab3:not(.ab3--plain){ z-index:3; margin-top:-100svh; }
+.dv-section:not(.dv-section--static) + .ab3:not(.ab3--plain)::before{
+  content:''; position:absolute; left:0; right:0; bottom:100%; height:30svh; pointer-events:none;
+  background:linear-gradient(to top, rgba(0,0,0,.55), transparent);
+}
+/* The old push through the laptop's screen landed in this dark; with the
+   stack-up About's scene shows as it rises, so the veil stays out. */
+.ab3-veil{ display:none; }
 /* Dissolves the scene's bottom edge as it hands over to Impacts. */
 .ab3-edge{ position:absolute; left:0; right:0; bottom:0; height:55%; opacity:0; pointer-events:none;
   background:linear-gradient(to bottom, transparent, var(--black-deep) 92%); }
-/* The words as real text: hidden from sight, there for search engines and
-   screen readers. */
-.ab3-copy{ position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+/* The words: real text over the scene, pinned with it (same box as the
+   sticky stage), one block per stop on the side the camera leaves free.
+   WorkspaceCanvas brings each block's words in and out (.ab3-w) and frames
+   the subject beside the block, measured from this layout. No box behind
+   them: a soft shadow and an edgeless dark bloom keep them readable. */
+.ab3-copy{
+  position:sticky; top:0; height:100vh; height:100svh; margin-top:-100vh; margin-top:-100svh;
+  z-index:1; pointer-events:none; color:#f2f0eb;
+  --gut:clamp(1.5rem, 5.2vw, 8rem);
+  --col:clamp(18rem, 37vw, 60rem);
+}
+.ab3-say{
+  position:absolute; top:0; bottom:0; margin:auto 0; height:fit-content; width:var(--col);
+  opacity:0; text-shadow:0 1px 2px rgba(0,0,0,.55), 0 0 28px rgba(4,7,11,.7);
+}
+.ab3-say--left{ left:var(--gut); }
+.ab3-say--right{ right:var(--gut); }
+.ab3-say::before{
+  content:''; position:absolute; inset:-22% -16%; z-index:-1; pointer-events:none; opacity:var(--show, 1);
+  background:radial-gradient(closest-side, rgba(6,9,14,.62), rgba(6,9,14,.3) 60%, transparent);
+}
+.ab3-w{ display:inline-block; }
+.ab3-say-title{
+  margin:0; font-family:var(--font-display); font-weight:400; text-transform:uppercase;
+  line-height:1.04; letter-spacing:.01em; color:#f2f0eb; text-wrap:balance;
+  font-size:min(5.6rem, 4.6vw, calc(var(--col) / (var(--chars) * 0.86)));
+}
+/* The name is the biggest thing in the section. */
+.ab3-say--who .ab3-say-title{ font-size:min(9rem, 7.4vw, calc(var(--col) / (var(--chars) * 0.86))); }
+.ab3-say-line{
+  margin:1.1rem 0 0; max-width:28em; font-family:var(--font-body); font-weight:400;
+  font-size:clamp(1.2rem, .95rem + .5vw, 1.9rem); line-height:1.5; color:#f2f0eb;
+}
+/* The role reads as the label under the name. */
+.ab3-say--who .ab3-say-line:first-of-type{
+  margin-top:1.3rem; font-weight:600; font-size:clamp(.9rem, .74rem + .3vw, 1.3rem);
+  letter-spacing:.16em; text-transform:uppercase; color:var(--accent-light);
+}
+.ab3-say-chips{
+  list-style:none; margin:1.5rem 0 0; padding:0; display:flex; flex-wrap:wrap; row-gap:.5rem;
+  font-family:var(--font-body); font-weight:600; font-size:clamp(.9rem, .76rem + .28vw, 1.25rem);
+  letter-spacing:.12em; text-transform:uppercase; color:var(--accent-light);
+}
+.ab3-say-chips li:not(:last-child) .ab3-w::after{
+  content:''; display:inline-block; width:.3em; height:.3em; margin:0 .85em .18em; border-radius:50%;
+  vertical-align:middle; background:var(--accent-light);
+}
+/* Tall screens: the words take the top band, the subject sits below them. */
+@media (max-aspect-ratio: 9/10){
+  .ab3-copy{ --gut:1.25rem; --col:calc(100vw - 2.5rem); }
+  .ab3-say{ top:5.25rem; bottom:auto; margin:0; left:var(--gut); right:auto; }
+  /* Here the scene runs on behind the words, so the bloom is deeper. */
+  .ab3-say::before{ inset:-30% -12%; background:radial-gradient(closest-side, rgba(6,9,14,.82), rgba(6,9,14,.5) 62%, transparent); }
+  .ab3-say-title{ font-size:min(3.6rem, 9vw, calc(var(--col) / (var(--chars) * 0.86))); }
+  .ab3-say--who .ab3-say-title{ font-size:min(5rem, 14vw, calc(var(--col) / (var(--chars) * 0.86))); }
+  .ab3-say-line{ margin-top:.75rem; font-size:1.06rem; }
+  .ab3-say--who .ab3-say-line:first-of-type{ margin-top:.9rem; font-size:.82rem; }
+  .ab3-say-chips{ margin-top:1rem; font-size:.8rem; }
+}
 /* Plain version: reduced motion or no WebGL. */
 .ab3--plain{ height:auto; }
 .ab3--plain .ab3-sticky{ display:none; }
-.ab3--plain .ab3-copy, .ab3-copy:focus-within{ position:static; width:auto; height:auto; clip-path:none; white-space:normal; }
-.ab3--plain .ab3-copy{ padding:6rem 6vw; max-width:46rem; color:var(--gold); }
-.ab3--plain .ab3-copy h2{ font-family:var(--font-display); font-weight:400; text-transform:uppercase; font-size:clamp(1.6rem,4vw,3rem); color:var(--accent-glow); margin:.4rem 0 2rem; }
-.ab3--plain .ab3-copy h3{ font-family:var(--font-body); font-weight:600; color:var(--gold-bright); margin:1.6rem 0 .3rem; }
-.ab3--plain .ab3-copy ul{ list-style:none; margin:.6rem 0 0; padding:0; display:flex; flex-wrap:wrap; gap:.5rem 1rem; }
+/* The same words as a plain page, one stop under the other. */
+.ab3--plain .ab3-copy{ position:static; height:auto; margin:0; padding:6rem 6vw; max-width:60rem; }
+.ab3--plain .ab3-say{ position:static; width:auto; height:auto; margin:0 0 3.5rem; opacity:1; }
+.ab3--plain .ab3-say::before{ content:none; }
+.ab3--plain .ab3-say-title{ font-size:clamp(1.8rem, 4.4vw, 3.6rem); }
+.ab3--plain .ab3-say--who .ab3-say-title{ font-size:clamp(2.4rem, 7vw, 5.4rem); }
 @media (max-width:768px){
   .ab3{ height:460vh; }
   /* Touch scrolls the page; the scene is only for looking at. */
@@ -1795,10 +1866,11 @@ footer span{color:var(--accent-glow)}
 @media (prefers-reduced-motion:reduce){
   .ab3{ height:auto; }
   .ab3-sticky{ position:relative; height:70vh; }
-  .ab3-copy{ position:static; width:auto; height:auto; clip-path:none; white-space:normal; padding:3rem 6vw 5rem; max-width:46rem; color:var(--gold); }
-  .ab3-copy h2{ font-family:var(--font-display); font-weight:400; text-transform:uppercase; font-size:clamp(1.6rem,4vw,3rem); color:var(--accent-glow); margin:.4rem 0 2rem; }
-  .ab3-copy h3{ font-family:var(--font-body); font-weight:600; color:var(--gold-bright); margin:1.6rem 0 .3rem; }
-  .ab3-copy ul{ list-style:none; margin:.6rem 0 0; padding:0; display:flex; flex-wrap:wrap; gap:.5rem 1rem; }
+  .ab3-copy{ position:static; height:auto; margin:0; padding:3rem 6vw 5rem; max-width:60rem; }
+  .ab3-say{ position:static; width:auto; height:auto; margin:0 0 3rem; opacity:1; }
+  .ab3-say::before{ content:none; }
+  .ab3-say-title{ font-size:clamp(1.8rem, 4.4vw, 3.6rem); }
+  .ab3-say--who .ab3-say-title{ font-size:clamp(2.4rem, 7vw, 5.4rem); }
 }
 
 /* ══════════════════════════════════════════════════════════════

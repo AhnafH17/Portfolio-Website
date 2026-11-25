@@ -10,26 +10,27 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { useAccent } from '@/lib/palette';
 import { coreHandoff } from '@/lib/coreHandoff';
-import { ABOUT_STOPS, drawSign, SIGN_SIZE, type AboutStop } from './stops';
+import { ABOUT_STOPS, type AboutStop } from './stops';
 
 /* The About section's workspace scene (public/models/about-workspace.glb,
    built in Blender), which tells the whole section by itself: pinned and
-   centred, the camera tours the island as you scroll (ABOUT_STOPS), and a
-   panel of text floating in the scene comes up at each stop. Around it, a dim
-   field of towers on a glossy floor.
+   centred, the camera tours the island as you scroll (ABOUT_STOPS), framing
+   each stop's subject beside its words (HTML over the canvas, AboutSection),
+   which come up while it holds there. Around it, a dim field of towers on a
+   glossy floor.
    The model's contract, which this file relies on:
    - every glowing part uses the single material `MAT_Accent_Emissive`, so it
      can be recoloured to the visitor's palette here;
    - each platform is a separate `PLT_*` node with its pivot at its bottom and
-     its contents parented to it, so lifting the node lifts everything on it. */
+     its contents parented to it, so lifting the node lifts everything on it
+     (the slow drift, and the core's rise into Impacts). */
 
 const MODEL_URL = '/models/about-workspace.glb';
-const LIFT = 0.24;          // how far a hovered platform rises
-const LIFT_EASE = 7;        // higher = snappier lift/drop
-// Platforms, plus the glowing core cube people naturally point at.
+const LIFT_EASE = 7;        // higher = snappier rise/drop
+// The platforms and the core cube: each drifts on its own.
 const isLiftable = (name: string) => name.startsWith('PLT_') || name === 'CUBE_Core';
 const BASE_YAW = -0.18;     // the island's angle
-// Gentle up/down drift every platform does on its own (hover lifts on top).
+// Gentle up/down drift every platform does on its own.
 const DRIFT = 0.07;
 const DRIFT_SPEED = 0.9;
 // How far the core cube rises off its platform before the Impacts section
@@ -40,9 +41,17 @@ const CORE_EDGE = 0.44;     // the cube's edge length in the model
 const FOV = 30;
 // Share of each stop's scroll spent holding still (the rest is moving on).
 const HOLD = 0.55;
-// The tour ends here; the rest of the scroll holds on the core, and its panel
-// clears before the cube flies up into Impacts.
+// The tour ends here; the rest of the scroll holds on the core, and its words
+// clear before the cube flies up into Impacts.
 const TOUR_END = 0.93;
+// Of each move, the share the words take to go (at its start) and to come
+// (at its end); none show mid-move. WORD_LAG spreads the words of one stop.
+const WORDS_OUT = 0.42;
+const WORD_LAG = 0.6;
+const WORD_RISE = 26;       // px a word travels as it comes and goes
+// Room kept clear on each edge of the screen and beside the words, in px.
+// A subject fills 1 / stop.frame of what's left.
+const EDGE = { top: 92, bottom: 40, side: 40, gap: 32 };
 
 /* Red reads far darker to the eye than amber, teal or magenta, so a glow
    tuned on crimson blows the brighter palettes out. Scale glow + accent
@@ -76,14 +85,49 @@ const drawing = { onScreen: false, warm: 0 };
 /* Resolves once the bloom pass's shaders are compiled (see Bloom). */
 let bloomCompiled: Promise<unknown> = Promise.resolve();
 
-// Hovering anything that sits on a platform lifts that whole platform.
-function platformOf(obj: THREE.Object3D | null) {
-  for (let o = obj; o; o = o.parent) if (isLiftable(o.name)) return o.name;
-  return null;
+/** One camera stop, resolved for this screen and model. */
+interface Pose { focus: THREE.Vector3; dir: THREE.Vector3; dist: number }
+
+/** Where a stop's subject may sit, in normalised device coords (-1..1). */
+interface Region { x0: number; x1: number; y0: number; y1: number }
+
+const smooth = (x: number) => x * x * (3 - 2 * x);
+const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
+
+/* Frames a box from `dir` so its on-screen outline fills `fill` of `region`
+   and is centred in it. Measured, not estimated: the box's corners are
+   projected and the camera moved until they land (a few rounds converge). */
+function fitBox(box: THREE.Box3, dirIn: THREE.Vector3, region: Region, fill: number, aspect: number): Pose {
+  const cam = new THREE.PerspectiveCamera(FOV, aspect, 0.05, 400);
+  const dir = dirIn.clone().normalize();
+  const focus = box.getCenter(new THREE.Vector3());
+  const corners = [0, 1, 2, 3, 4, 5, 6, 7].map((k) => new THREE.Vector3(
+    k & 1 ? box.max.x : box.min.x, k & 2 ? box.max.y : box.min.y, k & 4 ? box.max.z : box.min.z));
+  const vt = Math.tan(THREE.MathUtils.degToRad(FOV) / 2);
+  let dist = box.getSize(new THREE.Vector3()).length() / (2 * vt);
+  const rw = (region.x1 - region.x0) * fill, rh = (region.y1 - region.y0) * fill;
+  const rcx = (region.x0 + region.x1) / 2, rcy = (region.y0 + region.y1) / 2;
+  const p = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3();
+  for (let round = 0; round < 16; round++) {
+    cam.position.copy(focus).addScaledVector(dir, dist);
+    cam.lookAt(focus);
+    cam.updateMatrixWorld();
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const c of corners) {
+      p.copy(c).project(cam);
+      x0 = Math.min(x0, p.x); x1 = Math.max(x1, p.x); y0 = Math.min(y0, p.y); y1 = Math.max(y1, p.y);
+    }
+    right.setFromMatrixColumn(cam.matrixWorld, 0);
+    up.setFromMatrixColumn(cam.matrixWorld, 1);
+    const halfH = dist * vt, halfW = halfH * aspect;
+    focus.addScaledVector(right, ((x0 + x1) / 2 - rcx) * halfW).addScaledVector(up, ((y0 + y1) / 2 - rcy) * halfH);
+    dist *= Math.max((x1 - x0) / rw, (y1 - y0) / rh);
+  }
+  return { focus, dir, dist };
 }
 
-/** One camera stop, resolved for this screen and model. */
-interface Pose { focus: THREE.Vector3; dir: THREE.Vector3; dist: number; up: THREE.Vector3; viewW: number; viewH: number }
+/** A stop's words, split into the spans that move. */
+interface Say { el: HTMLElement; words: HTMLElement[]; hide: number; dir: number }
 
 /** Scroll position in stops, with the camera holding at each one. */
 function tourAt(p: number, n: number) {
@@ -94,16 +138,15 @@ function tourAt(p: number, n: number) {
   return { i, t: t * t * (3 - 2 * t) };
 }
 
-function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
+function Workspace({ sectionRef, veilRef, edgeRef, copyRef }: {
   sectionRef: RefObject<HTMLElement | null>;
-  pointerInside: RefObject<boolean>;
   veilRef: RefObject<HTMLDivElement | null>;
   edgeRef: RefObject<HTMLDivElement | null>;
+  copyRef: RefObject<HTMLDivElement | null>;
 }) {
   const { scene } = useGLTF(MODEL_URL);
   const accent = useAccent();
   const rootRef = useRef<THREE.Group>(null);
-  const hovered = useRef<string | null>(null);
 
   // three.js objects are mutated every frame, so they live in a ref (set up
   // once the model is in) rather than in render-time values.
@@ -167,36 +210,35 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
     };
   }, [scene, accent]);
 
-  /* Hover. Checked by ray each frame (every other frame) rather than with
-     pointer over/out events: the model is many small meshes, and moving
-     between two pieces of the SAME platform can deliver "left the old piece"
-     after "entered the new one", which dropped the platform mid-hover.
-     The ray simply asks which platform owns whatever is under the pointer. */
-  const raycaster = useMemo(() => new THREE.Raycaster(), []);
   const coreLightRef = useRef<THREE.PointLight>(null);
   const tmp = useMemo(() => ({ a: new THREE.Vector3(), b: new THREE.Vector3() }), []);
   const reduceMotion = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
-  const hoverTick = useRef(0);
   const posesRef = useRef<Pose[]>([]);
-  const [poses, setPoses] = useState<Pose[]>([]);
-  const tourRef = useRef(0);
-  const signFade = useRef(1);
-  const setHover = (name: string | null) => {
-    if (hovered.current === name) return;
-    hovered.current = name;
-    document.body.style.cursor = name ? 'pointer' : '';
+  const saysRef = useRef<Say[]>([]);
+
+  /* The words. Each stop's are fully up for its whole hold, go during the
+     first part of the move away and come during the last part of the move in,
+     word after word, rising; a pure function of the scroll, so scrolling back
+     plays it in reverse. `hide`: 0 shown .. 1 gone; `dir`: 1 leaving (rises
+     away), -1 arriving (rises in from below). */
+  const showWords = (say: Say, hide: number, dir: number) => {
+    hide = Math.round(hide * 1000) / 1000;
+    if (say.hide === hide && (say.dir === dir || hide === 0)) return;
+    say.hide = hide; say.dir = dir;
+    say.el.style.opacity = hide >= 1 ? '0' : '1';
+    say.el.style.setProperty('--show', String(1 - hide));
+    const n = say.words.length;
+    say.words.forEach((w, j) => {
+      const e = smooth(clamp01(hide * (1 + WORD_LAG) - (WORD_LAG * j) / Math.max(1, n - 1)));
+      w.style.opacity = String(1 - e);
+      w.style.transform = e ? `translate3d(0,${(-dir * e * WORD_RISE).toFixed(1)}px,0)` : '';
+    });
   };
 
   useFrame((state, dt) => {
     if (!drawing.onScreen) return;
     // Reduced motion: the island holds still (no sway, bob, drift or pulse).
     const t = reduceMotion ? 0 : state.clock.elapsedTime;
-    if (!pointerInside.current) setHover(null);
-    else if ((hoverTick.current = (hoverTick.current + 1) % 2) === 0) {
-      raycaster.setFromCamera(state.pointer, state.camera);
-      const hit = raycaster.intersectObject(scene, true)[0];
-      setHover(hit ? platformOf(hit.object) : null);
-    }
     // Scroll drives the camera; the section is sticky, so its top tells how
     // far through the tour we are.
     const section = sectionRef.current;
@@ -210,8 +252,22 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
       if (veilRef.current) veilRef.current.style.opacity = String(Math.min(1, Math.max(0, r.top / (vh * 0.55))));
       // Leaving: the scene's bottom edge dissolves into Impacts.
       if (edgeRef.current) edgeRef.current.style.opacity = String(Math.min(1, Math.max(0, (vh - r.bottom) / (vh * 0.12))));
-      signFade.current = 1 - Math.min(1, Math.max(0, (raw - 0.965) / 0.03));
       const { i, t: u } = tourAt(p, poses.length);
+      if (!reduceMotion) {
+        // The core's words clear before the cube flies into Impacts; the
+        // first stop's come in as the section arrives.
+        const clear = clamp01((raw - 0.965) / 0.03);
+        const arrive = clamp01(r.top / (vh * 0.55));
+        const last = saysRef.current.length - 1;
+        saysRef.current.forEach((say, k) => {
+          let hide = 1, dir = k <= i ? 1 : -1;
+          if (k === i) hide = clamp01(u / WORDS_OUT);
+          else if (k === i + 1) hide = clamp01((1 - u) / WORDS_OUT);
+          if (k === last && clear > 0) { dir = 1; hide = Math.max(hide, clear); }
+          if (k === 0 && arrive > 0) { dir = -1; hide = Math.max(hide, arrive); }
+          showWords(say, hide, dir);
+        });
+      }
       const a = poses[i], b = poses[i + 1];
       tmp.a.lerpVectors(a.focus, b.focus, u);
       tmp.b.lerpVectors(a.dir, b.dir, u).normalize();
@@ -221,7 +277,6 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
       cam.lookAt(tmp.a);
       const world = state.scene;
       if (world.fog instanceof THREE.Fog) { world.fog.near = dist - 1; world.fog.far = dist + 13; }
-      tourRef.current = p;
     }
     const model = modelRef.current;
     if (!model) return;
@@ -230,7 +285,7 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
       // Staggered phases, so they rise and fall like a slow wave, not in unison.
       const drift = (Math.sin(t * DRIFT_SPEED + phase) * 0.5 + 0.5) * DRIFT;
       const rise = name === 'CUBE_Core' ? coreHandoff.lift * CORE_RISE : 0;
-      const target = baseY + drift + rise + (hovered.current === name ? LIFT : 0);
+      const target = baseY + drift + rise;
       node.position.y += (target - node.position.y) * k;
     });
     if (model.coreMat) model.coreMat.emissiveIntensity = (2.2 + Math.sin(t * 1.6) * 0.35) * model.glow;
@@ -259,15 +314,38 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
   });
 
   useEffect(() => () => {
-    document.body.style.cursor = '';
     coreHandoff.ready = false;
     coreHandoff.canvas = null;
   }, []);
 
+  /* The words' spans, and a refit whenever their layout changes (resize,
+     fonts arriving). */
+  const [wordsLaid, setWordsLaid] = useState(0);
+  useEffect(() => {
+    const copy = copyRef.current;
+    if (!copy) return;
+    const says = Array.from(copy.querySelectorAll<HTMLElement>('.ab3-say')).map((el) => ({
+      el, words: Array.from(el.querySelectorAll<HTMLElement>('.ab3-w')), hide: -1, dir: 0,
+    }));
+    saysRef.current = says;
+    let live = true;
+    const bump = () => { if (live) setWordsLaid((n) => n + 1); };
+    const ro = new ResizeObserver(bump);
+    says.forEach((s) => ro.observe(s.el));
+    document.fonts?.ready.then(bump);
+    return () => {
+      live = false;
+      ro.disconnect();
+      says.forEach((s) => { s.el.style.opacity = ''; s.el.style.removeProperty('--show'); s.words.forEach((w) => { w.style.opacity = ''; w.style.transform = ''; }); });
+      saysRef.current = [];
+    };
+  }, [copyRef]);
+
   /* Where the camera goes: each stop frames its node, measured in the rest
-     pose so a refit always gives the same answer. Everything is sized from
-     the screen, so the island is centred and the stops fill the frame on a
-     wide monitor and a tall phone alike. */
+     pose so a refit always gives the same answer, into the part of the screen
+     its words leave free: beside them on a wide screen, below them on a tall
+     one. Measured from the laid-out words, so the subject never sits under
+     them at any size. */
   const width = useThree((st) => st.size.width);
   const height = useThree((st) => st.size.height);
   useEffect(() => {
@@ -277,109 +355,38 @@ function Workspace({ sectionRef, pointerInside, veilRef, edgeRef }: {
     const moved = new Map<THREE.Object3D, number>();
     modelRef.current?.platforms.forEach(({ node, baseY }) => { moved.set(node, node.position.y); node.position.y = baseY; });
     scene.updateMatrixWorld(true);
-    const vt = Math.tan(THREE.MathUtils.degToRad(FOV) / 2);
-    const ht = vt * (width / height);
-    const fit = Math.min(vt, ht);
     const box = new THREE.Box3();
-    const size = new THREE.Vector3();
-    posesRef.current = ABOUT_STOPS.map((stop: AboutStop) => {
+    const copy = copyRef.current?.getBoundingClientRect();
+    const tall = window.matchMedia('(max-aspect-ratio: 9/10)').matches;
+    // px -> normalised device coords
+    const nx = (x: number) => (x / width) * 2 - 1, ny = (y: number) => 1 - (y / height) * 2;
+    posesRef.current = ABOUT_STOPS.map((stop: AboutStop, k) => {
       const node = stop.node ? scene.getObjectByName(stop.node) : null;
       box.setFromObject(node ?? scene);
-      box.getSize(size);
-      const radius = Math.max(size.x, size.z, size.y * 0.8) / 2;
-      const dist = (radius * stop.frame) / fit;
-      const dir = new THREE.Vector3(...stop.dir).normalize();
-      const right = new THREE.Vector3(0, 1, 0).cross(dir).normalize();
-      const up = dir.clone().cross(right).normalize();
-      const viewH = 2 * dist * vt, viewW = viewH * (width / height);
-      // The subject sits above centre, leaving the lower part for its panel.
-      const focus = box.getCenter(new THREE.Vector3()).addScaledVector(up, -viewH * stop.lift);
-      return { focus, dir, dist, up, viewW, viewH };
+      let x0 = EDGE.side, x1 = width - EDGE.side, y0 = EDGE.top;
+      const y1 = height - EDGE.bottom;
+      const say = saysRef.current[k]?.el.getBoundingClientRect();
+      if (say && copy && !reduceMotion) {
+        const l = say.left - copy.left, r = say.right - copy.left, b = say.bottom - copy.top;
+        if (tall) y0 = Math.max(y0, b + EDGE.gap);
+        else if (stop.side === 'left') x0 = Math.max(x0, r + EDGE.gap);
+        else x1 = Math.min(x1, l - EDGE.gap);
+      }
+      const region = { x0: nx(x0), x1: nx(x1), y0: ny(y1), y1: ny(y0) };
+      return fitBox(box, new THREE.Vector3(...stop.dir), region, 1 / stop.frame, width / height);
     });
     moved.forEach((y, node) => { node.position.y = y; });
     scene.updateMatrixWorld(true);
-    setPoses(posesRef.current);
-  }, [scene, width, height]);
+  }, [scene, width, height, wordsLaid, copyRef, reduceMotion]);
 
   // The one coloured light: the core's, in model space.
   const k = glowScale(accent.glow) * 0.75;
   return (
     <>
-    {!reduceMotion && <Signs poses={poses} tour={tourRef} fade={signFade} accent={accent.glow} accentLight={accent.light} />}
     <group ref={rootRef}>
       <primitive object={scene} />
       <pointLight ref={coreLightRef} position={[0.39, 1.25, 0.6]} intensity={7 * k} userData={{ base: 7 * k }} distance={3} decay={2} color={accent.glow} />
     </group>
-    </>
-  );
-}
-
-/* The words. One panel per stop, floating in the scene just below its subject
-   and facing that stop's camera, so it drifts past in perspective as the
-   camera travels and settles square-on when it arrives. Drawn to canvases, so
-   they follow the palette. */
-function Signs({ poses, tour, fade, accent, accentLight }: {
-  poses: Pose[];
-  tour: RefObject<number>;
-  fade: RefObject<number>;
-  accent: string;
-  accentLight: string;
-}) {
-  const narrow = useThree((st) => st.size.width / st.size.height < 0.9);
-  const refs = useRef<(THREE.Mesh | null)[]>([]);
-  const [fontsIn, setFontsIn] = useState(false);
-  useEffect(() => {
-    let live = true;
-    Promise.all([document.fonts.load("64px 'Greater Theory'"), document.fonts.load("600 32px 'DM Sans'"), document.fonts.load("400 32px 'DM Sans'")])
-      .finally(() => { if (live) setFontsIn(true); });
-    return () => { live = false; };
-  }, []);
-
-  const textures = useMemo(() => {
-    if (!fontsIn) return [];
-    const { w, h } = SIGN_SIZE(narrow);
-    return ABOUT_STOPS.map((stop) => {
-      const c = document.createElement('canvas');
-      c.width = w; c.height = h;
-      drawSign(c.getContext('2d')!, w, h, stop, { accent, accentLight, narrow });
-      const tex = new THREE.CanvasTexture(c);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = 4;
-      return tex;
-    });
-  }, [fontsIn, narrow, accent, accentLight]);
-  useEffect(() => () => textures.forEach((t) => t.dispose()), [textures]);
-
-  useFrame(() => {
-    const n = ABOUT_STOPS.length;
-    const s = (tour.current ?? 0) * (n - 1);
-    refs.current.forEach((mesh, i) => {
-      if (!mesh) return;
-      // Fully up while the camera holds here, gone well before the next stop.
-      const away = Math.abs(s - i);
-      const o = Math.min(1, Math.max(0, (0.46 - away) / 0.16)) * (fade.current ?? 1);
-      (mesh.material as THREE.MeshBasicMaterial).opacity = o;
-      mesh.visible = o > 0.01;
-    });
-  });
-
-  const { w, h } = SIGN_SIZE(narrow);
-  return (
-    <>
-      {poses.map((pose, i) => {
-        if (!textures[i] || !ABOUT_STOPS[i].title) return null;
-        const width = Math.min(pose.viewW * (narrow ? 0.92 : 0.62), pose.viewH * (narrow ? 0.62 : 1.0));
-        const height = width * (h / w);
-        // On phones it clears the corner Return key.
-        const pos = pose.focus.clone().addScaledVector(pose.up, -pose.viewH * 0.5 + height / 2 + pose.viewH * (narrow ? 0.125 : 0.06));
-        const quat = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(pose.dir.clone(), new THREE.Vector3(), pose.up));
-        return (
-          <mesh key={i} ref={(el) => { refs.current[i] = el; }} position={pos} quaternion={quat} renderOrder={10}>
-            <planeGeometry args={[width, height]} />
-            <meshBasicMaterial map={textures[i]} transparent opacity={0} depthTest={false} depthWrite={false} toneMapped={false} fog={false} />
-          </mesh>
-        );
-      })}
     </>
   );
 }
@@ -555,24 +562,18 @@ function OnlyWhileVisible({ target }: { target: RefObject<HTMLElement | null> })
   return null;
 }
 
-export default function WorkspaceCanvas({ sectionRef, veilRef, edgeRef }: {
+export default function WorkspaceCanvas({ sectionRef, veilRef, edgeRef, copyRef }: {
   sectionRef: RefObject<HTMLElement | null>;
   veilRef: RefObject<HTMLDivElement | null>;
   edgeRef: RefObject<HTMLDivElement | null>;
+  copyRef: RefObject<HTMLDivElement | null>;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
-  // Whether the pointer is over the canvas.
-  const pointerInside = useRef(false);
   // Small screens get a lighter render: 1x pixels, no antialiasing, no bloom.
   const lite = useMemo(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches, []);
 
   return (
-    <div
-      ref={wrapRef}
-      className="ab3-canvas"
-      onPointerEnter={() => { pointerInside.current = true; }}
-      onPointerLeave={() => { pointerInside.current = false; }}
-    >
+    <div ref={wrapRef} className="ab3-canvas">
       <Canvas
         dpr={lite ? 1 : [1, 1.25]}
         camera={{ fov: FOV, position: [6, 5.2, 7], near: 0.1, far: 80 }}
@@ -592,7 +593,7 @@ export default function WorkspaceCanvas({ sectionRef, veilRef, edgeRef }: {
         <directionalLight position={[-8, 2.2, -5]} intensity={0.9} color="#d5deea" />
         <Atmosphere />
         <Surroundings />
-        <Workspace sectionRef={sectionRef} pointerInside={pointerInside} veilRef={veilRef} edgeRef={edgeRef} />
+        <Workspace sectionRef={sectionRef} veilRef={veilRef} edgeRef={edgeRef} copyRef={copyRef} />
         {lite ? <PlainRender /> : <Bloom />}
         <Prewarm />
       </Canvas>

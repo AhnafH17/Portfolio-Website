@@ -5,9 +5,9 @@ import { useFrame } from '@react-three/fiber';
 import { useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { createChromeSurface, createContentSurface, createLiveSurface, REGION, toPlane } from './screenTexture';
-import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
+import { approach, makeScreenMaterial, prepareModel, restingView, SCREEN_PANEL } from './deviceModel';
 import { useAccent } from '@/lib/palette';
-import { BEATS, POSE, phase, easeIn, easeInOut, easeOut, DAMP } from './beats';
+import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 /* The phone is a Blender model (scripts/build-phone.py →
    public/models/phone.glb); this file animates it and paints its screen.
@@ -21,6 +21,7 @@ const P = POSE.phone;
 
 const SCREEN_Z = 0.086; // the model's screen surface
 const CAM_Z = 7;        // DeviceCanvas's camera distance
+const CAM_FOV = 30;
 
 // Phone bounding size (local units, scale 1) used to fit the viewport.
 const DEVICE_W = 1.62;
@@ -43,6 +44,7 @@ export default function Phone({ progress }: { progress: { current: number } }) {
   // three objects are mutated every frame, so they live in a ref set up once
   // the model is in.
   const rig = useRef<{ screen: THREE.MeshStandardMaterial } | null>(null);
+  const lastFrame = useRef(0);
   useEffect(() => {
     const screen = makeScreenMaterial(chrome.texture);
     prepareModel(scene, {
@@ -70,14 +72,14 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     const tiltX = THREE.MathUtils.lerp(0.45, 0, open);
 
     // Responsive: fit the phone to the visible area (adapts to resize).
-    const vp = state.viewport;
+    const vp = restingView(state.size, CAM_FOV, CAM_Z);
     const dockScale = Math.min(vp.width / DEVICE_W, vp.height / DEVICE_H) * FIT;
     const scale = THREE.MathUtils.lerp(dockScale * 0.85, dockScale, open);
 
     const wake = easeOut(phase(p, BEATS.wakePhone));
     const read = phase(p, BEATS.read);
 
-    const k = 1 - Math.exp(-DAMP * dt);
+    const k = approach(lastFrame, dt, DAMP);
     root.current.rotation.y += (rotY - root.current.rotation.y) * k;
     root.current.rotation.x += (tiltX - root.current.rotation.x) * k;
     const s = root.current.scale.x + (scale - root.current.scale.x) * k;
@@ -87,9 +89,6 @@ export default function Phone({ progress }: { progress: { current: number } }) {
     r.screen.emissiveIntensity += (target - r.screen.emissiveIntensity) * k;
 
     content.render(read);
-    // The ending: the camera pushes through the screen into About.
-    const dive = easeIn(phase(p, BEATS.dive));
-    state.camera.position.set(0, 0, THREE.MathUtils.lerp(CAM_Z, 0.5, dive));
   });
 
   return (

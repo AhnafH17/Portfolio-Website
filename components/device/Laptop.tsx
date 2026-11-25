@@ -8,9 +8,9 @@ import {
   createChromeSurface, createContentSurface, createLiveSurface,
   REGION, toPlane,
 } from './screenTexture';
-import { makeScreenMaterial, prepareModel, SCREEN_PANEL } from './deviceModel';
+import { approach, makeScreenMaterial, prepareModel, restingView, SCREEN_PANEL } from './deviceModel';
 import { useAccent } from '@/lib/palette';
-import { BEATS, POSE, phase, easeIn, easeInOut, easeOut, DAMP } from './beats';
+import { BEATS, POSE, phase, easeInOut, easeOut, DAMP } from './beats';
 
 /* The laptop is a Blender model (scripts/build-laptop.py →
    public/models/laptop.glb); this file animates it and paints its screen.
@@ -35,6 +35,8 @@ const Y_FACTOR = -0.82; // vertical centring as a fraction of scale
 
 // The ending (see BEATS). DeviceCanvas sets the camera to CAM_BASE.
 const CAM_BASE = [0, 0.25, 6.4] as const;
+const CAM_FOV = 34;
+const CAM_DIST = Math.hypot(...CAM_BASE);
 const KEY_FOCUS = 0.6;   // how far toward the key the camera eases
 const KEY_VIEW = new THREE.Vector3(0, 1.3, 2.2);   // where it looks at the key from
 const KEY_TRAVEL = 0.0075;  // how far the key sinks
@@ -56,7 +58,8 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
   // `rig`, set up once the model is in (three objects are mutated per frame).
   const lidNode = useMemo(() => scene.getObjectByName('LID') ?? null, [scene]);
   const rig = useRef<{ lid: THREE.Object3D; screen: THREE.MeshStandardMaterial; key: THREE.Object3D | null; keyY: number; keyGlow: THREE.MeshStandardMaterial[] } | null>(null);
-  const cam = useMemo(() => ({ key: new THREE.Vector3(), screen: new THREE.Vector3(), pos: new THREE.Vector3(), look: new THREE.Vector3(), base: new THREE.Vector3(...CAM_BASE) }), []);
+  const cam = useMemo(() => ({ key: new THREE.Vector3(), pos: new THREE.Vector3(), look: new THREE.Vector3(), base: new THREE.Vector3(...CAM_BASE) }), []);
+  const lastFrame = useRef(0);
 
   useEffect(() => {
     const lid = scene.getObjectByName('LID');
@@ -113,7 +116,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     const tiltX = THREE.MathUtils.lerp(0, P.dockTilt, open);
 
     // Responsive: fit the device to the actual visible area (adapts to resize).
-    const vp = state.viewport;
+    const vp = restingView(state.size, CAM_FOV, CAM_DIST);
     const dockScale = Math.min(vp.width / DEVICE_W, vp.height / DEVICE_H) * FIT;
     const scale = THREE.MathUtils.lerp(dockScale * 0.82, dockScale, open);
     const targetPosY = scale * Y_FACTOR;
@@ -124,7 +127,7 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     // Beat D — read: content scrolls INSIDE the screen. Device does not move.
     const read = phase(p, BEATS.read);
 
-    const k = 1 - Math.exp(-DAMP * dt);
+    const k = approach(lastFrame, dt, DAMP);
     // No cursor parallax — the laptop stays constant, facing forward.
     root.current.rotation.y += (rotY - root.current.rotation.y) * k;
     root.current.rotation.x += (tiltX - root.current.rotation.x) * k;
@@ -141,26 +144,23 @@ export default function Laptop({ progress }: { progress: { current: number } }) 
     content.render(read);
 
     // The ending, all inside this scene: the camera eases toward the keyboard,
-    // the real Return key lights up and sinks, the terminal reports the
-    // deploy, and the camera pushes through the screen into About.
+    // the real Return key lights up and sinks, and the terminal reports the
+    // deploy and holds it while About rises over the scene (DeviceShowcase).
     const focus = easeInOut(phase(p, BEATS.focus)) * KEY_FOCUS;
-    const dive = easeIn(phase(p, BEATS.dive));
     const press = phase(p, BEATS.press);
     const down = Math.sin(Math.PI * Math.min(1, press * 2));   // down and back up
     if (r.key) r.key.position.y = r.keyY - down * KEY_TRAVEL;
-    const lit = press > 0 ? Math.max(0, 1 - phase(p, [BEATS.press[1], BEATS.dive[1]])) : 0;
+    const lit = press > 0 ? 1 - 0.6 * phase(p, [BEATS.press[1], 1]) : 0;
     r.keyGlow.forEach((m) => { m.emissiveIntensity = lit * 2.2; });
-    live.deployed(press > 0.5);
+    // `git push` types itself as the camera reaches the keys, then the press
+    // runs it.
+    live.ending(press > 0.5 ? 1 : 0.999 * phase(p, [BEATS.focus[0], BEATS.press[0] - 0.01]));
 
     const camera = state.camera;
-    if (focus > 0 || dive > 0) {
+    if (focus > 0) {
       (r.key ?? r.lid).getWorldPosition(cam.key);
-      cam.screen.set(0, SCREEN_Y, SCREEN_Z);
-      r.lid.localToWorld(cam.screen);
       cam.pos.copy(cam.base).lerp(cam.look.copy(cam.key).add(KEY_VIEW), focus);
       cam.look.set(0, cam.base.y, 0).lerp(cam.key, focus);
-      cam.pos.lerp(cam.key.copy(cam.screen).setZ(cam.screen.z + 0.3), dive);
-      cam.look.lerp(cam.screen, dive);
       camera.position.copy(cam.pos);
       camera.lookAt(cam.look);
     } else {

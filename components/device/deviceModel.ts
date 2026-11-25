@@ -56,3 +56,27 @@ export function prepareModel(
     }
   });
 }
+
+/**
+ * The visible area, in world units, of a plane `distance` in front of the
+ * device's resting camera. The devices fit themselves to this, not to R3F's
+ * `state.viewport`: that one is recomputed from wherever the camera is at the
+ * time the canvas is re-measured, which happens on every scroll, so after the
+ * laptop's camera had moved in, the device shrank and stayed that size.
+ */
+export function restingView(size: { width: number; height: number }, fov: number, distance: number) {
+  const height = 2 * Math.tan(THREE.MathUtils.degToRad(fov) / 2) * distance;
+  return { width: height * (size.width / Math.max(1, size.height)), height };
+}
+
+/**
+ * Per-frame approach factor toward the scroll-driven targets. After a pause
+ * (the render loop sleeps while the section is off screen) it snaps, so the
+ * device never animates back from wherever it was left.
+ */
+export function approach(last: { current: number }, dt: number, damp: number) {
+  const now = performance.now();
+  const gap = now - last.current;
+  last.current = now;
+  return gap > 250 ? 1 : 1 - Math.exp(-damp * dt);
+}

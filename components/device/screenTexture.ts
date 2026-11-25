@@ -718,8 +718,10 @@ function phoneContent(): ContentSurface {
 
 export interface LiveSurface {
   texture: THREE.CanvasTexture;
-  /** Holds the terminal on the finished deploy (the laptop's ending). */
-  deployed(on: boolean): void;
+  /** The laptop's ending, from scroll: 0 = the terminal runs its loop;
+      between 0 and 1 `git push` is typed that far, waiting for Return;
+      1 = held on the finished deploy. */
+  ending(t: number): void;
   update: (elapsed: number) => void;
 }
 
@@ -747,12 +749,13 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
   const CYCLE = 5.2;                // seconds per command
   const FPS = 12;
   let lastFrame = -1;
-  let held = false;
+  let end = 0;          // see LiveSurface.ending
 
   const draw = (elapsed: number) => {
     const step = Math.floor(elapsed / CYCLE) % TERM_SCRIPT.length;
-    const t = held ? 1 : (elapsed % CYCLE) / CYCLE;
-    const { cmd, out } = held ? { cmd: 'git push', out: '✓ deployed' } : TERM_SCRIPT[step];
+    const scripted = end > 0;
+    const t = !scripted ? (elapsed % CYCLE) / CYCLE : end >= 1 ? 1 : 0;
+    const { cmd, out } = end >= 1 ? { cmd: 'git push', out: '✓ deployed' } : scripted ? { cmd: 'git push', out: '' } : TERM_SCRIPT[step];
 
     c.fillStyle = '#080b11';
     c.fillRect(0, 0, rw, rh);
@@ -763,7 +766,9 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
     c.fillStyle = 'rgba(255,255,255,0.34)';
     c.fillText('TERMINAL', 24, 26);
 
-    const typed = Math.min(cmd.length, Math.floor((t / 0.34) * cmd.length));
+    const typed = scripted && end < 1
+      ? Math.min(cmd.length, Math.ceil(end * cmd.length))
+      : Math.min(cmd.length, Math.floor((t / 0.34) * cmd.length));
     c.font = `400 23px ${MONO}`;
     c.fillStyle = a.glow;
     c.fillText('$', 24, 66);
@@ -772,12 +777,14 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
 
     // caret blinks while typing, then sits after the command
     const caretX = 46 + c.measureText(cmd.slice(0, typed)).width + 3;
-    if (Math.floor(elapsed * 2) % 2 === 0 || typed < cmd.length) {
+    if (scripted || Math.floor(elapsed * 2) % 2 === 0 || typed < cmd.length) {
       c.fillStyle = a.glow;
       c.fillRect(caretX, 50, 11, 20);
     }
 
-    if (t > 0.42) {
+    if (scripted && end < 1) {
+      // Typed, waiting for Return: nothing below the prompt yet.
+    } else if (t > 0.42) {
       c.font = `400 21px ${MONO}`;
       c.fillStyle = t > 0.5 ? '#7fd18a' : DIM;
       const reveal = Math.min(out.length, Math.floor(((t - 0.42) / 0.2) * out.length));
@@ -797,8 +804,10 @@ export function createLiveSurface(kind: 'laptop' | 'phone' = 'laptop'): LiveSurf
 
   return {
     texture,
-    deployed: (on: boolean) => {
-      if (on !== held) { held = on; lastFrame = -1; }
+    ending: (t: number) => {
+      // Redraw only when what's shown changes (one more letter, or done).
+      const q = t <= 0 ? 0 : t >= 1 ? 1 : 0.001 + Math.floor(t * 34) / 34;
+      if (q !== end) { end = q; lastFrame = -1; }
     },
     update: (elapsed: number) => {
       const frame = Math.floor(elapsed * FPS);
@@ -881,7 +890,7 @@ function islandSurface(): LiveSurface {
 
   return {
     texture,
-    deployed: () => {},
+    ending: () => {},
     update: (elapsed: number) => {
       const frame = Math.floor(elapsed * FPS);
       if (frame === lastFrame) return;

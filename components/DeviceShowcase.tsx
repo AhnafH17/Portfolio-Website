@@ -25,6 +25,8 @@ export default function DeviceShowcase() {
   const sectionRef = useRef<HTMLElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLSpanElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const fadeRef = useRef<HTMLDivElement>(null);
   const progress = useRef(0);
 
@@ -35,43 +37,60 @@ export default function DeviceShowcase() {
     return () => cancelAnimationFrame(frame);
   }, []);
 
-  // Only run the WebGL render loop while the hero is on screen.
-  const [active, setActive] = useState(false);
+  // Only run the WebGL render loop while the hero is on screen and not yet
+  // fully covered by About.
+  const [inView, setInView] = useState(false);
+  const [covered, setCovered] = useState(false);
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
     const io = new IntersectionObserver(
-      ([entry]) => setActive(entry.isIntersecting),
+      ([entry]) => setInView(entry.isIntersecting),
       { rootMargin: '200px 0px' },
     );
     io.observe(section);
     return () => io.disconnect();
   }, []);
+  const active = inView && !covered;
 
   useEffect(() => {
     if (mode !== 'laptop' && mode !== 'phone') return;
     const section = sectionRef.current;
     if (!section) return;
 
+    /* The track is the device's part, then one screen in which About (pulled
+       up a screen by CSS, `.dv-section + .ab3`) rises over the still-pinned
+       scene. The trigger runs until the sticky releases, the moment About's
+       top reaches the top of the screen. Everything below is a pure function
+       of where the page is scrolled, so it reads the same whichever way the
+       visitor got there. */
+    const sticky = () => stickyRef.current?.offsetHeight || window.innerHeight;
+    const apply = (scrolled: number) => {
+      const riseStart = Math.max(1, section.offsetHeight - sticky() - window.innerHeight);
+      const p = Math.min(1, Math.max(0, scrolled / riseStart));
+      const cover = Math.min(1, Math.max(0, (scrolled - riseStart) / window.innerHeight));
+      progress.current = p;
+      // Fade the "About Me" overlay out as the device turns (first ~30%)
+      if (overlayRef.current) {
+        const o = 1 - Math.min(1, p / 0.3);
+        overlayRef.current.style.opacity = String(o);
+        overlayRef.current.style.transform = `translateY(${(1 - o) * -24}px)`;
+      }
+      if (hintRef.current) {
+        hintRef.current.style.opacity = String(1 - Math.min(1, p / 0.13));
+      }
+      // Covered by About: the scene darkens and settles back a little.
+      if (fadeRef.current) fadeRef.current.style.opacity = String(cover * 0.6);
+      if (canvasRef.current) canvasRef.current.style.transform = cover > 0 ? `scale(${1 - cover * 0.05})` : '';
+      setCovered(cover >= 1);
+    };
     const st = ScrollTrigger.create({
       trigger: section,
       start: 'top top',
-      end: 'bottom bottom',
-      scrub: true,
-      onUpdate: (self) => {
-        progress.current = self.progress;
-        // Fade the "About Me" overlay out as the device turns (first ~30%)
-        if (overlayRef.current) {
-          const o = 1 - Math.min(1, self.progress / 0.28);
-          overlayRef.current.style.opacity = String(o);
-          overlayRef.current.style.transform = `translateY(${(1 - o) * -24}px)`;
-        }
-        if (hintRef.current) {
-          hintRef.current.style.opacity = String(1 - Math.min(1, self.progress / 0.12));
-        }
-        // The push through the screen lands in the About section's own dark.
-        if (fadeRef.current) fadeRef.current.style.opacity = String(Math.min(1, Math.max(0, (self.progress - 0.95) / 0.04)));
-      },
+      end: () => `+=${section.offsetHeight - sticky()}`,
+      invalidateOnRefresh: true,
+      onUpdate: (self) => apply(self.progress * (self.end - self.start)),
+      onRefresh: (self) => apply(self.progress * (self.end - self.start)),
     });
 
     return () => st.kill();
@@ -86,9 +105,9 @@ export default function DeviceShowcase() {
       className={`dv-section${isStatic ? ' dv-section--static' : ''}`}
       aria-label="About me"
     >
-      <div className="dv-sticky">
+      <div ref={stickyRef} className="dv-sticky">
         {/* 3D layer */}
-        <div className="dv-canvas">
+        <div ref={canvasRef} className="dv-canvas">
           {(mode === 'laptop' || mode === 'phone') && (
             <DeviceCanvas kind={mode} progress={progress} active={active} />
           )}
